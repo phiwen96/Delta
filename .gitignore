@@ -1,3 +1,9 @@
+*build*
+.vscode
+.DS_Store
+*.sh
+*.pcm
+
 # Prerequisites
 *.d
 
