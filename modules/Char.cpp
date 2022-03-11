@@ -1,14 +1,16 @@
 export module Delta.Char;
 
-import Delta.Same_as;
+import Delta.Convertible_to;
 
 export 
 {
 	template <typename T>
-	concept Char = Same_as <T, char>
-		or Same_as <T, signed char>
-		or Same_as <T, unsigned char>
-		or Same_as <T, char16_t>
-		or Same_as <T, char32_t>
-		or Same_as <T, wchar_t>;
+	concept Char = Convertible_to <T, char>
+		or Convertible_to <T, signed char>
+		or Convertible_to <T, unsigned char>
+		or Convertible_to <T, char16_t>
+		or Convertible_to <T, char32_t>
+		or Convertible_to <T, wchar_t>;
 }
+
+

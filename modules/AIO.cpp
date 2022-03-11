@@ -8,9 +8,9 @@ import Delta.String;
 
 
 
-export namespace delta::aio
+export namespace aio
 {
-	inline auto write (int fd, char const* src)
+	inline auto write (int fd, String auto const& src)
 	{
 		struct aiocb op 
 		{
@@ -20,7 +20,7 @@ export namespace delta::aio
 		op.aio_fildes = fd;
 		op.aio_offset = 0;
 		op.aio_buf = (void*) src; 
-		// op.aio_nbytes = strlen (src) * sizeof (char);
+		// op.aio_nbytes = length (src) * sizeof (char);
 
 		// if (aio_write (&op) != 0) 
 		// {

@@ -9,7 +9,7 @@ export module Delta.Convertible_to;
 export template <typename T, typename U>
 concept Convertible_to = requires (T t, U u)
 {
-	t = u;
+	u = t;
 };
 
 
