@@ -1,6 +1,6 @@
 export module Delta.AIO;
 
-import Delta.String;
+export import Delta.String;
 
 #include <aio.h>
 #include <stdio.h>
@@ -8,23 +8,25 @@ import Delta.String;
 
 
 
-export namespace aio
-{
-	inline auto write (int fd, String auto const& src)
-	{
-		struct aiocb op 
-		{
+// export
+// {
+	// inline auto write (int fd, auto* src, auto len)
+	// {
+		
+	// 	struct aiocb op 
+	// 	{
 			
-		};
+	// 	};
 
-		op.aio_fildes = fd;
-		op.aio_offset = 0;
-		op.aio_buf = (void*) src; 
-		// op.aio_nbytes = length (src) * sizeof (char);
+	// 	op.aio_fildes = fd;
+	// 	op.aio_offset = 0;
+	// 	op.aio_buf = (void*) src; 
+	// 	op.aio_nbytes = len * sizeof (char);
 
-		// if (aio_write (&op) != 0) 
-		// {
-		// 	// printf ("")
-		// }
-	}
-}
+	// 	if (aio_write (&op) != 0) 
+	// 	{
+	// 		// printf ("")
+	// 	}
+	// }
+
+// }

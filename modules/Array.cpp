@@ -1,5 +1,6 @@
 export module Delta.Array;
 
+import Delta.Size;
 
 template <typename T>
 struct is_array_t 
@@ -17,15 +18,14 @@ concept Dynamic_array = Array <T> and is_array_t <T>::dynamic;
 export template <typename T>
 concept Static_array = Array <T> and not is_array_t <T>::dynamic;
 
-export template <Array T>
-using element_type = typename is_array_t <T>::element_type;
-
 export template <Static_array T>
-auto length (T const& t) noexcept -> auto
+inline auto length (T const& t) noexcept -> Size auto
 {
 	return is_array_t <T>::length;
-}
+} 
 
+export template <Array T>
+using element_type = typename is_array_t <T>::element_type;
 
 template <typename T, auto N>
 struct is_array_t <T [N]>

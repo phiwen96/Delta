@@ -1,7 +1,7 @@
 export module Delta.String;
 
 import Delta.Char;
-import Delta.Array;
+export import Delta.Array;
 import Delta.Size;
 import Delta.Range;
 
@@ -10,17 +10,9 @@ import Delta.Range;
 
 export 
 {
-	template <typename T>
-	concept String = requires (T t) 
-	{
-		{t [1]} -> Char;
-		{length (t)} -> Size;
-
-	};
-
 	template <Dynamic_array T>
-	requires Char <element_type <T>>
-	auto length (T const& s) noexcept -> auto
+	requires (not Static_array <T>) and Char <element_type <T>>
+	inline auto length (T const& s) noexcept -> Size auto
 	{
 		auto i = 0;
 		while (s [i++] != '\0')
@@ -30,6 +22,17 @@ export
 	
 		return i;
 	}
+
+	template <typename T>
+	concept String = requires (T t) 
+	{
+		{t [1]} -> Char;
+		{length (t)} -> Size;
+
+	};
+
+	
+
 
 	
 }
