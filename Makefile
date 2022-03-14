@@ -46,27 +46,46 @@ all: $(APPS)
 
 ######## T0 ###########
 $(APPS_DIR)/T0: $(OBJECTS_DIR)/T0.o
-	$(CXX) $(CXX_FLAGS) $(OBJECTS_DIR)/T0.o -o $@ -L/usr/lib -lssl -lcrypto -lrt
+	$(CXX) -std=c++2a -o $@ -c $<
 
-$(OBJECTS_DIR)/T0.o: $(TARGETS_DIR)/T0.cpp $(MODULES_DIR)/Delta.pcm #$(MODULES) # $(MODULES_DIR)/Delta.pcm
-	$(CXX) $(CXX_FLAGS) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -o $@ $(LIB_NLOHMANN)/include 
+$(OBJECTS_DIR)/T0.o: $(TARGETS_DIR)/T0.cpp $(MODULES_DIR)/Delta.pcm 
+	$(CXX) -std=c++2a -fmodule-file=$(MODULES_DIR)/Delta.pcm -c $< -o $@
+
+
+# $(APPS_DIR)/T0: $(OBJECTS_DIR)/T0.o
+# 	$(CXX) $(CXX_FLAGS) -c $(OBJECTS_DIR)/T0.o -lrt -o $@ -L/usr/lib -lssl -lcrypto
+
+# $(OBJECTS_DIR)/T0.o: $(TARGETS_DIR)/T0.cpp $(MODULES_DIR)/libaio.a # $(MODULES_DIR)/AIO.pcm # $(MODULES_DIR)/Delta.pcm
+# 	$(CXX) $(CXX_FLAGS) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -o $@ $(LIB_NLOHMANN)/include 
+
+# $(APPS_DIR)/T0: $(TARGETS_DIR)/T0.cpp $(MODULES_DIR)/AIO.pcm # $(MODULES_DIR)/AIO.pcm # $(MODULES_DIR)/Delta.pcm
+# 	$(CXX) $(CXX_FLAGS) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -o $@
+
+# $(APPS_DIR)/T0: $(TARGETS_DIR)/T0.cpp $(MODULES_DIR)/AIO.pcm
+# 	$(CXX) $(CXX_FLAGS) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -o $@ $< -lrt
 
 ######## T1 ###########
-$(APPS_DIR)/T1: $(OBJECTS_DIR)/T1.o
-	$(CXX) $(CXX_FLAGS) $(OBJECTS_DIR)/T1.o -o $@
+# $(APPS_DIR)/T1: $(OBJECTS_DIR)/T1.o
+# 	$(CXX) $(CXX_FLAGS) $(OBJECTS_DIR)/T1.o -o $@
 
-$(OBJECTS_DIR)/T1.o: $(TARGETS_DIR)/T1.cpp $(MODULES_DIR)/Delta.pcm
-	$(CXX) $(CXX_FLAGS) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -o $@ $(LIB_NLOHMANN)/include
+# $(OBJECTS_DIR)/T1.o: $(TARGETS_DIR)/T1.cpp $(MODULES_DIR)/Delta.pcm
+# 	$(CXX) $(CXX_FLAGS) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -o $@ $(LIB_NLOHMANN)/include
 
 # $(info $$NAMES is [${NAMES}])
 
 
+# $(MODULES_DIR)/Delta.so: $(MODULES_DIR)/Delta.pcm
+# 	$(CXX) $(CXX_FLAGS) -shared -o $(MODULES_DIR)/Delta.so $(MODULES_DIR)/Delta.pcm
+
+# $(MODULES_DIR)/Delta.o: $(MODULES_DIR)/Delta.pcm
+# 	$(CXX) $(CXX_FLAGS) -lrt -c $(MODULES_DIR)/Delta.pcm -o $(MODULES_DIR)/Delta.o
 ######## Modules ###########
 $(MODULES_DIR)/Delta.pcm: $(SOURCES_DIR)/Delta.cpp $(MODULES_DIR)/Array.pcm $(MODULES_DIR)/AIO.pcm $(MODULES_DIR)/Future.pcm $(MODULES_DIR)/String.pcm $(MODULES_DIR)/Range.pcm $(MODULES_DIR)/Iterator.pcm $(MODULES_DIR)/Char.pcm $(MODULES_DIR)/Size.pcm $(MODULES_DIR)/Convertible_to.pcm $(MODULES_DIR)/Same_as.pcm $(MODULES_DIR)/Class.pcm
-	$(CXX) $(CXX_FLAGS) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@ $(LIB_NLOHMANN)/include -I/$(LIB_OPENSSL)/include
+	$(CXX) $(CXX_FLAGS) --precompile $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@ $(LIB_NLOHMANN)/include -I/$(LIB_OPENSSL)/include
 
-$(MODULES_DIR)/AIO.pcm: $(SOURCES_DIR)/AIO.cpp $(MODULES_DIR)/String.pcm
-	$(CXX) $(CXX_FLAGS) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@ $(LIB_NLOHMANN)/include -I/$(LIB_OPENSSL)/include
+
+$(MODULES_DIR)/AIO.pcm: $(SOURCES_DIR)/AIO.cpp
+	$(CXX) -std=c++2a -fimplicit-modules -fimplicit-module-maps -c $< -Xclang -emit-module-interface -o $@
 
 $(MODULES_DIR)/String.pcm: $(SOURCES_DIR)/String.cpp $(MODULES_DIR)/Char.pcm $(MODULES_DIR)/Array.pcm $(MODULES_DIR)/Size.pcm $(MODULES_DIR)/Range.pcm
 	$(CXX) $(CXX_FLAGS) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@ $(LIB_NLOHMANN)/include -I/$(LIB_OPENSSL)/include
