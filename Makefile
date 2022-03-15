@@ -1,124 +1,30 @@
-############### C++ compiler flags ###################
-CXX := /usr/bin/clang++-12
-CXX_FLAGS = -std=c++2a -fmodules-ts -fmodules -fbuiltin-module-map -fimplicit-modules -fimplicit-module-maps -fprebuilt-module-path=.
-# -stdlib=libc++
-############### External C++ libraries  ###################
-LIB_NLOHMANN := -I/opt/homebrew/Cellar/nlohmann-json/3.10.5
+GCC=g++-11 -std=c++20 -fmodules-ts
+APP=main
 
-# LIB_OPENSSL := /opt/homebrew/Cellar/openssl@3/3.0.1
-# LIB_OPENSSL := -Lopenssl/openssl-0.9.8k/
+build: std_headers mathlib main.o
+	$(GCC) *.o -o $(APP) -lrt
 
-################## Project dirs ##################
-PROJ_DIR := $(CURDIR)
-BUILD_DIR := $(PROJ_DIR)/build
-MODULES_DIR := $(BUILD_DIR)/modules
-SOURCES_DIR := $(PROJ_DIR)/modules
-TARGETS_DIR := $(PROJ_DIR)/targets
-OBJECTS_DIR := $(BUILD_DIR)/objects
-APPS_DIR := $(BUILD_DIR)/apps
+std_headers:
+	$(GCC) -xc++-system-header iostream
 
-#################### Targets ###############
-TEST_0 := $(BUILD_DIR)/T0
-TEST_1 := $(BUILD_DIR)/T1
+mathlib: Convertible_to.cpp Same_as.cpp Size.cpp Array.cpp Iterator.cpp Range.cpp Class.cpp Char.cpp AIO.cpp String.cpp Future.cpp Delta.cpp
+	$(GCC) -c Convertible_to.cpp
+	$(GCC) -c Same_as.cpp
+	$(GCC) -c Size.cpp
+	$(GCC) -c Array.cpp
+	$(GCC) -c Iterator.cpp
+	$(GCC) -c Range.cpp
+	$(GCC) -c Class.cpp
+	$(GCC) -c Char.cpp
+	$(GCC) -c AIO.cpp
+	$(GCC) -c String.cpp
+	$(GCC) -c Future.cpp
+	$(GCC) -c Delta.cpp
 
-######################################
-SOURCES := $(wildcard $(SOURCES_DIR)/*.cpp)
-TARGETS := $(wildcard $(TARGETS_DIR)/*.cpp)
-
-__MODULES := $(subst .cpp,.pcm,$(SOURCES))
-_MODULES := $(foreach F,$(__MODULES),$(word $(words $(subst /, ,$F)),$(subst /, ,$F)))
-MODULES := $(foreach name, $(_MODULES), $(addprefix $(MODULES_DIR)/, $(name)))
-
-# __APPS := $(subst .cpp,,$(TARGETS))
-__APPS = $(basename $(TARGETS))
-_APPS := $(foreach F,$(__APPS),$(word $(words $(subst /, ,$F)),$(subst /, ,$F)))
-APPS := $(foreach name, $(_APPS), $(addprefix $(APPS_DIR)/, $(name)))
-
-__OBJECTS := $(subst .cpp,.o,$(TARGETS))
-_OBJECTS := $(foreach F,$(__OBJECTS),$(word $(words $(subst /, ,$F)),$(subst /, ,$F)))
-OBJECTS := $(foreach name, $(_OBJECTS), $(addprefix $(OBJECTS_DIR)/, $(name)))
-
-_BUILD_DIRS := apps modules targets objects docs tests
-BUILD_DIRS := $(foreach dir, $(_BUILD_DIRS), $(addprefix $(BUILD_DIR)/, $(dir)))
-
-######################################
-all: $(APPS)
-
-######## T0 ###########
-$(APPS_DIR)/T0: $(OBJECTS_DIR)/T0.o
-	$(CXX) -std=c++2a -o $@ -c $<
-
-$(OBJECTS_DIR)/T0.o: $(TARGETS_DIR)/T0.cpp $(MODULES_DIR)/Delta.pcm 
-	$(CXX) -std=c++2a -fmodule-file=$(MODULES_DIR)/Delta.pcm -c $< -o $@
-
-
-# $(APPS_DIR)/T0: $(OBJECTS_DIR)/T0.o
-# 	$(CXX) $(CXX_FLAGS) -c $(OBJECTS_DIR)/T0.o -lrt -o $@ -L/usr/lib -lssl -lcrypto
-
-# $(OBJECTS_DIR)/T0.o: $(TARGETS_DIR)/T0.cpp $(MODULES_DIR)/libaio.a # $(MODULES_DIR)/AIO.pcm # $(MODULES_DIR)/Delta.pcm
-# 	$(CXX) $(CXX_FLAGS) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -o $@ $(LIB_NLOHMANN)/include 
-
-# $(APPS_DIR)/T0: $(TARGETS_DIR)/T0.cpp $(MODULES_DIR)/AIO.pcm # $(MODULES_DIR)/AIO.pcm # $(MODULES_DIR)/Delta.pcm
-# 	$(CXX) $(CXX_FLAGS) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -o $@
-
-# $(APPS_DIR)/T0: $(TARGETS_DIR)/T0.cpp $(MODULES_DIR)/AIO.pcm
-# 	$(CXX) $(CXX_FLAGS) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -o $@ $< -lrt
-
-######## T1 ###########
-# $(APPS_DIR)/T1: $(OBJECTS_DIR)/T1.o
-# 	$(CXX) $(CXX_FLAGS) $(OBJECTS_DIR)/T1.o -o $@
-
-# $(OBJECTS_DIR)/T1.o: $(TARGETS_DIR)/T1.cpp $(MODULES_DIR)/Delta.pcm
-# 	$(CXX) $(CXX_FLAGS) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -o $@ $(LIB_NLOHMANN)/include
-
-# $(info $$NAMES is [${NAMES}])
-
-
-# $(MODULES_DIR)/Delta.so: $(MODULES_DIR)/Delta.pcm
-# 	$(CXX) $(CXX_FLAGS) -shared -o $(MODULES_DIR)/Delta.so $(MODULES_DIR)/Delta.pcm
-
-# $(MODULES_DIR)/Delta.o: $(MODULES_DIR)/Delta.pcm
-# 	$(CXX) $(CXX_FLAGS) -lrt -c $(MODULES_DIR)/Delta.pcm -o $(MODULES_DIR)/Delta.o
-######## Modules ###########
-$(MODULES_DIR)/Delta.pcm: $(SOURCES_DIR)/Delta.cpp $(MODULES_DIR)/Array.pcm $(MODULES_DIR)/AIO.pcm $(MODULES_DIR)/Future.pcm $(MODULES_DIR)/String.pcm $(MODULES_DIR)/Range.pcm $(MODULES_DIR)/Iterator.pcm $(MODULES_DIR)/Char.pcm $(MODULES_DIR)/Size.pcm $(MODULES_DIR)/Convertible_to.pcm $(MODULES_DIR)/Same_as.pcm $(MODULES_DIR)/Class.pcm
-	$(CXX) $(CXX_FLAGS) --precompile $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@ $(LIB_NLOHMANN)/include -I/$(LIB_OPENSSL)/include
-
-
-$(MODULES_DIR)/AIO.pcm: $(SOURCES_DIR)/AIO.cpp
-	$(CXX) -std=c++2a -fimplicit-modules -fimplicit-module-maps -c $< -Xclang -emit-module-interface -o $@
-
-$(MODULES_DIR)/String.pcm: $(SOURCES_DIR)/String.cpp $(MODULES_DIR)/Char.pcm $(MODULES_DIR)/Array.pcm $(MODULES_DIR)/Size.pcm $(MODULES_DIR)/Range.pcm
-	$(CXX) $(CXX_FLAGS) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@ $(LIB_NLOHMANN)/include -I/$(LIB_OPENSSL)/include
-
-$(MODULES_DIR)/Future.pcm: $(SOURCES_DIR)/Future.cpp
-	$(CXX) $(CXX_FLAGS) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@ $(LIB_NLOHMANN)/include -I/$(LIB_OPENSSL)/include
-
-$(MODULES_DIR)/Char.pcm: $(SOURCES_DIR)/Char.cpp $(MODULES_DIR)/Convertible_to.pcm
-	$(CXX) $(CXX_FLAGS) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@ $(LIB_NLOHMANN)/include -I/$(LIB_OPENSSL)/include
-
-$(MODULES_DIR)/Array.pcm: $(SOURCES_DIR)/Array.cpp $(MODULES_DIR)/Size.pcm
-	$(CXX) $(CXX_FLAGS) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@ $(LIB_NLOHMANN)/include -I/$(LIB_OPENSSL)/include
-
-$(MODULES_DIR)/Range.pcm: $(SOURCES_DIR)/Range.cpp $(MODULES_DIR)/Iterator.pcm
-	$(CXX) $(CXX_FLAGS) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@ $(LIB_NLOHMANN)/include -I/$(LIB_OPENSSL)/include
-
-$(MODULES_DIR)/Iterator.pcm: $(SOURCES_DIR)/Iterator.cpp
-	$(CXX) $(CXX_FLAGS) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@ $(LIB_NLOHMANN)/include -I/$(LIB_OPENSSL)/include
-
-$(MODULES_DIR)/Size.pcm: $(SOURCES_DIR)/Size.cpp $(MODULES_DIR)/Convertible_to.pcm
-	$(CXX) $(CXX_FLAGS) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@ $(LIB_NLOHMANN)/include -I/$(LIB_OPENSSL)/include
-
-$(MODULES_DIR)/Same_as.pcm: $(SOURCES_DIR)/Same_as.cpp
-	$(CXX) $(CXX_FLAGS) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@ $(LIB_NLOHMANN)/include -I/$(LIB_OPENSSL)/include
-
-$(MODULES_DIR)/Convertible_to.pcm: $(SOURCES_DIR)/Convertible_to.cpp
-	$(CXX) $(CXX_FLAGS) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@ $(LIB_NLOHMANN)/include -I/$(LIB_OPENSSL)/include
-
-$(MODULES_DIR)/Class.pcm: $(SOURCES_DIR)/Class.cpp
-	$(CXX) $(CXX_FLAGS) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@ $(LIB_NLOHMANN)/include -I/$(LIB_OPENSSL)/include
-
-######################################
-directories := $(foreach dir, $(BUILD_DIRS), $(shell [ -d $(dir) ] || mkdir -p $(dir)))
+main.o: main.cpp
+	$(GCC) -c $<
 
 clean:
-	rm -rf $(BUILD_DIR)/*
+	@rm -rf gcm.cache/
+	@rm -f *.o
+	@rm -f $(APP)

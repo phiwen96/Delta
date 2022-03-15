@@ -1,4 +1,5 @@
 *build*
+*gcm.cache*
 .vscode
 .DS_Store
 *.sh
