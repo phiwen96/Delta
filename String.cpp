@@ -3,10 +3,12 @@ export module Delta.String;
 import Delta.Char;
 import Delta.Array;
 import Delta.Size;
+import Delta.Pointer;
 
 
-export template <Dynamic_array T> requires (not Static_array <T>) and Char <element_type <T>>
-auto len (T const& s) noexcept -> Size auto
+export template <typename T> 
+auto len (T const& s) noexcept -> Size auto 
+requires requires {{s [1]} -> Char;}
 {
 	auto i = 0;
 	while (s [i++] != '\0')
