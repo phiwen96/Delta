@@ -3,61 +3,70 @@ export module Delta.Array;
 import Delta.Size;
 
 template <typename T>
-struct is_array_t 
+struct type_info 
 {
-	constexpr static auto value = false;
+	constexpr static auto is_array = false;
 };
 
 
 export template <typename T>
-concept Array = is_array_t <T>::value;
+concept Array = type_info <T>::is_array;
 
 export template <typename T>
-concept Dynamic_array = Array <T> and is_array_t <T>::dynamic;
+concept Dynamic_array = Array <T> and type_info <T>::is_dynamic;
 
 export template <typename T>
-concept Static_array = Array <T> and not is_array_t <T>::dynamic;
+concept Static_array = Array <T> and not type_info <T>::is_dynamic;
 
 export template <Static_array T>
-inline auto length (T const& t) noexcept -> Size auto
+inline auto len (T const& t) noexcept -> Size auto
 {
-	return is_array_t <T>::length;
+	return type_info <T>::len;
 } 
 
 export template <Array T>
-using element_type = typename is_array_t <T>::element_type;
+using element_type = typename type_info <T>::element_type;
 
 template <typename T, auto N>
-struct is_array_t <T [N]>
+struct type_info <T [N]>
 {
 	using element_type = T;
-	constexpr static auto value = true;
-	constexpr static auto dynamic = false;
-	constexpr static auto length = N;
+	constexpr static auto is_array = true;
+	constexpr static auto is_dynamic = false;
+	constexpr static auto len = N;
 };
 
 template <typename T, auto N>
-struct is_array_t <T (&) [N]>
+struct type_info <T (&) [N]>
 {
 	using element_type = T;
-	constexpr static auto value = true;
-	constexpr static auto dynamic = false;
-	constexpr static auto length = N;
+	constexpr static auto is_array = true;
+	constexpr static auto is_dynamic = false;
+	constexpr static auto len = N;
 };
 
 template <typename T, auto N>
-struct is_array_t <T const [N]>
+struct type_info <T (&&) [N]>
 {
 	using element_type = T;
-	constexpr static auto value = true;
-	constexpr static auto dynamic = false;
-	constexpr static auto length = N;
+	constexpr static auto is_array = true;
+	constexpr static auto is_dynamic = false;
+	constexpr static auto len = N;
+};
+
+template <typename T, auto N>
+struct type_info <T const [N]>
+{
+	using element_type = T;
+	constexpr static auto is_array = true;
+	constexpr static auto is_dynamic = false;
+	constexpr static auto len = N;
 };
 
 template <typename T>
-struct is_array_t <T *>
+struct type_info <T *>
 {
 	using element_type = T;
-	constexpr static auto value = true;
-	constexpr static auto dynamic = true;
+	constexpr static auto is_array = true;
+	constexpr static auto is_dynamic = true;
 };
