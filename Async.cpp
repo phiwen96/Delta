@@ -4,12 +4,6 @@ module;
 #include <stdio.h>
 export module Delta.Async;
 
-// import Delta.String; 
-// import :Write;
-
-// export async_write;
-
-
 export auto async_write (int fd, auto * src, int len)
 {
     struct aiocb op 
@@ -27,3 +21,6 @@ export auto async_write (int fd, auto * src, int len)
 			perror ("aio_write");
 		}
 }
+
+
+
