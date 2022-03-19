@@ -1,5 +1,6 @@
 export module Delta;
 
+export import Delta.Net;
 export import Delta.String;
 export import Delta.Async;
 export import Delta.Class;
