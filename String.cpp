@@ -7,7 +7,7 @@ import Delta.Pointer;
 
 
 export template <typename T> 
-auto len (T const& s) noexcept -> Size auto 
+constexpr auto len (T const& s) noexcept -> Size auto 
 requires requires {{s [1]} -> Char;}
 {
 	auto i = 0;
