@@ -66,7 +66,9 @@ private:
     auto send_client_hello ()
     {
         auto package = client_hello {};
-        
+        package.session_id_length = 0;
+        package.session_id = nullptr;
+        package.cipher_suites = supported_suites;
     }
     
     master_secret_type master_secret;
