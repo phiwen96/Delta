@@ -1,9 +1,11 @@
-// Transport Layer Security
-
 module;
-#include <time.h>
 #include <stdio.h>
+#include <time.h>
+#include <arpa/inet.h>
+#include <cstring>
 export module Delta.Net.TLS;
+
+// Transport Layer Security
 
 struct protocol_version
 {
@@ -26,10 +28,6 @@ struct random
 
 struct client_hello
 {
-    client_hello (protocol_version const& client)
-    {
-        
-    }
     protocol_version client_version;
     random randoom;
     unsigned char session_id_length;
@@ -53,7 +51,22 @@ struct protected_params
     unsigned char* IV {nullptr}; // initialization vector
 };
 
-struct tls 
+enum cipher_suites_identifier
+{
+    TLS_NULL_WITH_NULL_NULL = 0x0000,
+    TLS_RSA_WITH_NULL_MD5 = 0x0001,
+    TLS_RSA_WITH_NULL_SHA = 0x0002,
+    TLS_RSA_EXPORT_WITH_RC4_40_MD5 = 0x0003,
+    TLS_RSA_WITH_RC4_128_MD5 = 0x0004,
+    TLS_RSA_WITH_RC4_128_SHA = 0x0005,
+    TLS_RSA_EXPORT_WITH_RC2_CBC_40_MD5 = 0x0006,
+    TLS_RSA_WITH_IDEA_CBC_SHA = 0x0007,
+    TLS_RSA_EXPORT_WITH_DES40_CBC_SHA = 0x0008,
+    TLS_RSA_WITH_DES_CBC_SHA = 0x0009,
+    TLS_RSA_WITH_3DES_EDE_CBC_SHA = 0x0010
+};
+
+export struct tls 
 {  
     tls (int sockid)
     {
@@ -64,8 +77,25 @@ struct tls
     
 private:
     auto send_client_hello ()
-    {
-        auto package = client_hello {};
+    { 
+        unsigned short supported_suites [1] = {htons (cipher_suites_identifier::TLS_RSA_WITH_3DES_EDE_CBC_SHA)};
+        unsigned char supported_compression_methods [1] = {0};
+        
+
+        auto package = client_hello 
+        {
+            .session_id_length = 0,
+            .session_id = nullptr,
+            .cipher_suites_length = htons (2),
+            .cipher_suites = supported_suites,
+            .compression_methods_length = 1,
+            .compression_methods = supported_compression_methods
+        };
+        
+        int sned_buffer_size;
+        char* send_buffer;
+        void* write_buffer;
+
         package.session_id_length = 0;
         package.session_id = nullptr;
         package.cipher_suites = supported_suites;
@@ -89,7 +119,7 @@ private:
 };
 
 
-export auto send (int sockfd, tls& params, String auto const& msg) -> void
+export auto send (int sockfd, tls& params, char const* msg) -> void
 {
     
 }
