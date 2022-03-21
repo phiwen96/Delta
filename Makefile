@@ -1,4 +1,4 @@
-GCC=g++-11 -std=c++2a -fmodules-ts
+GCC=/usr/bin/g++-11 -std=c++2a -fmodules-ts
 APP=main
 all: main
 
