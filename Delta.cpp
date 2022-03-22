@@ -9,5 +9,6 @@ export import Delta.Convertible_to;
 export import Delta.Same_as;
 export import Delta.Size;
 export import Delta.Char;
+export import Delta.CopyPaste;
 export import Delta.Array;
 export import Delta.Pointer;

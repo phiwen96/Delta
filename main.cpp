@@ -68,7 +68,7 @@ int main (int, char**)
 
     buf [numbytes] = '\0';
 
-    printf (buf);
+    // printf (buf);
 
     close (sockfd);
 
