@@ -110,6 +110,44 @@ int main(int, char **)
         while (keep_running)
         {
             auto nfds = epoll_wait (epollfd, events, 32, -1);
+
+            for (auto i = 0; i < nfds; ++i)
+            {
+                if (events[i].data.fd == sockfd) 
+                {
+                    /* handle new connection */
+                    struct sockaddr_in cli_addr;
+                    socklen_t socklen = sizeof (cli_addr);
+                    auto client_sockfd = accept (sockfd, (struct sockaddr *)&cli_addr, &socklen);
+
+                    if (fcntl (client_sockfd, F_SETFD, fcntl(client_sockfd, F_GETFD, 0) | O_NONBLOCK) == -1)
+                    {
+                        perror("fcntl");
+                        exit(1);
+                    }
+
+                    // inet_ntop(AF_INET, (char *)&(cli_addr.sin_addr),
+                    //     buf, sizeof(cli_addr));
+                    // printf("[+] connected with %s:%d\n", buf,
+                    //     ntohs(cli_addr.sin_port));
+
+                    event.events = EPOLLIN | EPOLLET | EPOLLRDHUP | EPOLLHUP;
+                    event.data.fd = client_sockfd;
+
+                    if (epoll_ctl (epollfd, EPOLL_CTL_ADD, client_sockfd, &event) == -1) 
+                    {
+                        perror ("epoll_ctl");
+                        exit (1);
+                    }
+                    
+                } else if (events[i].events & EPOLLIN)
+                {
+                    
+                } else if (events[i].events & (EPOLLRDHUP | EPOLLHUP))
+                {
+                    
+                }
+            }
         }
     };
 
