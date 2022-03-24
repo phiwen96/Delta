@@ -14,10 +14,6 @@ module;
 #include <cstring>
 #include <stdio.h>
 
-
-
-
-
 export module Delta.Net.TLS;
 
 import Delta.CopyPaste;
@@ -214,10 +210,13 @@ export struct tls
         memset (server_random, '\0', random_length);
 
         send_client_hello (sockfd);
+
+        receive_tls_message (sockfd);
+        
     }
     
 private:
-    auto send_message( int connection, content_type conttype, const unsigned char *content, short content_len ) -> void
+    auto send_message (int connection, content_type conttype, const unsigned char *content, short content_len) -> void
     {
         
         tls_plaintext header;
@@ -239,15 +238,15 @@ private:
         copy_paste (content, send_buffer + 5, content_len);
         // memcpy( send_buffer + 3, &header.length, sizeof( short ) );
         // memcpy( send_buffer + 5, content, content_len );
-        if ( send( connection, ( void * ) send_buffer, send_buffer_size, 0 ) < send_buffer_size )
+        if ( send (connection, (void *) send_buffer, send_buffer_size, 0) < send_buffer_size)
         {
             perror ("send");
         }
 
-        free( send_buffer );
+        free (send_buffer);
         
     }
-    auto send_handshake_message( int sockfd, handshake_type msg_type, /*const unsigned char **/ auto* message, int message_len ) -> void
+    auto send_handshake_message (int sockfd, handshake_type msg_type, /*const unsigned char **/ auto* message, int message_len) -> void
     {
         handshake record;
         short send_buffer_size;
@@ -265,7 +264,6 @@ private:
         send_message (sockfd, content_type::content_handshake, send_buffer, send_buffer_size);
         free (send_buffer);
     }
-
     auto send_client_hello (int sockfd) -> void
     { 
         unsigned short supported_suites [1] = {htons (cipher_suites_identifier::TLS_RSA_WITH_3DES_EDE_CBC_SHA)};
@@ -313,6 +311,26 @@ private:
         
     }
     
+    auto receive_tls_message (int sockfd) -> void
+    {
+        tls_plaintext message;
+        unsigned char *read_pos, *msg_buf;
+        unsigned char header[ 5 ]; // size of TLSPlaintext
+        int bytes_read, accum_bytes;
+        // STEP 1 - read off the TLS Record layer
+        if ( recv( sockfd, header, 5, 0 ) <= 0 )
+        {
+            // No data available; it’s up to the caller whether this is an error or not.
+            perror ("recv");
+            exit (-1);
+        }
+        message.type = header[ 0 ];
+        message.version.major = header[ 1 ];
+        message.version.minor = header[ 2 ];
+        copy_paste (header + 3, &message.length, 2);
+        message.length = htons( message.length );
+    }
+
     master_secret_type master_secret;
     random_type client_random;
     random_type server_random;
