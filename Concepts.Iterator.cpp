@@ -1,4 +1,4 @@
-export module Delta.Concepts.Range.Iterator;
+export module Delta.Concepts.Iterator;
 
 
 

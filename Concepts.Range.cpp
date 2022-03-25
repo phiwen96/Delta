@@ -1,13 +1,11 @@
 export module Delta.Concepts.Range;
 
-import Delta.Concepts.Range.Iterator;
+import Delta.Concepts.Iterator;
 
-export 
+export template <typename T>
+concept Range = requires(T t)
 {
-	template <typename T>
-	concept Range = requires (T t)
-	{
-		{begin (t)} -> Iterator;
-		{end (t)} -> Iterator;
-	};
-}
+	{begin(t)} -> Iterator;
+	{end(t)} -> Iterator;
+};
+

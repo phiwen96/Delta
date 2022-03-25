@@ -8,15 +8,8 @@ struct type_info
 	constexpr static auto is_array = false;
 };
 
-
 export template <typename T>
 concept Array = type_info <T>::is_array;
-
-// export template <typename T>
-// concept Dynamic_array = Array <T> and type_info <T>::is_dynamic;
-
-// export template <typename T>
-// concept Static_array = Array <T> and not type_info <T>::is_dynamic;
 
 export template <Array T>
 auto len (T const& t) noexcept -> Size auto
@@ -63,10 +56,3 @@ struct type_info <T const [N]>
 	constexpr static auto len = N;
 };
 
-// template <typename T>
-// struct type_info <T *>
-// {
-// 	using element_type = T;
-// 	constexpr static auto is_array = true;
-// 	constexpr static auto is_dynamic = true;
-// };
