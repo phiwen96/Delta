@@ -212,13 +212,11 @@ export struct tls
         send_client_hello (sockfd);
 
         receive_tls_message (sockfd);
-        
     }
     
 private:
     auto send_message (int connection, content_type conttype, const unsigned char *content, short content_len) -> void
     {
-        
         tls_plaintext header;
         unsigned char *send_buffer;
         int send_buffer_size;

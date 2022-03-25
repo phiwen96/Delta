@@ -5,7 +5,7 @@ all: main
 std_headers:
 	$(GCC) -xc++-system-header iostream
 
-delta: Convertible_to.cpp Same_as.cpp Size.cpp Pointer.cpp Array.cpp Iterator.cpp Range.cpp Class.cpp Char.cpp CopyPaste.cpp Async.cpp String.cpp Future.cpp Net.cpp Delta.cpp
+delta: Convertible_to.cpp Same_as.cpp Size.cpp Pointer.cpp Array.cpp Iterator.cpp Range.cpp Class.cpp Char.cpp CopyPaste.cpp Async.Write.cpp Async.Out.cpp Async.cpp String.cpp Future.cpp Net.cpp Delta.cpp
 	$(GCC) -c Convertible_to.cpp
 	$(GCC) -c Same_as.cpp 
 	$(GCC) -c Size.cpp
@@ -16,6 +16,8 @@ delta: Convertible_to.cpp Same_as.cpp Size.cpp Pointer.cpp Array.cpp Iterator.cp
 	$(GCC) -c Class.cpp
 	$(GCC) -c Char.cpp
 	$(GCC) -c CopyPaste.cpp
+	$(GCC) -c Async.Write.cpp
+	$(GCC) -c Async.Out.cpp
 	$(GCC) -c Async.cpp		
 	$(GCC) -c String.cpp
 	$(GCC) -c Future.cpp

@@ -13,6 +13,9 @@ import Delta;
 #include <iostream>
 #include <sys/epoll.h>
 #include <fcntl.h>
+#include <thread>
+
+using std::thread, std::cout, std::endl;
 
 int main(int, char **)
 {
@@ -152,6 +155,8 @@ int main(int, char **)
     };
 
     as_server();
+
+    
 
     auto as_client = []
     {
