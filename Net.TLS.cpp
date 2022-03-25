@@ -16,7 +16,7 @@ module;
 
 export module Delta.Net.TLS;
 
-import Delta.CopyPaste;
+import Delta.Algorithms.CopyPaste;
 
 #if BYTE_ORDER == BIG_ENDIAN
 

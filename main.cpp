@@ -154,11 +154,7 @@ int main(int, char **)
         }
     };
 
-    as_server();
-
-    
-
-    auto as_client = []
+	auto as_client = []
     {
         constexpr auto port = "443";
         constexpr auto ip = "google.com";
@@ -219,6 +215,16 @@ int main(int, char **)
 
         close(sockfd);
     };
+
+    thread {as_server}.join();
+
+	thread {as_client}.join();
+
+
+
+    
+
+    
 
     return 0;
 }

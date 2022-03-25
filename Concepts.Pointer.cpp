@@ -1,4 +1,4 @@
-export module Delta.Pointer;
+export module Delta.Concepts.Pointer;
 
 template <typename T>
 struct type_info 

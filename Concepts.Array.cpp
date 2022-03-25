@@ -1,6 +1,6 @@
-export module Delta.Array;
+export module Delta.Concepts.Array;
 
-import Delta.Size;
+import Delta.Concepts.Size;
 
 template <typename T>
 struct type_info 

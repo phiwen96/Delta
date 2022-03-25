@@ -1,6 +1,6 @@
-export module Delta.Char;
+export module Delta.Concepts.Char;
 
-import Delta.Convertible_to;
+import Delta.Concepts.Convertible_to;
 
 export 
 {

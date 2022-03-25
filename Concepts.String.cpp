@@ -1,9 +1,9 @@
-export module Delta.String;
+export module Delta.Concepts.String;
 
-import Delta.Char;
-import Delta.Array;
-import Delta.Size;
-import Delta.Pointer;
+import Delta.Concepts.Char;
+import Delta.Concepts.Array;
+import Delta.Concepts.Size;
+import Delta.Concepts.Pointer;
 
 
 export template <typename T> 

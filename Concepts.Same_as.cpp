@@ -1,4 +1,4 @@
-export module Delta.Same_as;
+export module Delta.Concepts.Same_as;
 
 template <typename T, typename U>
 struct same_as_t 

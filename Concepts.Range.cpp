@@ -1,6 +1,6 @@
-export module Delta.Range;
+export module Delta.Concepts.Range;
 
-import Delta.Range.Iterator;
+import Delta.Concepts.Range.Iterator;
 
 export 
 {

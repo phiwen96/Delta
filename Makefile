@@ -5,28 +5,30 @@ all: main
 std_headers:
 	$(GCC) -xc++-system-header iostream
 
-delta: Convertible_to.cpp Same_as.cpp Size.cpp Pointer.cpp Array.cpp Iterator.cpp Range.cpp Class.cpp Char.cpp CopyPaste.cpp Async.Write.cpp Async.Out.cpp Async.cpp String.cpp Future.cpp Net.cpp Delta.cpp
-	$(GCC) -c Convertible_to.cpp
-	$(GCC) -c Same_as.cpp 
-	$(GCC) -c Size.cpp
-	$(GCC) -c Pointer.cpp
-	$(GCC) -c Array.cpp
-	$(GCC) -c Iterator.cpp
-	$(GCC) -c Range.cpp
-	$(GCC) -c Class.cpp
-	$(GCC) -c Char.cpp
-	$(GCC) -c CopyPaste.cpp
+delta: Concepts.Convertible_to.cpp Concepts.Same_as.cpp Concepts.Size.cpp Concepts.Pointer.cpp Concepts.Array.cpp Concepts.Range.Iterator.cpp Concepts.Range.cpp Concepts.Class.cpp Concepts.Char.cpp Concepts.String.cpp Concepts.Future.cpp Concepts.cpp Algorithms.CopyPaste.cpp Algorithms.cpp Async.Write.cpp Async.Out.cpp Async.cpp Net.cpp Delta.cpp
+	$(GCC) -c Concepts.Convertible_to.cpp
+	$(GCC) -c Concepts.Same_as.cpp 
+	$(GCC) -c Concepts.Size.cpp
+	$(GCC) -c Concepts.Pointer.cpp
+	$(GCC) -c Concepts.Array.cpp
+	$(GCC) -c Concepts.Range.Iterator.cpp
+	$(GCC) -c Concepts.Range.cpp
+	$(GCC) -c Concepts.Class.cpp
+	$(GCC) -c Concepts.Char.cpp
+	$(GCC) -c Concepts.String.cpp
+	$(GCC) -c Concepts.Future.cpp
+	$(GCC) -c Concepts.cpp
+	$(GCC) -c Algorithms.CopyPaste.cpp
+	$(GCC) -c Algorithms.cpp
 	$(GCC) -c Async.Write.cpp
 	$(GCC) -c Async.Out.cpp
 	$(GCC) -c Async.cpp		
-	$(GCC) -c String.cpp
-	$(GCC) -c Future.cpp
-	$(GCC) -c TLS.cpp
+	$(GCC) -c Net.TLS.cpp
 	$(GCC) -c Net.cpp
 	$(GCC) -c Delta.cpp
 
 main: main.cpp delta
-	$(GCC) $< *.o -o $@ -lrt
+	$(GCC) $< *.o -o $@ -lrt -lpthread
 
 clean:
 	@rm -rf gcm.cache/
