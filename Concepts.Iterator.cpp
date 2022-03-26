@@ -13,5 +13,5 @@ concept Iterator =
 	OutputIterator<T> or 
 	ForwardIterator<T> or 
 	BidirectionalIterator<T> or 
-	Random_accessIterator<T> or
+	RandomAccessIterator<T> or
 	ContiguousIterator<T>;

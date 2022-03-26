@@ -8,7 +8,7 @@ import Delta.Concepts.Iterator.Jump;
 
 export template <typename T>
 concept RandomAccessIterator =  
-	ReadOnly <T> and 
+	ReadOnly <T> and
 	WriteOnly <T> and 
 	StepForward <T> and 
 	StepBackward <T> and 

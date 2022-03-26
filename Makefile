@@ -5,7 +5,7 @@ all: main
 std_headers:
 	$(GCC) -xc++-system-header iostream
 
-delta: Concepts.Convertible.cpp Concepts.Same.cpp Concepts.Size.cpp Concepts.Pointer.cpp Concepts.Array.cpp Concepts.Iterator.ReadOnly Concepts.Iterator.WriteOnly Concepts.Iterator.StepForward Concepts.Iterator.StepBackward Concepts.Iterator.Jump Concepts.Iterator.Input.cpp Concepts.Iterator.Output.cpp Concepts.Iterator.Forward.cpp Concepts.Iterator.Bidirectional.cpp Concepts.Iterator.RandomAccess.cpp Concepts.Iterator.Contiguous.cpp Concepts.Iterator.cpp Concepts.Range.cpp Concepts.Class.cpp Concepts.Char.cpp Concepts.String.cpp Concepts.Future.cpp Concepts.cpp Range.Begin.cpp Range.End.cpp Range.Length.cpp Range.cpp Algorithms.CopyPaste.cpp Algorithms.cpp Async.Write.cpp Async.Out.cpp Async.cpp Net.cpp Delta.cpp
+delta: Concepts.Convertible.cpp Concepts.Same.cpp Concepts.Size.cpp Concepts.Pointer.cpp Concepts.Array.cpp Concepts.Iterator.ReadOnly.cpp Concepts.Iterator.WriteOnly.cpp Concepts.Iterator.StepForward.cpp Concepts.Iterator.StepBackward.cpp Concepts.Iterator.Jump.cpp Concepts.Iterator.Input.cpp Concepts.Iterator.Output.cpp Concepts.Iterator.Forward.cpp Concepts.Iterator.Bidirectional.cpp Concepts.Iterator.RandomAccess.cpp Concepts.Iterator.Contiguous.cpp Concepts.Iterator.cpp Concepts.Range.cpp Concepts.Class.cpp Concepts.Char.cpp Concepts.String.cpp Concepts.Future.cpp Concepts.cpp Range.Begin.cpp Range.End.cpp Range.Length.cpp Range.cpp Algorithms.CopyPaste.cpp Algorithms.cpp Async.Write.cpp Async.Out.cpp Async.cpp Net.cpp Delta.cpp
 	$(GCC) -c Concepts.Convertible.cpp
 	$(GCC) -c Concepts.Same.cpp 
 	$(GCC) -c Concepts.Size.cpp

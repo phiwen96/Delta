@@ -4,4 +4,6 @@ import Delta.Concepts.Iterator.ReadOnly;
 import Delta.Concepts.Iterator.StepForward;
 
 export template <typename T>
-concept InputIterator =  ReadOnly <T> and StepForward <T>;
+concept InputIterator =  
+	ReadOnly <T> and 
+	StepForward <T>;
