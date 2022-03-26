@@ -5,12 +5,23 @@ all: main
 std_headers:
 	$(GCC) -xc++-system-header iostream
 
-delta: Concepts.Convertible_to.cpp Concepts.Same_as.cpp Concepts.Size.cpp Concepts.Pointer.cpp Concepts.Array.cpp Concepts.Iterator.cpp Concepts.Range.cpp Concepts.Class.cpp Concepts.Char.cpp Concepts.String.cpp Concepts.Future.cpp Concepts.cpp Range.Begin.cpp Range.End.cpp Range.Length.cpp Range.cpp Algorithms.CopyPaste.cpp Algorithms.cpp Async.Write.cpp Async.Out.cpp Async.cpp Net.cpp Delta.cpp
-	$(GCC) -c Concepts.Convertible_to.cpp
-	$(GCC) -c Concepts.Same_as.cpp 
+delta: Concepts.Convertible.cpp Concepts.Same.cpp Concepts.Size.cpp Concepts.Pointer.cpp Concepts.Array.cpp Concepts.Iterator.ReadOnly Concepts.Iterator.WriteOnly Concepts.Iterator.StepForward Concepts.Iterator.StepBackward Concepts.Iterator.Jump Concepts.Iterator.Input.cpp Concepts.Iterator.Output.cpp Concepts.Iterator.Forward.cpp Concepts.Iterator.Bidirectional.cpp Concepts.Iterator.RandomAccess.cpp Concepts.Iterator.Contiguous.cpp Concepts.Iterator.cpp Concepts.Range.cpp Concepts.Class.cpp Concepts.Char.cpp Concepts.String.cpp Concepts.Future.cpp Concepts.cpp Range.Begin.cpp Range.End.cpp Range.Length.cpp Range.cpp Algorithms.CopyPaste.cpp Algorithms.cpp Async.Write.cpp Async.Out.cpp Async.cpp Net.cpp Delta.cpp
+	$(GCC) -c Concepts.Convertible.cpp
+	$(GCC) -c Concepts.Same.cpp 
 	$(GCC) -c Concepts.Size.cpp
 	$(GCC) -c Concepts.Pointer.cpp
 	$(GCC) -c Concepts.Array.cpp
+	$(GCC) -c Concepts.Iterator.ReadOnly.cpp
+	$(GCC) -c Concepts.Iterator.WriteOnly.cpp
+	$(GCC) -c Concepts.Iterator.StepForward.cpp
+	$(GCC) -c Concepts.Iterator.StepBackward.cpp
+	$(GCC) -c Concepts.Iterator.Jump.cpp
+	$(GCC) -c Concepts.Iterator.Input.cpp
+	$(GCC) -c Concepts.Iterator.Output.cpp
+	$(GCC) -c Concepts.Iterator.Forward.cpp
+	$(GCC) -c Concepts.Iterator.Bidirectional.cpp
+	$(GCC) -c Concepts.Iterator.RandomAccess.cpp
+	$(GCC) -c Concepts.Iterator.Contiguous.cpp
 	$(GCC) -c Concepts.Iterator.cpp
 	$(GCC) -c Concepts.Range.cpp
 	$(GCC) -c Concepts.Class.cpp
@@ -21,6 +32,7 @@ delta: Concepts.Convertible_to.cpp Concepts.Same_as.cpp Concepts.Size.cpp Concep
 	$(GCC) -c Range.Begin.cpp
 	$(GCC) -c Range.End.cpp
 	$(GCC) -c Range.Length.cpp
+	$(GCC) -c Range.Elements.cpp
 	$(GCC) -c Range.cpp
 	$(GCC) -c Algorithms.CopyPaste.cpp
 	$(GCC) -c Algorithms.cpp

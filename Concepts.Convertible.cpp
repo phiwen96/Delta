@@ -1,4 +1,4 @@
-export module Delta.Concepts.Convertible_to;
+export module Delta.Concepts.Convertible;
 
 // template <typename T, typename U>
 // struct convertible_to_t 
@@ -7,7 +7,7 @@ export module Delta.Concepts.Convertible_to;
 // };
 
 export template <typename T, typename U>
-concept Convertible_to = requires (T t, U u)
+concept Convertible = requires (T t, U u)
 {
 	u = t;
 };

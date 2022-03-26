@@ -1,73 +1,17 @@
 export module Delta.Concepts.Iterator;
 
+export import Delta.Concepts.Iterator.Input;
+export import Delta.Concepts.Iterator.Output;
+export import Delta.Concepts.Iterator.Forward;
+export import Delta.Concepts.Iterator.Bidirectional;
+export import Delta.Concepts.Iterator.RandomAccess;
+export import Delta.Concepts.Iterator.Contiguous;
 
-
-export 
-{
-	template <typename T>
-	concept Input_iterator = requires (T t)
-	{
-		++t;
-		t++;
-		*t;
-	};
-
-	template <typename T>
-	concept Output_iterator = requires (T t, decltype (*t) u)
-	{
-		++t;
-		t++;
-		*t = u;
-	};
-	template <typename T>
-	concept Iterator = 
-		Input_iterator <T> or 
-		Output_iterator <T>;
-
-	auto begin (auto& t) noexcept -> Iterator auto 
-	requires requires 
-	{
-		{t.begin ()} -> Iterator;
-	}
-	{
-		return t.begin ();
-	}
-
-	auto begin (auto const& t) noexcept -> Iterator auto 
-	requires requires 
-	{
-		{t.begin ()} -> Iterator;
-	}
-	{
-		return t.begin ();
-	}
-
-	auto begin (auto const* t) noexcept -> Iterator auto 
-	{
-		return t;
-	}
-
-	
-
-	auto end (auto& t) noexcept -> Iterator auto 
-	requires requires 
-	{
-		{t.end ()} -> Iterator;
-	}
-	{
-		return t.end ();
-	}
-
-	auto end (auto const& t) noexcept -> Iterator auto 
-	requires requires 
-	{
-		{t.end ()} -> Iterator;
-	}
-	{
-		return t.end ();
-	}
-		// Forward <T> or 
-		// Bidirectional <T> or
-		// Random_access <T>;
-}
-	
+export template <typename T>
+concept Iterator =
+	InputIterator<T> or
+	OutputIterator<T> or 
+	ForwardIterator<T> or 
+	BidirectionalIterator<T> or 
+	Random_accessIterator<T> or
+	ContiguousIterator<T>;

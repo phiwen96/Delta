@@ -10,7 +10,7 @@ export namespace async
 	{
 		auto operator << (char const* str) -> out_t&
 		{
-			async::write (1, str);
+			// async::write (1, str);
 			return *this;
 		}
 	};
