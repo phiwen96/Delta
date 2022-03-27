@@ -118,6 +118,8 @@ int main(int, char **)
             {
                 if (events[i].data.fd == sockfd) 
                 {
+					async::out << "new connection\n";
+
                     /* handle new connection */
                     struct sockaddr_in cli_addr;
                     socklen_t socklen = sizeof (cli_addr);
@@ -157,7 +159,7 @@ int main(int, char **)
 	auto as_client = []
     {
         constexpr auto port = "443";
-        constexpr auto ip = "google.com";
+        constexpr auto ip = "127.0.0.1";
 
         struct addrinfo hints, *servinfo, *p;
         int sockfd;
@@ -199,11 +201,11 @@ int main(int, char **)
 
         auto secured = tls{sockfd};
 
-        return 0;
-
         int numbytes;
 
         char buf[4096];
+
+		async::out << "receiving\n";
 
         if ((numbytes = recv(sockfd, buf, 4095, 0)) == -1)
         {

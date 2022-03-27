@@ -1,12 +1,11 @@
-export module Delta.Concepts.Range;
+export module Delta.Concepts.Range.Contiguous;
 
 import Delta.Concepts.Iterator;
 export import Delta.Concepts.Range.Begin;
 export import Delta.Concepts.Range.End;
-export import Delta.Concepts.Range.Contiguous;
 
 export template <typename T>
-concept Range = requires (T t)
+concept ContiguousRange = requires (T t)
 {
 	{begin (t)} -> Iterator;
 	{end (t)} -> Iterator;
