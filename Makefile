@@ -1,58 +1,69 @@
 GCC=g++-11 -std=c++2a -fmodules-ts
 APP=main
-all: main
+apps: App.Client App.Server
+all: apps
 
 std_headers:
 	$(GCC) -xc++-system-header iostream
 
-delta: Concepts.Convertible.cpp Concepts.Same.cpp Concepts.Number.Floating.cpp Concepts.Number.Integer.cpp Concepts.Number.Signed.cpp Concepts.Number.Unsigned.cpp Concepts.Size.cpp Concepts.Pointer.cpp Concepts.Array.cpp Concepts.Iterator.ReadOnly.cpp Concepts.Iterator.WriteOnly.cpp Concepts.Iterator.StepForward.cpp Concepts.Iterator.StepBackward.cpp Concepts.Iterator.Jump.cpp Concepts.Iterator.Input.cpp Concepts.Iterator.Output.cpp Concepts.Iterator.Forward.cpp Concepts.Iterator.Bidirectional.cpp Concepts.Iterator.RandomAccess.cpp Concepts.Iterator.Contiguous.cpp Concepts.Iterator.cpp Concepts.Range.Begin.cpp Concepts.Range.End.cpp Concepts.Range.Contiguous.cpp Concepts.Range.cpp Concepts.Class.cpp Concepts.Char.cpp Concepts.String.cpp Concepts.Future.cpp Concepts.cpp Range.Begin.cpp Range.End.cpp Range.Length.cpp Range.cpp Algorithms.CopyPaste.cpp Algorithms.cpp Async.Write.cpp Async.Out.cpp Async.cpp Net.cpp Delta.cpp
-	$(GCC) -c Concepts.Convertible.cpp
-	$(GCC) -c Concepts.Same.cpp 
-	$(GCC) -c Concepts.Number.Floating.cpp
-	$(GCC) -c Concepts.Number.Integer.cpp
-	$(GCC) -c Concepts.Number.Signed.cpp
-	$(GCC) -c Concepts.Number.Unsigned.cpp
-	$(GCC) -c Concepts.Number.cpp
-	$(GCC) -c Concepts.Size.cpp
-	$(GCC) -c Concepts.Pointer.cpp
-	$(GCC) -c Concepts.Array.cpp
-	$(GCC) -c Concepts.Iterator.ReadOnly.cpp
-	$(GCC) -c Concepts.Iterator.WriteOnly.cpp
-	$(GCC) -c Concepts.Iterator.StepForward.cpp
-	$(GCC) -c Concepts.Iterator.StepBackward.cpp
-	$(GCC) -c Concepts.Iterator.Jump.cpp
-	$(GCC) -c Concepts.Iterator.Input.cpp
-	$(GCC) -c Concepts.Iterator.Output.cpp
-	$(GCC) -c Concepts.Iterator.Forward.cpp
-	$(GCC) -c Concepts.Iterator.Bidirectional.cpp
-	$(GCC) -c Concepts.Iterator.RandomAccess.cpp
-	$(GCC) -c Concepts.Iterator.Contiguous.cpp
-	$(GCC) -c Concepts.Iterator.cpp
-	$(GCC) -c Concepts.Range.Begin.cpp
-	$(GCC) -c Concepts.Range.End.cpp
-	$(GCC) -c Concepts.Range.Contiguous.cpp
-	$(GCC) -c Concepts.Range.cpp
-	$(GCC) -c Concepts.Class.cpp
-	$(GCC) -c Concepts.Char.cpp
-	$(GCC) -c Concepts.String.cpp
-	$(GCC) -c Concepts.Future.cpp
-	$(GCC) -c Concepts.cpp
-	$(GCC) -c Range.Begin.cpp
-	$(GCC) -c Range.End.cpp
-	$(GCC) -c Range.Length.cpp
-	$(GCC) -c Range.Elements.cpp
-	$(GCC) -c Range.cpp
-	$(GCC) -c Algorithms.CopyPaste.cpp
-	$(GCC) -c Algorithms.cpp
-	$(GCC) -c Async.Write.cpp
-	$(GCC) -c Async.Out.cpp
-	$(GCC) -c Async.cpp
-	$(GCC) -c Net.TLS.cpp
-	$(GCC) -c Net.cpp
+delta: Delta.Concepts.Convertible.cpp Delta.Concepts.Same.cpp Delta.Concepts.Number.Floating.cpp Delta.Concepts.Number.Integer.cpp Delta.Concepts.Number.Signed.cpp Delta.Concepts.Number.Unsigned.cpp Delta.Concepts.Size.cpp Delta.Concepts.Pointer.cpp Delta.Concepts.Array.cpp Delta.Concepts.Iterator.ReadOnly.cpp Delta.Concepts.Iterator.WriteOnly.cpp Delta.Concepts.Iterator.StepForward.cpp Delta.Concepts.Iterator.StepBackward.cpp Delta.Concepts.Iterator.Jump.cpp Delta.Concepts.Iterator.Input.cpp Delta.Concepts.Iterator.Output.cpp Delta.Concepts.Iterator.Forward.cpp Delta.Concepts.Iterator.Bidirectional.cpp Delta.Concepts.Iterator.RandomAccess.cpp Delta.Concepts.Iterator.Contiguous.cpp Delta.Concepts.Iterator.cpp Delta.Concepts.Range.Begin.cpp Delta.Concepts.Range.End.cpp Delta.Concepts.Range.Contiguous.cpp Delta.Concepts.Range.cpp Delta.Concepts.Class.cpp Delta.Concepts.Char.cpp Delta.Concepts.String.cpp Delta.Concepts.Future.cpp Delta.Concepts.cpp Delta.Range.Begin.cpp Delta.Range.End.cpp Delta.Range.Length.cpp Delta.Range.cpp Delta.Algorithms.CopyPaste.cpp Delta.Algorithms.cpp Delta.Async.Write.cpp Delta.Async.Out.cpp Delta.Async.cpp Delta.Net.cpp Delta.cpp
+	$(GCC) -c Delta.Concepts.Convertible.cpp
+	$(GCC) -c Delta.Concepts.Same.cpp 
+	$(GCC) -c Delta.Concepts.Number.Floating.cpp
+	$(GCC) -c Delta.Concepts.Number.Integer.cpp
+	$(GCC) -c Delta.Concepts.Number.Signed.cpp
+	$(GCC) -c Delta.Concepts.Number.Unsigned.cpp
+	$(GCC) -c Delta.Concepts.Number.cpp
+	$(GCC) -c Delta.Concepts.Size.cpp
+	$(GCC) -c Delta.Concepts.Pointer.cpp
+	$(GCC) -c Delta.Concepts.Array.cpp
+	$(GCC) -c Delta.Concepts.Iterator.ReadOnly.cpp
+	$(GCC) -c Delta.Concepts.Iterator.WriteOnly.cpp
+	$(GCC) -c Delta.Concepts.Iterator.StepForward.cpp
+	$(GCC) -c Delta.Concepts.Iterator.StepBackward.cpp
+	$(GCC) -c Delta.Concepts.Iterator.Jump.cpp
+	$(GCC) -c Delta.Concepts.Iterator.Input.cpp
+	$(GCC) -c Delta.Concepts.Iterator.Output.cpp
+	$(GCC) -c Delta.Concepts.Iterator.Forward.cpp
+	$(GCC) -c Delta.Concepts.Iterator.Bidirectional.cpp
+	$(GCC) -c Delta.Concepts.Iterator.RandomAccess.cpp
+	$(GCC) -c Delta.Concepts.Iterator.Contiguous.cpp
+	$(GCC) -c Delta.Concepts.Iterator.cpp
+	$(GCC) -c Delta.Concepts.Range.Begin.cpp
+	$(GCC) -c Delta.Concepts.Range.End.cpp
+	$(GCC) -c Delta.Concepts.Range.Contiguous.cpp
+	$(GCC) -c Delta.Concepts.Range.cpp
+	$(GCC) -c Delta.Concepts.Class.cpp
+	$(GCC) -c Delta.Concepts.Char.cpp
+	$(GCC) -c Delta.Concepts.String.cpp
+	$(GCC) -c Delta.Concepts.Future.cpp
+	$(GCC) -c Delta.Concepts.cpp
+	$(GCC) -c Delta.Range.Begin.cpp
+	$(GCC) -c Delta.Range.End.cpp
+	$(GCC) -c Delta.Range.Length.cpp
+	$(GCC) -c Delta.Range.Elements.cpp
+	$(GCC) -c Delta.Range.cpp
+	$(GCC) -c Delta.Algorithms.CopyPaste.cpp
+	$(GCC) -c Delta.Algorithms.cpp
+	$(GCC) -c Delta.Async.Write.cpp
+	$(GCC) -c Delta.Async.Out.cpp
+	$(GCC) -c Delta.Async.cpp
+	$(GCC) -c Delta.Net.TLS.cpp
+	$(GCC) -c Delta.Net.cpp
 	$(GCC) -c Delta.cpp
 
 main: main.cpp delta
 	$(GCC) $< *.o -o $@ -lrt -lpthread
+
+App.Client: App.Client.cpp delta
+	$(GCC) $< *.o -o $@ -lrt -lpthread
+
+App.Server: App.Server.cpp delta
+	$(GCC) $< *.o -o $@ -lrt -lpthread
+
+
+
+
 
 clean:
 	@rm -rf gcm.cache/
