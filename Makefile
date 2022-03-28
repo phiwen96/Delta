@@ -52,10 +52,10 @@ delta: Delta.Concepts.Convertible.cpp Delta.Concepts.Same.cpp Delta.Concepts.Num
 	$(GCC) -c Delta.Net.cpp
 	$(GCC) -c Delta.cpp
 
-App.Client: App.Client.cpp delta
+App.Server: App.Server.cpp delta
 	$(GCC) $< *.o -o $@ -lrt -lpthread
 
-App.Server: App.Server.cpp delta
+App.Client: App.Client.cpp delta
 	$(GCC) $< *.o -o $@ -lrt -lpthread
 
 clean:

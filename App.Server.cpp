@@ -156,7 +156,10 @@ int main(int, char **)
         }
     };
 
-	
+	int t0 [10];
+	static_assert (ContiguousRange <decltype (t0)>);
+
+
 
     return 0;
 }

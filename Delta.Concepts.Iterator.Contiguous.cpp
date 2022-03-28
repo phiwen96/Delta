@@ -15,5 +15,5 @@ concept ContiguousIterator =
 	Jump <T> and 
 	requires (T t)
 	{
-		
+		&(*(t + 1)) == &(*t) + sizeof (T);
 	};
