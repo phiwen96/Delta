@@ -52,9 +52,6 @@ delta: Delta.Concepts.Convertible.cpp Delta.Concepts.Same.cpp Delta.Concepts.Num
 	$(GCC) -c Delta.Net.cpp
 	$(GCC) -c Delta.cpp
 
-main: main.cpp delta
-	$(GCC) $< *.o -o $@ -lrt -lpthread
-
 App.Client: App.Client.cpp delta
 	$(GCC) $< *.o -o $@ -lrt -lpthread
 
