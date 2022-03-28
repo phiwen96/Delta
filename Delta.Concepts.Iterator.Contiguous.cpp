@@ -12,4 +12,8 @@ concept ContiguousIterator =
 	WriteOnly <T> and 
 	StepForward <T> and 
 	StepBackward <T> and 
-	Jump <T>;
+	Jump <T> and 
+	requires (T t)
+	{
+		
+	};

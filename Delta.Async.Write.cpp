@@ -9,7 +9,7 @@ import Delta.Range;
 
 export namespace async
 {
-	auto write (int fd, Range auto const& src)
+	auto write (int fd, ContiguousRange auto const& src)
 	{
 		// struct aiocb op
 		// {

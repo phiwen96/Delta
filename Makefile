@@ -58,10 +58,6 @@ App.Client: App.Client.cpp delta
 App.Server: App.Server.cpp delta
 	$(GCC) $< *.o -o $@ -lrt -lpthread
 
-
-
-
-
 clean:
 	@rm -rf gcm.cache/
 	@rm -f *.o
