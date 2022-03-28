@@ -5,7 +5,6 @@ main
 .DS_Store
 *.sh
 *.pcm
-App.*
 
 # Prerequisites
 *.d
