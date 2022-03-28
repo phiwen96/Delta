@@ -1,6 +1,8 @@
 export module Delta.Concepts.Range.Begin;
 
 import Delta.Concepts.Iterator;
+import Delta.Concepts.Size;
+import Delta.Concepts.Array;
 
 export
 {
@@ -11,5 +13,10 @@ export
 	}
 	{
 		return range.begin();
+	}
+
+	constexpr auto begin (auto* t) noexcept -> Iterator auto 
+	{
+		return t;
 	}
 }

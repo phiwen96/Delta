@@ -156,8 +156,24 @@ int main(int, char **)
         }
     };
 
+	auto test_range = [] (Range auto)
+	{
+
+	};
+
 	int t0 [10];
-	static_assert (ContiguousRange <decltype (t0)>);
+	auto* t1 = (int*) malloc (10);
+	// static_assert (ContiguousRange <decltype (t1)>);
+
+	test_range (t0);
+	// auto t2 = (long) t1;
+	// auto t3 = t2 + sizeof (int);
+	// auto* t4 = (int*) t3; 
+	// cout << t1+1 << endl << t4 << endl;
+	
+
+	// auto t4 = (int*) ((long) t1 + sizeof (int))
+	
 
 
 
