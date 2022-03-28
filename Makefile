@@ -5,9 +5,14 @@ all: main
 std_headers:
 	$(GCC) -xc++-system-header iostream
 
-delta: Concepts.Convertible.cpp Concepts.Same.cpp Concepts.Size.cpp Concepts.Pointer.cpp Concepts.Array.cpp Concepts.Iterator.ReadOnly.cpp Concepts.Iterator.WriteOnly.cpp Concepts.Iterator.StepForward.cpp Concepts.Iterator.StepBackward.cpp Concepts.Iterator.Jump.cpp Concepts.Iterator.Input.cpp Concepts.Iterator.Output.cpp Concepts.Iterator.Forward.cpp Concepts.Iterator.Bidirectional.cpp Concepts.Iterator.RandomAccess.cpp Concepts.Iterator.Contiguous.cpp Concepts.Iterator.cpp Concepts.Range.Begin.cpp Concepts.Range.End.cpp Concepts.Range.Contiguous.cpp Concepts.Range.cpp Concepts.Class.cpp Concepts.Char.cpp Concepts.String.cpp Concepts.Future.cpp Concepts.cpp Range.Begin.cpp Range.End.cpp Range.Length.cpp Range.cpp Algorithms.CopyPaste.cpp Algorithms.cpp Async.Write.cpp Async.Out.cpp Async.cpp Net.cpp Delta.cpp
+delta: Concepts.Convertible.cpp Concepts.Same.cpp Concepts.Number.Floating.cpp Concepts.Number.Integer.cpp Concepts.Number.Signed.cpp Concepts.Number.Unsigned.cpp Concepts.Size.cpp Concepts.Pointer.cpp Concepts.Array.cpp Concepts.Iterator.ReadOnly.cpp Concepts.Iterator.WriteOnly.cpp Concepts.Iterator.StepForward.cpp Concepts.Iterator.StepBackward.cpp Concepts.Iterator.Jump.cpp Concepts.Iterator.Input.cpp Concepts.Iterator.Output.cpp Concepts.Iterator.Forward.cpp Concepts.Iterator.Bidirectional.cpp Concepts.Iterator.RandomAccess.cpp Concepts.Iterator.Contiguous.cpp Concepts.Iterator.cpp Concepts.Range.Begin.cpp Concepts.Range.End.cpp Concepts.Range.Contiguous.cpp Concepts.Range.cpp Concepts.Class.cpp Concepts.Char.cpp Concepts.String.cpp Concepts.Future.cpp Concepts.cpp Range.Begin.cpp Range.End.cpp Range.Length.cpp Range.cpp Algorithms.CopyPaste.cpp Algorithms.cpp Async.Write.cpp Async.Out.cpp Async.cpp Net.cpp Delta.cpp
 	$(GCC) -c Concepts.Convertible.cpp
 	$(GCC) -c Concepts.Same.cpp 
+	$(GCC) -c Concepts.Number.Floating.cpp
+	$(GCC) -c Concepts.Number.Integer.cpp
+	$(GCC) -c Concepts.Number.Signed.cpp
+	$(GCC) -c Concepts.Number.Unsigned.cpp
+	$(GCC) -c Concepts.Number.cpp
 	$(GCC) -c Concepts.Size.cpp
 	$(GCC) -c Concepts.Pointer.cpp
 	$(GCC) -c Concepts.Array.cpp

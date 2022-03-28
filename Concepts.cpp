@@ -9,3 +9,4 @@ export import Delta.Concepts.Same;
 export import Delta.Concepts.Size;
 export import Delta.Concepts.Char;
 export import Delta.Concepts.String;
+export import Delta.Concepts.Number;
