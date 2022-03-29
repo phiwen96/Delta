@@ -19,19 +19,19 @@ export
 	constexpr auto end (auto& t) noexcept -> Iterator auto 
 	requires requires 
 	{
-		{end (t)} noexcept -> Iterator;
+		{t.end()} noexcept -> Iterator;
 	}
 	{
-		return end (t);
+		return t.end ();
 	}
 
 	constexpr auto end (auto const& t) noexcept -> Iterator auto 
 	requires requires 
 	{
-		{end (t)} noexcept -> Iterator;
+		{t.end()} noexcept -> Iterator;
 	}
 	{
-		return end (t);
+		return t.end();
 	}
 	
 }

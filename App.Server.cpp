@@ -163,9 +163,17 @@ int main(int, char **)
 
 	int t0 [10];
 	auto* t1 = (int*) malloc (10);
-	// static_assert (ContiguousRange <decltype (t1)>);
 
 	test_range (t0);
+
+	async::out << "hej\n";
+
+	while (true)
+	{
+		/* code */
+	}
+	
+	
 	// auto t2 = (long) t1;
 	// auto t3 = t2 + sizeof (int);
 	// auto* t4 = (int*) t3; 
