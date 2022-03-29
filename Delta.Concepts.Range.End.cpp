@@ -5,17 +5,31 @@ import Delta.Concepts.Array;
 
 export
 {	
-	template <typename T, auto N>
-	constexpr auto end (T (&t) [N]) noexcept -> Iterator auto 
+	template <auto N>
+	constexpr auto end (auto (&t) [N]) noexcept -> Iterator auto 
 	{
-		return t;
+		return t + N;
 	}
 
-	template <typename T>
-	constexpr auto end (T& t) noexcept -> Iterator auto 
+	template <auto N>
+	constexpr auto end (auto const (&t) [N]) noexcept -> Iterator auto 
+	{
+		return t + N;
+	}
+
+	constexpr auto end (auto& t) noexcept -> Iterator auto 
 	requires requires 
 	{
-		{end (t)} -> Iterator;
+		{end (t)} noexcept -> Iterator;
+	}
+	{
+		return end (t);
+	}
+
+	constexpr auto end (auto const& t) noexcept -> Iterator auto 
+	requires requires 
+	{
+		{end (t)} noexcept -> Iterator;
 	}
 	{
 		return end (t);

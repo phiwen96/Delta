@@ -6,7 +6,19 @@ import Delta.Concepts.Array;
 
 export
 {
-	constexpr auto begin (auto &&range) noexcept -> Iterator auto 
+	template <typename T, auto N>
+	constexpr auto begin (T (&t) [N]) noexcept -> Iterator auto 
+	{
+		return t + N;
+	}
+
+	template <auto N>
+	constexpr auto begin (auto const (&t) [N]) noexcept -> Iterator auto 
+	{
+		return t + N;
+	}
+
+	constexpr auto begin (auto& range) noexcept -> Iterator auto 
 	requires requires
 	{
 		{range.begin()} noexcept -> Iterator;
@@ -15,8 +27,12 @@ export
 		return range.begin();
 	}
 
-	constexpr auto begin (auto* t) noexcept -> Iterator auto 
+	constexpr auto begin (auto const& range) noexcept -> Iterator auto 
+	requires requires
 	{
-		return t;
+		{range.begin()} noexcept -> Iterator;
+	}
+	{
+		return range.begin();
 	}
 }
