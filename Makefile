@@ -1,4 +1,4 @@
-GCC=g++-11 -std=c++2a -fmodules-ts
+GCC=g++-11 -std=c++2a -fmodules-ts -fconcepts-diagnostics-depth=2
 APP=main
 apps: App.Client App.Server
 all: apps

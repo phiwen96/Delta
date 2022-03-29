@@ -156,7 +156,7 @@ int main(int, char **)
         }
     };
 
-	auto test_range = [] (Range auto)
+	auto test_range = [] (Range auto&)
 	{
 
 	};
