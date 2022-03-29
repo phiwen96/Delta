@@ -1,7 +1,6 @@
 export module Delta.Concepts.Range.End;
 
 import Delta.Concepts.Iterator;
-import Delta.Concepts.Array;
 
 export
 {	
