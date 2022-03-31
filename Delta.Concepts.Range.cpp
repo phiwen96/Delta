@@ -1,5 +1,6 @@
 export module Delta.Concepts.Range;
 
+import Delta.Concepts.Same;
 import Delta.Concepts.Convertible;
 import Delta.Mimic;
 export import Delta.Concepts.Iterator;
@@ -44,3 +45,5 @@ using element_type = typename range_traits <T>::element_type;//decltype (*(begin
 
 export template <typename T, typename U>
 concept Element = Range <T> and Convertible <element_type <T>, U>;
+
+static_assert (Same <element_type <char const [10]>, char>);

@@ -17,8 +17,19 @@ import Delta;
 
 using std::thread, std::cout, std::endl;
 
+auto async_out = async::out_t {};
+
 int main(int, char **)
 {
+	async_out << "-1\n";
+	cout << "0\n";
+	printf ("1\n");
+	while (true)
+	{
+		/* code */
+	}
+	
+	return 0;
 
     auto as_server = [port = "443"]
     {
@@ -118,7 +129,7 @@ int main(int, char **)
             {
                 if (events[i].data.fd == sockfd) 
                 {
-					async::out << "new connection\n";
+					async_out << "new connection\n";
 
                     /* handle new connection */
                     struct sockaddr_in cli_addr;
@@ -164,7 +175,7 @@ int main(int, char **)
 	int t0 [10];
 	auto* t1 = (int*) malloc (10);
 
-	async::out << "hej\n";
+	async_out << "hej\n";
 	// cout << "hej\n";
 	test_range (t0);
 
