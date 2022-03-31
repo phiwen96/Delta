@@ -164,9 +164,11 @@ int main(int, char **)
 	int t0 [10];
 	auto* t1 = (int*) malloc (10);
 
+	async::out << "hej\n";
+	// cout << "hej\n";
 	test_range (t0);
 
-	async::out << "hej\n";
+	
 
 	while (true)
 	{

@@ -4,12 +4,17 @@ module;
 #include "errno.h"
 export module Delta.Async.Write;
 
-// import Delta.String;
-import Delta.Range;
+import Delta.Concepts.String;
 
 export namespace async
 {
-	auto write (int fd, ContiguousRange auto const& src)
+	/*
+		TODO
+
+		implement ContiguousRange, because "src" needs to be contiguous
+	*/
+
+	auto write (int fd, Range auto const& src)
 	{
 		struct aiocb op
 		{
@@ -18,7 +23,7 @@ export namespace async
 		op.aio_fildes = fd;
 		op.aio_offset = 0;
 		op.aio_buf = (void *)  & (*begin (src));
-		op.aio_nbytes = end (src) - begin (src) * sizeof (element_type <decltype (src)>);
+		op.aio_nbytes = (long) (end (src) - begin (src)) * sizeof (element_type <decltype (src)>);
 
 		if (aio_write(&op) != 0)
 		{

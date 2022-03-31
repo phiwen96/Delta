@@ -2,10 +2,10 @@ export module Delta.Concepts.Range;
 
 import Delta.Concepts.Convertible;
 import Delta.Mimic;
-import Delta.Concepts.Iterator;
+export import Delta.Concepts.Iterator;
 export import Delta.Concepts.Range.Begin;
 export import Delta.Concepts.Range.End;
-export import Delta.Concepts.Range.Contiguous;
+// export import Delta.Concepts.Range.Contiguous;
 
 
 
@@ -17,8 +17,30 @@ requires (T& t)
 	{end (t)} noexcept -> Iterator;
 };
 
+export template <typename T>
+struct range_traits
+{
+
+};
+
+export template <typename T, auto N>
+struct range_traits <T const [N]>
+{
+	using element_type = T;
+};
+
+export template <typename T, auto N>
+struct range_traits <T const (&) [N]>
+{
+	using element_type = T;
+};
+
+
+
+
+
 export template <Range T>
-using element_type = decltype (*(begin (mimic <T> ())));
+using element_type = typename range_traits <T>::element_type;//decltype (*(begin (mimic <T> ())));
 
 export template <typename T, typename U>
 concept Element = Range <T> and Convertible <element_type <T>, U>;

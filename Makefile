@@ -1,7 +1,7 @@
-GCC=g++-11 -std=c++2a -fmodules-ts -fconcepts-diagnostics-depth=2
+GCC=g++-12 -std=c++2a -fmodules-ts #-fconcepts-diagnostics-depth=1
 APP=main
 apps: App.Client App.Server
-all: apps
+all: apps 
 
 std_headers:
 	$(GCC) -xc++-system-header iostream
@@ -50,10 +50,10 @@ delta: Delta.Mimic.cpp Delta.Concepts.Convertible.cpp Delta.Concepts.Same.cpp De
 	$(GCC) -c Delta.Net.cpp
 	$(GCC) -c Delta.cpp
 
-App.Server: App.Server.cpp delta
+App.Server: App.Server.cpp delta std_headers
 	$(GCC) $< *.o -o $@ -lrt -lpthread
 
-App.Client: App.Client.cpp delta
+App.Client: App.Client.cpp delta 
 	$(GCC) $< *.o -o $@ -lrt -lpthread
 
 clean:

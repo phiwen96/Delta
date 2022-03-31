@@ -1,13 +1,17 @@
 export module Delta.Concepts.Iterator.Contiguous;
-
+import Delta.Mimic;
 import Delta.Concepts.Iterator.ReadOnly;
 import Delta.Concepts.Iterator.WriteOnly;
 import Delta.Concepts.Iterator.StepForward;
 import Delta.Concepts.Iterator.StepBackward;
 import Delta.Concepts.Iterator.Jump;
 
+
+
+
+
 export template <typename T>
-concept ContiguousIterator =  
+concept ContiguousIterator = 
 	ReadOnly <T> and 
 	WriteOnly <T> and 
 	StepForward <T> and 
@@ -15,6 +19,5 @@ concept ContiguousIterator =
 	Jump <T> and 
 	requires (T t)
 	{
-		*(++t) == (T*) ((long) t + sizeof (T));
-		// &(*(t + 1)) == &(*t) + sizeof (T);
+		requires *t == *t;
 	};

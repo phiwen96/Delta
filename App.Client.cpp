@@ -205,7 +205,7 @@ int main(int, char **)
 
         char buf[4096];
 
-		async::out << "receiving\n";
+		// async::out << "receiving\n";
 
         if ((numbytes = recv(sockfd, buf, 4095, 0)) == -1)
         {
