@@ -24,7 +24,7 @@ export
 	// };
 
 	template <auto N>
-	constexpr auto begin (auto (t) [N]) noexcept -> Iterator auto 
+	constexpr auto begin (auto (&&t) [N]) noexcept -> Iterator auto 
 	{
 		return t;
 	}

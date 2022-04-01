@@ -15,12 +15,12 @@ export namespace async
 		{
 			
 		}
- 		constexpr auto operator << (Range auto const& str) -> auto&
+
+		template <Range T>
+ 		constexpr auto operator << (T && str) -> auto&
 		{
-			// printf ("length: %ld\n", end (str) - begin (str));
-			// printf ("tjo");
-			// std::cout << ":" << str;
-			async::write (1, str);
+			// printf (str);
+			async::write (1, (T&&) str);
 			return *this;
 		}
 	};

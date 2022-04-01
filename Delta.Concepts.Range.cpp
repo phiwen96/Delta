@@ -28,13 +28,23 @@ export template <typename T, auto N>
 struct range_traits <T const [N]>
 {
 	using element_type = T;
+	// static constexpr auto bounded = true;
+	// static constexpr auto length = N;
 };
 
 export template <typename T, auto N>
 struct range_traits <T const (&) [N]>
 {
 	using element_type = T;
+	// static constexpr auto bounded = true;
+	// static constexpr auto length = N;
 };
+
+// export template <Range T>
+// struct range_traits <T>
+// {
+	
+// };
 
 
 

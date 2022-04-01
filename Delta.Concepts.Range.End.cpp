@@ -5,6 +5,12 @@ import Delta.Concepts.Iterator;
 export
 {	
 	template <auto N>
+	constexpr auto end (auto (&&t) [N]) noexcept -> Iterator auto 
+	{
+		return t + N;
+	}
+
+	template <auto N>
 	constexpr auto end (auto (&t) [N]) noexcept -> Iterator auto 
 	{
 		return t + N;
