@@ -25,5 +25,5 @@ export namespace async
 		}
 	};
 
-	// auto out = out_t {};
+	auto out = out_t {};
 }

@@ -36,7 +36,7 @@ export namespace async
 		implement ContiguousRange, because "src" needs to be contiguous
 	*/
 	template <typename T, auto N>
-	auto write (int fd, T const (&src) [N]) -> task <bool>
+	auto write (int fd, T const (&src) [N]) -> void //task <bool>
 	{
 
 		auto op = aiocb
@@ -57,8 +57,8 @@ export namespace async
 		{
 			perror ("write");
 		}
-
-		co_return;
+		// co_yield 10;
+		// co_await std::suspend_always {};
 
 		// auto status = aio_error (&op);
 

@@ -17,11 +17,13 @@ import Delta;
 
 using std::thread, std::cout, std::endl;
 
-auto async_out = async::out_t {};
+#define E
+
+
 
 int main(int, char **)
 {
-	async_out << "-1\n";
+	// async::out << "-1\n";
 	cout << "0\n";
 	printf ("1\n");
 	while (true)
@@ -129,7 +131,7 @@ int main(int, char **)
             {
                 if (events[i].data.fd == sockfd) 
                 {
-					async_out << "new connection\n";
+					// async::out << "new connection\n";
 
                     /* handle new connection */
                     struct sockaddr_in cli_addr;
@@ -175,7 +177,7 @@ int main(int, char **)
 	int t0 [10];
 	auto* t1 = (int*) malloc (10);
 
-	async_out << "hej\n";
+	// async::out << "hej\n";
 	// cout << "hej\n";
 	test_range (t0);
 

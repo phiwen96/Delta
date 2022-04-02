@@ -5,7 +5,7 @@ export module Delta.Async.Task;
 export namespace async
 {
 	template <typename T>
-	struct task 
+	struct [[nodiscard]] task 
 	{
 		struct promise_type 
 		{
@@ -14,7 +14,7 @@ export namespace async
 			{
 				return task {*this};
 			}
-			auto return_void () noexcept -> void
+			auto return_value (T const& t) noexcept -> void
 			{
 
 			}
@@ -22,14 +22,37 @@ export namespace async
 			{
 
 			}
+			auto yield_value (auto&&) noexcept -> void 
+			{
+				
+			}
 			auto initial_suspend () noexcept -> auto 
 			{
 				return std::suspend_never {};
 			}
-			auto final_suspend () noexcept ->
+			auto final_suspend () noexcept -> auto 
+			{
+				struct awaitable 
+				{
+					auto await_ready () noexcept -> bool 
+					{
+						return false;
+					}
+					auto await_suspend (std::coroutine_handle <promise_type> h) noexcept -> auto
+					{
+						return h.promise().continutaion;
+					}
+					auto await_resume () noexcept -> void 
+					{
+
+					}
+				};
+
+				return awaitable {};
+			}
 		};
 
-		constexpr task (task&& other) noexcept : handle {(std::coroutine_handle <promise_type>&&) other.handle}
+		task (task&& other) noexcept : handle {(std::coroutine_handle <promise_type>&&) other.handle}
 		{
 
 		}
@@ -38,7 +61,7 @@ export namespace async
 		{
 			if (handle)
 			{
-				handle.destroy;
+				handle.destroy ();
 			}
 		}
 
@@ -47,13 +70,19 @@ export namespace async
 			return false;
 		}
 
-		auto await_suspend (std::coroutine_handle <> c)  -> auto
+		auto await_suspend (std::coroutine_handle <> c) noexcept -> std::coroutine_handle <promise_type>
 		{	
+			handle.promise().continuation = c;
+			return handle;
+		}
+
+		auto await_resume () noexcept -> void 
+		{
 
 		}
 
 	private:
-		constexpr explicit task (promise_type& p) noexcept : handle {std::coroutine_handle <promise_type>::from_promise (p)}
+		explicit task (promise_type& p) noexcept : handle {std::coroutine_handle <promise_type>::from_promise (p)}
 		{
 			
 		}
