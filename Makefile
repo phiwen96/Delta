@@ -1,8 +1,8 @@
 GCC=g++-12 -std=c++2a -fcoroutines -fmodules-ts #-fconcepts-diagnostics-depth=1
 APP=main
-apps: App.Server App.Client
-tests: Test.Async.Out
-all: apps tests
+apps:= App.Server App.Client
+tests:= Test.Async.Out
+all: $(apps) $(tests)
 
 std_headers:
 	$(GCC) -xc++-system-header iostream
@@ -68,5 +68,5 @@ Test.%: Test.%.cpp delta
 clean:
 	@rm -rf gcm.cache/
 	@rm -f *.o
-	@rm -f $(APP)
-	
+	@rm -f $(apps)
+	@rm -f $(tests)
