@@ -17,10 +17,10 @@ export namespace async
 		}
 
 		template <Range T>
- 		constexpr auto operator << (T && str) -> auto&
+ 		constexpr auto operator << (T const& str) -> auto&
 		{
 			// printf (str);
-			async::write (1, (T&&) str);
+			async::write (1, str);
 			return *this;
 		}
 	};
