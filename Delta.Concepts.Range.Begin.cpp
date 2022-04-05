@@ -1,28 +1,30 @@
 export module Delta.Concepts.Range.Begin;
 
-import Delta.Concepts.Range.Traits;
+import Delta.Concepts.Array;
 import Delta.Concepts.Iterator;
-import Delta.Concepts.Char;
 
-export template <typename T>
-constexpr auto begin (T& t) noexcept -> Iterator auto 
-requires requires 
+template <typename T>
+concept HasBegin = requires (T& t)
 {
-	{range_traits <T>::begin (t)} noexcept -> Iterator;
-}
-{
-	return range_traits <T>::begin (t);
-}
+	{t.begin()} noexcept -> Iterator;
+};
 
-export template <typename T>
-constexpr auto begin (T const& t) noexcept -> Iterator auto 
-requires requires 
+export constexpr auto begin (HasBegin auto&& range) noexcept -> Iterator auto 
 {
-	{range_traits <T>::begin (t)} noexcept -> Iterator;
-}
-{
-	return range_traits <T>::begin (t);
+	return range.begin();
 }
 
+export constexpr auto begin (Array auto&& range) noexcept -> Iterator auto 
+{
+	return range;
+}
 
+export constexpr auto begin (Array auto range) noexcept -> Iterator auto 
+{
+	return range;
+}
 
+export constexpr auto begin (IteratorWithSentinel auto&& range) noexcept -> Iterator auto 
+{
+	return range;
+}

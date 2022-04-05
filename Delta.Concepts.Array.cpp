@@ -1,104 +1,40 @@
 export module Delta.Concepts.Array;
 
-// import Delta.Concepts.Size;
+template <typename T>
+struct array_info
+{
+	static constexpr auto is_array = false;
+};
 
-// template <typename T>
-// struct array_traits 
-// {
-// 	constexpr static auto is_array = false;
-// };
+export template <typename T>
+concept Array = array_info <T>::is_array;
 
-// export template <typename T>
-// concept Array = array_traits <T>::is_array;
+export constexpr auto length (Array auto&& range) noexcept -> auto 
+{
+	return array_info <decltype (range)>::length;
+}
 
-// export template <Array T>
-// auto len (T const& t) noexcept -> Size auto
-// {
-// 	return array_traits <T>::len;
-// } 
+template <typename T, auto N>
+struct array_info <T [N]>
+{
+	static constexpr auto is_array = true;
+	static constexpr auto length = N;
+};
 
-// export template <Array T>
-// using element_type = typename array_traits <T>::element_type;
+template <typename T, auto N>
+struct array_info <T const [N]>
+{
+	static constexpr auto is_array = true;
+	static constexpr auto length = N;
+};
 
-// template <typename T, auto N>
-// struct array_traits <T [N]>
-// {
-// 	using element_type = T;
-// 	constexpr static auto is_array = true;
-// 	constexpr static auto is_dynamic = false;
-// 	constexpr static auto len = N;
-// };
+template <typename T, auto N>
+struct array_info <T const (&) [N]>
+{
+	static constexpr auto is_array = true;
+	static constexpr auto length = N;
+};
 
-// template <typename T, auto N>
-// struct array_traits <T (&) [N]>
-// {
-// 	using element_type = T;
-// 	constexpr static auto is_array = true;
-// 	constexpr static auto is_dynamic = false;
-// 	constexpr static auto len = N;
-// };
-
-// template <typename T, auto N>
-// struct array_traits <T (&&) [N]>
-// {
-// 	using element_type = T;
-// 	constexpr static auto is_array = true;
-// 	constexpr static auto is_dynamic = false;
-// 	constexpr static auto len = N;
-// };
-
-// template <typename T, auto N>
-// struct array_traits <T const [N]>
-// {
-// 	using element_type = T;
-// 	constexpr static auto is_array = true;
-// 	constexpr static auto is_dynamic = false;
-// 	constexpr static auto len = N;
-// };
-
-
-// template <typename T>
-// struct array_traits <T []>
-// {
-// 	using element_type = T;
-// 	constexpr static auto is_array = true;
-// 	constexpr static auto is_dynamic = true;
-// };
-
-// template <typename T>
-// struct array_traits <T (&) []>
-// {
-// 	using element_type = T;
-// 	constexpr static auto is_array = true;
-// 	constexpr static auto is_dynamic = true;
-// };
-
-// template <typename T>
-// struct array_traits <T (&&) []>
-// {
-// 	using element_type = T;
-// 	constexpr static auto is_array = true;
-// 	constexpr static auto is_dynamic = true;
-// };
-
-// template <typename T>
-// struct array_traits <T const []>
-// {
-// 	using element_type = T;
-// 	constexpr static auto is_array = true;
-// 	constexpr static auto is_dynamic = true;
-// };
-
-
-
-
-// consteval auto test_array () noexcept -> bool
-// {
-// 	int t [10];
-
-// 	static_assert (Array <decltype (t)>);
-
-// 	return true;
-// }
-
-// static_assert (test_array ());
+static_assert (Array <char [10]>);
+static_assert (Array <char const [10]>);
+static_assert (Array <char const (&) [10]>);
