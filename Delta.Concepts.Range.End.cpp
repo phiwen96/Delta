@@ -20,11 +20,16 @@ export constexpr auto end (Array auto&& range) noexcept -> Iterator auto
 	return begin (range) + length (range);
 }
 
-export constexpr auto end (IteratorWithSentinel auto&& iter) noexcept -> Iterator auto 
+export template <Iterator T>
+requires requires (T t)
 {
-	auto i = iter;
-	auto e = sentinel (iter);
-	while (i != e)
+	*t == sentinel_value <T>;
+}
+constexpr auto end (T t) noexcept -> Iterator auto 
+{
+	auto i = t;
+
+	while (*i != sentinel_value <T>)
 	{
 		++i;
 	}

@@ -4,12 +4,11 @@ export import Delta.Concepts.Char;
 export import Delta.Concepts.Range;
 
 
-export template <typename T>
-// requires Char <element_type <T>>
-requires Iterator <T>
+export template <Iterator T>
+requires Char <element_type <T>>
 struct sentinel_value_t <T>
 {
-	// static constexpr auto value = '\0';
+	static constexpr auto value = '\0';
 };
 
 // export template <typename T>

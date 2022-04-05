@@ -24,7 +24,12 @@ export constexpr auto begin (Array auto range) noexcept -> Iterator auto
 	return range;
 }
 
-export constexpr auto begin (IteratorWithSentinel auto&& range) noexcept -> Iterator auto 
+export template <Iterator T>
+requires requires (T t)
 {
+	*t == sentinel_value <T>;
+}
+constexpr auto begin (Iterator auto&& range) noexcept -> Iterator auto 
+{	
 	return range;
 }

@@ -10,11 +10,5 @@ concept HasSentinelValue = requires
 	true;
 };
 
-export template <HasSentinelValue T>
-
-requires 
-{
-	// sentinel_value_t <T>::value;
-	// true;
-}
+export template <typename T>
 constexpr auto sentinel_value = sentinel_value_t <T>::value;
