@@ -11,10 +11,12 @@ struct sentinel_value_t <T>
 	static constexpr auto value = '\0';
 };
 
-// export template <typename T>
-// concept String = Range <T> and Char <element_type <T>>;
+export template <typename T>
+concept String = Range <T> and Char <element_type <T>>;
 
-// static_assert (String <char const *>);
+static_assert (Iterator <char const *>);
+static_assert (Char <element_type <char const *>>);
+static_assert (String <char const *>);
 
 
 

@@ -10,6 +10,18 @@ struct add_r_value_t
 };
 
 template <typename T>
+struct add_r_value_t <T*>
+{
+	using type = T*;
+};
+
+template <typename T>
+struct add_r_value_t <T const*>
+{
+	using type = T const*&&;
+};
+
+template <typename T>
 struct add_r_value_t <T&>
 {
 	using type = T&&;

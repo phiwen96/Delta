@@ -1,3 +1,5 @@
+module;
+#include <utility>
 export module Delta.Concepts.Iterator;
 
 import Delta.Mimic;
@@ -28,4 +30,4 @@ concept IteratorWithSentinel = Iterator <T> and requires (T& t)
 };
 
 export template <Iterator T>
-using element_type = decltype (*mimic <T> ());
+using element_type = decltype (*std::declval <T> ());// decltype (*mimic <T> ());
