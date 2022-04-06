@@ -1,40 +1,69 @@
 export module Delta.Concepts.Array;
 
-template <typename T>
-struct array_info
+import Delta.Concepts.Size;
+export import Delta.Concepts.Range;
+
+export template <typename T>
+concept ArrayTraits = requires 
 {
-	static constexpr auto is_array = false;
+	typename T::element_type;
+	{T::length} -> Size;
 };
 
 export template <typename T>
-concept Array = array_info <T>::is_array;
+struct array_traits;
 
-export constexpr auto length (Array auto&& range) noexcept -> auto 
+export template <typename T, auto N>
+struct array_traits <T [N]>
 {
-	return array_info <decltype (range)>::length;
+	using element_type = T;
+	static constexpr auto length = N;
+};
+
+export template <typename T, auto N>
+struct array_traits <T const [N]>
+{
+	using element_type = T;
+	static constexpr auto length = N;
+};
+
+export template <typename T, auto N>
+struct array_traits <T const (&) [N]>
+{
+	using element_type = T;
+	static constexpr auto length = N;
+};
+
+export template <typename T>
+concept Array = ArrayTraits <array_traits <T>>;
+
+export template <Array T>
+struct range_traits <T> : array_traits <T>
+{
+
+};
+
+
+export constexpr auto length (Array auto const& range) noexcept -> auto 
+{
+	return array_traits <decltype (range)>::length;
 }
-
-template <typename T, auto N>
-struct array_info <T [N]>
-{
-	static constexpr auto is_array = true;
-	static constexpr auto length = N;
-};
-
-template <typename T, auto N>
-struct array_info <T const [N]>
-{
-	static constexpr auto is_array = true;
-	static constexpr auto length = N;
-};
-
-template <typename T, auto N>
-struct array_info <T const (&) [N]>
-{
-	static constexpr auto is_array = true;
-	static constexpr auto length = N;
-};
 
 static_assert (Array <char [10]>);
 static_assert (Array <char const [10]>);
 static_assert (Array <char const (&) [10]>);
+
+export constexpr auto begin (Array auto&& range) noexcept -> Iterator auto 
+{
+	return range;
+}
+
+export constexpr auto begin (Array auto range) noexcept -> Iterator auto 
+{
+	return range;
+}
+
+export constexpr auto end (Array auto&& range) noexcept -> Iterator auto 
+{
+	return begin (range) + length (range);
+}

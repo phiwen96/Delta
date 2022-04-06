@@ -1,6 +1,6 @@
 export module Delta.Concepts.Range.Begin;
 
-import Delta.Concepts.Array;
+import Delta.Concepts.Range.Policies;
 import Delta.Concepts.Iterator;
 
 template <typename T>
@@ -14,22 +14,15 @@ export constexpr auto begin (HasBegin auto&& range) noexcept -> Iterator auto
 	return range.begin();
 }
 
-export constexpr auto begin (Array auto&& range) noexcept -> Iterator auto 
+export template <typename R, template <typename...> typename P = range_policies>
+requires (RangePolicies <P <R>>)
+constexpr auto begin (R && range) noexcept -> Iterator auto 
 {
-	return range;
+	return P <R> :: begin (range);
 }
 
-export constexpr auto begin (Array auto range) noexcept -> Iterator auto 
-{
-	return range;
-}
-
-export template <Iterator T>
+export template <IteratorWithSentinelValue T>
 constexpr auto begin (T&& range) noexcept -> Iterator auto 
-requires requires
-{
-	*range == sentinel_value <T>;
-}
 {	
 	return range;
 }

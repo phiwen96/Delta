@@ -7,10 +7,11 @@ all: $(apps) $(tests)
 std_headers:
 	$(GCC) -xc++-system-header iostream
 
-delta: Delta.Mimic.cpp Delta.Concepts.Convertible.cpp Delta.Concepts.Same.cpp Delta.Concepts.Number.Floating.cpp Delta.Concepts.Number.Integer.cpp Delta.Concepts.Number.Signed.cpp Delta.Concepts.Number.Unsigned.cpp Delta.Concepts.Size.cpp Delta.Concepts.Pointer.cpp Delta.Concepts.Class.cpp Delta.Concepts.Char.cpp Delta.Concepts.Array.cpp Delta.Concepts.Iterator.Sentinel.cpp Delta.Concepts.Iterator.Traits.cpp Delta.Concepts.Iterator.ReadOnly.cpp Delta.Concepts.Iterator.WriteOnly.cpp Delta.Concepts.Iterator.StepForward.cpp Delta.Concepts.Iterator.StepBackward.cpp Delta.Concepts.Iterator.Jump.cpp Delta.Concepts.Iterator.Input.cpp Delta.Concepts.Iterator.Output.cpp Delta.Concepts.Iterator.Forward.cpp Delta.Concepts.Iterator.Bidirectional.cpp Delta.Concepts.Iterator.RandomAccess.cpp Delta.Concepts.Iterator.Contiguous.cpp Delta.Concepts.Iterator.cpp Delta.Concepts.Range.Traits.cpp Delta.Concepts.Range.Policies.cpp Delta.Concepts.Range.Begin.cpp Delta.Concepts.Range.End.cpp Delta.Concepts.Range.Contiguous.cpp Delta.Concepts.Range.cpp Delta.Concepts.String.Begin.cpp Delta.Concepts.String.End.cpp Delta.Concepts.String.cpp Delta.Concepts.Future.cpp Delta.Concepts.cpp Delta.Range.cpp Delta.Algorithms.CopyPaste.cpp Delta.Algorithms.cpp Delta.Async.Task.cpp Delta.Async.Write.cpp Delta.Async.Out.cpp Delta.Async.cpp Delta.Net.cpp Delta.cpp
+delta: Delta.Mimic.cpp Delta.Concepts.Convertible.cpp Delta.Concepts.Same.cpp Delta.Concepts.Bool.cpp Delta.Concepts.Number.Floating.cpp Delta.Concepts.Number.Integer.cpp Delta.Concepts.Number.Signed.cpp Delta.Concepts.Number.Unsigned.cpp Delta.Concepts.Size.cpp Delta.Concepts.Pointer.cpp Delta.Concepts.Class.cpp Delta.Concepts.Char.cpp Delta.Concepts.Iterator.Sentinel.cpp Delta.Concepts.Iterator.Traits.cpp Delta.Concepts.Iterator.ReadOnly.cpp Delta.Concepts.Iterator.WriteOnly.cpp Delta.Concepts.Iterator.StepForward.cpp Delta.Concepts.Iterator.StepBackward.cpp Delta.Concepts.Iterator.Jump.cpp Delta.Concepts.Iterator.Input.cpp Delta.Concepts.Iterator.Output.cpp Delta.Concepts.Iterator.Forward.cpp Delta.Concepts.Iterator.Bidirectional.cpp Delta.Concepts.Iterator.RandomAccess.cpp Delta.Concepts.Iterator.Contiguous.cpp Delta.Concepts.Iterator.cpp Delta.Concepts.Range.Traits.cpp Delta.Concepts.Range.Policies.cpp Delta.Concepts.Range.Begin.cpp Delta.Concepts.Range.End.cpp Delta.Concepts.Range.Contiguous.cpp Delta.Concepts.Range.cpp Delta.Concepts.BoundedRange.cpp Delta.Concepts.Array.cpp Delta.Concepts.String.Begin.cpp Delta.Concepts.String.End.cpp Delta.Concepts.String.cpp Delta.Concepts.Future.cpp Delta.Concepts.cpp Delta.Range.cpp Delta.Algorithms.CopyPaste.cpp Delta.Algorithms.cpp Delta.Async.Task.cpp Delta.Async.Write.cpp Delta.Async.Out.cpp Delta.Async.cpp Delta.Net.cpp Delta.cpp
 	$(GCC) -c Delta.Mimic.cpp
 	$(GCC) -c Delta.Concepts.Convertible.cpp
 	$(GCC) -c Delta.Concepts.Same.cpp 
+	$(GCC) -c Delta.Concepts.Bool.cpp 
 	$(GCC) -c Delta.Concepts.Number.Floating.cpp
 	$(GCC) -c Delta.Concepts.Number.Integer.cpp
 	$(GCC) -c Delta.Concepts.Number.Signed.cpp
@@ -20,7 +21,6 @@ delta: Delta.Mimic.cpp Delta.Concepts.Convertible.cpp Delta.Concepts.Same.cpp De
 	$(GCC) -c Delta.Concepts.Pointer.cpp
 	$(GCC) -c Delta.Concepts.Class.cpp
 	$(GCC) -c Delta.Concepts.Char.cpp
-	$(GCC) -c Delta.Concepts.Array.cpp
 	$(GCC) -c Delta.Concepts.Iterator.Sentinel.cpp
 	$(GCC) -c Delta.Concepts.Iterator.Traits.cpp
 	$(GCC) -c Delta.Concepts.Iterator.ReadOnly.cpp
@@ -41,6 +41,8 @@ delta: Delta.Mimic.cpp Delta.Concepts.Convertible.cpp Delta.Concepts.Same.cpp De
 	$(GCC) -c Delta.Concepts.Range.End.cpp
 	$(GCC) -c Delta.Concepts.Range.Contiguous.cpp
 	$(GCC) -c Delta.Concepts.Range.cpp
+	$(GCC) -c Delta.Concepts.BoundedRange.cpp
+	$(GCC) -c Delta.Concepts.Array.cpp
 	$(GCC) -c Delta.Concepts.String.Begin.cpp
 	$(GCC) -c Delta.Concepts.String.End.cpp
 	$(GCC) -c Delta.Concepts.String.cpp

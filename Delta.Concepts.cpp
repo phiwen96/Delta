@@ -2,6 +2,7 @@ export module Delta.Concepts;
 
 export import Delta.Concepts.Convertible;
 export import Delta.Concepts.Same;
+export import Delta.Concepts.Bool;
 export import Delta.Concepts.Number;
 export import Delta.Concepts.Size;
 export import Delta.Concepts.Pointer;

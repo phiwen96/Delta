@@ -19,15 +19,25 @@ concept Iterator =
 	OutputIterator<T> or 
 	ForwardIterator<T> or 
 	BidirectionalIterator<T> or 
-	RandomAccessIterator<T> or
-	ContiguousIterator<T>;
+	RandomAccessIterator<T>;
+	// or ContiguousIterator<T>;
 
 export template <typename T>
-concept IteratorWithSentinel = Iterator <T> and requires (T& t)
+struct sentinel_value_t;
+
+
+export template <typename T>
+constexpr auto sentinel_value = sentinel_value_t <T>::value;
+
+export template <typename T>
+concept IteratorWithSentinelValue = Iterator <T> and requires (T t)
 {
-	{t == sentinel_value <T>} noexcept -> Convertible <bool>;  
-	{t != sentinel_value <T>} noexcept -> Convertible <bool>;  
+	sentinel_value <T>;  
+	// sentinel_value <T>;
 };
 
-export template <Iterator T>
-using element_type = decltype (*std::declval <T> ());// decltype (*mimic <T> ());
+
+static_assert (Iterator <char const*>);
+
+// export template <Iterator T>
+// using element_type = decltype (*std::declval <T> ());// decltype (*mimic <T> ());
