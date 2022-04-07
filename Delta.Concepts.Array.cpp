@@ -1,13 +1,27 @@
 export module Delta.Concepts.Array;
 
 import Delta.Concepts.Size;
-export import Delta.Concepts.Range;
+import Delta.Concepts.Range;
+
+export template <typename T, auto N>
+struct range_policies <T [N]>
+{
+	static constexpr auto begin (T (t) [N]) noexcept -> Iterator auto 
+	{
+		return t;
+	}
+
+	static constexpr auto end (T (t) [N]) noexcept -> Iterator auto 
+	{
+		return t + N;
+	}
+};
 
 export template <typename T, auto N>
 struct range_traits <T [N]>
 {
 	using element_type = T;
-	using iterator_type = T *;
+	using iterator_type = T*; //return_type_of <>;
 	static constexpr auto is_array = true;
 	static constexpr auto is_bounded = true;
 	static constexpr auto length = N;
@@ -44,18 +58,3 @@ export constexpr auto length (Array auto const& range) noexcept -> auto
 static_assert (Array <int [10]>);
 static_assert (Array <int const [10]>);
 static_assert (Array <int const (&) [10]>);
-
-export constexpr auto begin (Array auto&& range) noexcept -> Iterator auto 
-{
-	return range;
-}
-
-export constexpr auto begin (Array auto range) noexcept -> Iterator auto 
-{
-	return range;
-}
-
-export constexpr auto end (Array auto&& range) noexcept -> Iterator auto 
-{
-	return begin (range) + length (range);
-}

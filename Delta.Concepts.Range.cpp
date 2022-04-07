@@ -10,6 +10,7 @@ export module Delta.Concepts.Range;
 export import Delta.Concepts.Iterator;
 export import Delta.Concepts.Range.Begin;
 export import Delta.Concepts.Range.End;
+export import Delta.Concepts.Range.Policies;
 export import Delta.Concepts.Range.Traits;
 
 // export import Delta.Concepts.Range.Contiguous;
@@ -25,7 +26,7 @@ export import Delta.Concepts.Range.Traits;
 
 export template <typename T>
 concept Range = 
-requires (T t)
+requires (T& t)
 {
 	{begin (t)} noexcept -> Iterator;
 	{end (t)} noexcept -> Iterator;
