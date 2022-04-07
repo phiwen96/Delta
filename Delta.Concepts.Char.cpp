@@ -5,6 +5,12 @@ import Delta.Concepts.Convertible;
 export template <template <typename...> typename T>
 using char_types = T <char, signed char, unsigned char, char16_t, char32_t, wchar_t>;
 
+// template <typename List, typename Element>
+// concept AnyOf = 
+
+
+
+
 // template <typename T>
 // constexpr auto is_char = 
 
@@ -12,8 +18,7 @@ using char_types = T <char, signed char, unsigned char, char16_t, char32_t, wcha
 
 
 
-// template <typename Element, typename List>
-// concept AnyOf = 
+
 
 // template <typename...>
 // struct bb{};
