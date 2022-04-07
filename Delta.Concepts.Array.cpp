@@ -3,55 +3,47 @@ export module Delta.Concepts.Array;
 import Delta.Concepts.Size;
 export import Delta.Concepts.Range;
 
-export template <typename T>
-concept ArrayTraits = requires 
-{
-	typename T::element_type;
-	{T::length} -> Size;
-};
-
-export template <typename T>
-struct array_traits;
-
 export template <typename T, auto N>
-struct array_traits <T [N]>
+struct range_traits <T [N]>
 {
 	using element_type = T;
+	using iterator_type = T *;
+	static constexpr auto is_array = true;
+	static constexpr auto is_bounded = true;
 	static constexpr auto length = N;
 };
 
 export template <typename T, auto N>
-struct array_traits <T const [N]>
+struct range_traits <T const [N]>
 {
 	using element_type = T;
+	using iterator_type = T const*;
+	static constexpr auto is_array = true;
+	static constexpr auto is_bounded = true;
 	static constexpr auto length = N;
 };
 
 export template <typename T, auto N>
-struct array_traits <T const (&) [N]>
+struct range_traits <T const (&) [N]>
 {
 	using element_type = T;
+	using iterator_type = T const*;
+	static constexpr auto is_array = true;
+	static constexpr auto is_bounded = true;
 	static constexpr auto length = N;
 };
 
 export template <typename T>
-concept Array = ArrayTraits <array_traits <T>>;
-
-export template <Array T>
-struct range_traits <T> : array_traits <T>
-{
-
-};
-
+concept Array = Range <T> and range_traits<T>::is_array;
 
 export constexpr auto length (Array auto const& range) noexcept -> auto 
 {
-	return array_traits <decltype (range)>::length;
+	return range_traits <decltype (range)>::length;
 }
 
-static_assert (Array <char [10]>);
-static_assert (Array <char const [10]>);
-static_assert (Array <char const (&) [10]>);
+static_assert (Array <int [10]>);
+static_assert (Array <int const [10]>);
+static_assert (Array <int const (&) [10]>);
 
 export constexpr auto begin (Array auto&& range) noexcept -> Iterator auto 
 {

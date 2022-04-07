@@ -21,7 +21,7 @@ constexpr auto begin (R && range) noexcept -> Iterator auto
 	return P <R> :: begin (range);
 }
 
-export template <IteratorWithSentinelValue T>
+export template <Sentinel T>
 constexpr auto begin (T&& range) noexcept -> Iterator auto 
 {	
 	return range;

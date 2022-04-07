@@ -14,7 +14,7 @@ export constexpr auto end (HasEnd auto&& range) noexcept -> Iterator auto
 	return range.end();
 }
 
-export template <IteratorWithSentinelValue T>
+export template <Sentinel T>
 constexpr auto end (T&& t) noexcept -> Iterator auto 
 {
 	auto i = t;

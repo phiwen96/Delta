@@ -4,7 +4,8 @@ export module Delta.Concepts.Iterator;
 
 import Delta.Mimic;
 import Delta.Concepts.Convertible;
-export import Delta.Concepts.Iterator.Sentinel;
+export import Delta.Concepts.Iterator.Traits;
+// export import Delta.Concepts.Iterator.Sentinel;
 export import Delta.Concepts.Iterator.Input;
 export import Delta.Concepts.Iterator.Output;
 export import Delta.Concepts.Iterator.Forward;
@@ -23,18 +24,34 @@ concept Iterator =
 	// or ContiguousIterator<T>;
 
 export template <typename T>
-struct sentinel_value_t;
+concept Sentinel = 
+	Iterator <T> and 
+	sentinel_traits <T>::has_sentinel == true and 
+	requires 
+	{
+		sentinel_traits <T>::value;
+	};
+
+template <typename T>
+concept HasValue = Sentinel <T> and sentinel_traits<T>::has_sentinel and requires {sentinel_traits<T>::value;};
+
+export template <Sentinel T>
+requires HasValue <T>
+constexpr auto sentinel_value = sentinel_traits <T>::value;
+
+// export template <typename T>
+// struct sentinel_value_t;
 
 
-export template <typename T>
-constexpr auto sentinel_value = sentinel_value_t <T>::value;
+// export template <typename T>
+// constexpr auto sentinel_value = sentinel_value_t <T>::value;
 
-export template <typename T>
-concept IteratorWithSentinelValue = Iterator <T> and requires (T t)
-{
-	sentinel_value <T>;  
-	// sentinel_value <T>;
-};
+// export template <typename T>
+// concept IteratorWithSentinelValue = Iterator <T> and requires (T t)
+// {
+// 	sentinel_value <T>;  
+// 	// sentinel_value <T>;
+// };
 
 
 static_assert (Iterator <char const*>);

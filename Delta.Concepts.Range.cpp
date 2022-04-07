@@ -31,6 +31,16 @@ requires (T t)
 	{end (t)} noexcept -> Iterator;
 };
 
+// export template <>
+
+// export template <typename T>
+// struct range_traits
+// {
+
+// };
+
+
+
 
 
 

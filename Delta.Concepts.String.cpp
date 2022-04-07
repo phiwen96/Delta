@@ -1,22 +1,25 @@
 export module Delta.Concepts.String;
 
-export import Delta.Concepts.Char;
-export import Delta.Concepts.Array;
+import Delta.Concepts.Char;
+import Delta.Concepts.Range;
+import Delta.Concepts.Iterator;
+import Delta.Concepts.Array;
 
 
-export template <Iterator T>
-requires Char <element_type <T>>
-struct sentinel_value_t <T>
-{
-	static constexpr auto value = '\0';
-};
+// export template <Iterator T>
+// // requires Char <typename iterator_traits <T>::element_type>
+// struct sentinel_traits <T>
+// {
+// 	static constexpr auto has_sentinel = true;
+// 	static constexpr auto value = '\0';
+// };
 
-export template <Iterator T>
-requires Char <element_type <T>>
-struct sentinel_value_t <T const>
-{
-	static constexpr auto value = '\0';
-};
+// export template <Iterator T>
+// requires Char <element_type <T>>
+// struct sentinel_traits <T const>
+// {
+// 	static constexpr auto value = '\0';
+// };
 
 export template <typename T>
 concept String = Range <T> and Char <element_type <T>>;
