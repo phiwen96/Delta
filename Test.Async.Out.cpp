@@ -11,7 +11,7 @@ using first = T;
 template <typename T, auto predicate, typename U, typename... V>
 struct any_of_t
 {
-	constexpr static auto value = predicate.template operator() <T, U> () ? true : any_of_t <T, predicate, V...>::value;//__builtin_choose_expr (predicate.template operator() <T, U>(), true, any_of_t <T, predicate, V...>::value);
+	constexpr static auto value = predicate.template operator() <T, U> () ? true : any_of_t <T, predicate, V...>::value;
 };
 
 template <typename T, auto predicate, typename U>
