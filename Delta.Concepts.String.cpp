@@ -24,8 +24,8 @@ import Delta.Concepts.Array;
 export template <typename T>
 concept String = Range <T> and Char <element_type <T>>;
 
-static_assert (Iterator <char const *>);
-static_assert (Char <element_type <char const *>>);
+// static_assert (Iterator <char const *>);
+// static_assert (Char <element_type <char const *>>);
 // static_assert (String <char const *>);
 
 

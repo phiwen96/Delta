@@ -1,43 +1,23 @@
 export module Delta.Concepts.Pointer;
 
-template <typename T>
-struct type_info 
-{
-	constexpr static auto is_pointer = false;
-};
-
+import Delta.Concepts.Pointer.Traits;
 
 export template <typename T>
-concept Pointer = type_info <T>::is_pointer;
+concept Pointer = PointerTraits <pointer_traits <T>>;
 
 
+// template <typename T, template <typename> typename U>
+// constexpr auto for_every_pointer_value = 
+// 	U <T*> and 
+// 	U <T*&> and
+// 	U <T *&&> and
+// 	U <T const*> and 
+// 	U <T const * &> and 
+// 	U <T * const> and 
+// 	U <const * const>;
+	
 export template <Pointer T>
-using element_type = typename type_info <T>::element_type;
+using element_type = typename pointer_traits <T>::element_type;
 
-template <typename T>
-struct type_info <T*>
-{
-	using element_type = T;
-	constexpr static auto is_pointer = true;
-};
 
-template <typename T>
-struct type_info <T const*>
-{
-	using element_type = T;
-	constexpr static auto is_pointer = true;
-};
-
-template <typename T>
-struct type_info <T*&&>
-{
-	using element_type = T;
-	constexpr static auto is_pointer = true;
-};
-
-template <typename T>
-struct type_info <T*&>
-{
-	using element_type = T;
-	constexpr static auto is_pointer = true;
-};
+// static_assert (for_every_pointer_value <int, >);

@@ -1,5 +1,7 @@
 export module Delta.Concepts.Function;
 
+
+
 template <typename T>
 struct function_traits 
 {
@@ -20,6 +22,6 @@ struct function_traits <T(U...)>
 	constexpr static auto is_function = true;
 	using return_value = T;
 	constexpr static auto params = sizeof...(U);
-	
+
 };
 

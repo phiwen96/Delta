@@ -7,7 +7,7 @@ module;
 export module Delta.Async.Write;
 
 import Delta.Async.Task;
-import Delta.Concepts.String;
+import Delta.Concepts;
 
 export namespace async
 {
@@ -43,7 +43,7 @@ export namespace async
 		{
 			.aio_fildes = fd,
 			.aio_buf = (void *)  & (*begin (src)),
-			.aio_nbytes = ((long) (end (src) - begin (src))) * sizeof (element_type <decltype (src)>),
+			.aio_nbytes = ((long) (end (src) - begin (src))) * sizeof (T),
 			.aio_sigevent = {.sigev_notify = SIGEV_THREAD},
 			.aio_offset = 0
 			// .aio_sigevent.sigev_notify_function = aio_handler

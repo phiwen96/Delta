@@ -4,7 +4,7 @@ module;
 export module Delta.Async.Out;
 
 import Delta.Async.Write;
-import Delta.Concepts.String;
+import Delta.Concepts;
 
 
 export namespace async

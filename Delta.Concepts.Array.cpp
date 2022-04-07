@@ -55,6 +55,6 @@ export constexpr auto length (Array auto const& range) noexcept -> auto
 	return range_traits <decltype (range)>::length;
 }
 
-static_assert (Array <int [10]>);
-static_assert (Array <int const [10]>);
-static_assert (Array <int const (&) [10]>);
+// static_assert (Array <int [10]>);
+// static_assert (Array <int const [10]>);
+// static_assert (Array <int const (&) [10]>);
