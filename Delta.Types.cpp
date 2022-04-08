@@ -1,8 +1,9 @@
 export module Delta.Types;
 
-export import :List;
+// export import :List;
 export import Delta.Types.Predicate;
-export import :AnyOf;
+export import Delta.Types.BinaryPredicate;
+export import Delta.Types.AnyOf;
 
 
 // export import Delta.Types.List;

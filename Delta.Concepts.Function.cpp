@@ -1,34 +1,12 @@
 export module Delta.Concepts.Function;
 
-import Delta.Concepts.Number.Signed;
+import :Traits;
 
-export template <typename T>
-concept FunctionTraits = requires ()
-{
-	typename T::return_value;
 
-	{T::params} -> Signed;
-};
-
-export template <typename T>
-struct function_traits_t;
 
 export template <typename T>
 concept Function = FunctionTraits <function_traits_t <T>>;
 
-export template <typename T>
-struct function_traits_t <T()>
-{
-	using return_value = T;
-	constexpr static auto params = 0;
-};
-
-export template <typename T, typename... U>
-struct function_traits_t <T(U...)>
-{
-	using return_value = T;
-	constexpr static auto params = sizeof...(U);
-};
 
 
 
