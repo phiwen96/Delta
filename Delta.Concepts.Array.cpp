@@ -3,19 +3,24 @@ export module Delta.Concepts.Array;
 import Delta.Concepts.Size;
 import Delta.Concepts.Range;
 
-export template <typename T, auto N>
-struct range_policies <T [N]>
-{
-	static constexpr auto begin (T (t) [N]) noexcept -> Iterator auto 
-	{
-		return t;
-	}
+// template <typename T, auto N>
+// struct range_policies <T [N]>
+// {
+// 	static constexpr auto begin (T (t) [N]) noexcept -> Iterator auto 
+// 	{
+// 		return t;
+// 	}
 
-	static constexpr auto end (T (t) [N]) noexcept -> Iterator auto 
-	{
-		return t + N;
-	}
-};
+// 	static constexpr auto end (T (t) [N]) noexcept -> Iterator auto 
+// 	{
+// 		return t + N;
+// 	}
+
+// 	static constexpr auto length (T (t) [N]) noexcept -> Size auto 
+// 	{
+// 		return N;
+// 	}
+// };
 
 export template <typename T, auto N>
 struct range_traits <T [N]>
@@ -24,7 +29,6 @@ struct range_traits <T [N]>
 	using iterator_type = T*; //return_type_of <>;
 	static constexpr auto is_array = true;
 	static constexpr auto is_bounded = true;
-	static constexpr auto length = N;
 };
 
 export template <typename T, auto N>
@@ -34,7 +38,6 @@ struct range_traits <T const [N]>
 	using iterator_type = T const*;
 	static constexpr auto is_array = true;
 	static constexpr auto is_bounded = true;
-	static constexpr auto length = N;
 };
 
 export template <typename T, auto N>
@@ -44,7 +47,6 @@ struct range_traits <T const (&) [N]>
 	using iterator_type = T const*;
 	static constexpr auto is_array = true;
 	static constexpr auto is_bounded = true;
-	static constexpr auto length = N;
 };
 
 export template <typename T>

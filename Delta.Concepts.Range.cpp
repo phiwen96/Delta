@@ -25,12 +25,12 @@ export import Delta.Concepts.Range.Traits;
 
 
 export template <typename T>
-concept Range = 
-requires (T& t)
-{
-	{begin (t)} noexcept -> Iterator;
-	{end (t)} noexcept -> Iterator;
-};
+concept Range = RangeTraits <range_traits <T>>;
+// requires (T& t)
+// {
+// 	{begin (t)} noexcept -> Iterator;
+// 	{end (t)} noexcept -> Iterator;
+// };
 
 // export template <>
 
