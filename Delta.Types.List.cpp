@@ -1,4 +1,4 @@
-export module Delta.Types.List;
+export module Delta.Types:List;
 
 // import Delta.Types.List.Traits;
 
