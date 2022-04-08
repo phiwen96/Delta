@@ -10,16 +10,16 @@ using first = T;
 
 
 
-constexpr auto run (AnyOf <[]<typename T, typename U>{return Same <T, U>;}, int, char> auto yay)
-{
+// constexpr auto run (AnyOf <[]<typename U>{return Same <U, int>;}, int, char> auto yay)
+// {
 
-}
+// }
 
 
 auto main (int, char**) -> int 
 {
 
-	run (4);
+	// run (4);
 		
 	auto msg = "start program by hitting enter\n";
 	// async::out << msg;

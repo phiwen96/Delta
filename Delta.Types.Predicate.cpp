@@ -4,10 +4,10 @@ import Delta.Concepts.Same;
 
 /*
 	A type predicate is a lambda that, when called 
-	with types, should return a boolean value.
+	with a type, should return a boolean value.
 */
-export template <auto predicate, typename... T>
-concept TypePredicate = requires ()
+export template <typename T, typename U>
+concept TypePredicate = requires (T& t)
 {
-	{predicate.template operator() <T...> ()} -> Same <bool>;
+	{t.template operator() <U> ()} -> Same <bool>;
 };

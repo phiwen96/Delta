@@ -1,9 +1,9 @@
 export module Delta.Concepts.Char;
 
 import Delta.Concepts.Convertible;
+import Delta.Types;
 
-export template <template <typename...> typename T>
-using char_types = T <char, signed char, unsigned char, char16_t, char32_t, wchar_t>;
+using char_types = typelist <char, signed char, unsigned char, char16_t, char32_t, wchar_t>;
 
 // template <typename List, typename Element>
 // concept AnyOf = 
@@ -25,18 +25,21 @@ using char_types = T <char, signed char, unsigned char, char16_t, char32_t, wcha
 // static_assert (Bajs <bb>);
 
 
+
 export template <typename T>
-concept Char = 
-	Convertible <T, char> or 
-	Convertible <T, signed char> or 
-	Convertible <T, unsigned char> or 
-	Convertible <T, char16_t> or 
-	Convertible <T, char32_t> or 
-	Convertible <T, wchar_t>; 
+concept Char = AnyOf <[] <typename U> {return Convertible <T, U>;}, char_types>;
+	// Convertible <T, char> or 
+	// Convertible <T, signed char> or 
+	// Convertible <T, unsigned char> or 
+	// Convertible <T, char16_t> or 
+	// Convertible <T, char32_t> or 
+	// Convertible <T, wchar_t>; 
 
 	/*
 	concept Char = char_types | any_of (<Char> {});
 	*/
+
+static_assert (AnyOf <[] <typename A> {return Char <A>;}, char_types>);
 
 
 
