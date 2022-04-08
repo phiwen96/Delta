@@ -4,6 +4,7 @@ import Delta.Concepts.Char;
 import Delta.Concepts.Range;
 import Delta.Concepts.Iterator;
 import Delta.Concepts.Array;
+import Delta.Types;
 
 
 // export template <Iterator T>
@@ -23,6 +24,10 @@ import Delta.Concepts.Array;
 
 export template <typename T>
 concept String = Range <T> and Char <element_type <T>>;
+
+// export template <Char T = unsigned char>
+// using string_types = typelist <>;
+
 
 // static_assert (Iterator <char const *>);
 // static_assert (Char <element_type <char const *>>);

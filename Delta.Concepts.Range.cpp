@@ -24,8 +24,12 @@ export import Delta.Concepts.Range.Traits;
 
 
 
-export template <typename T>
-concept Range = RangeTraits <range_traits <T>>;
+export template <typename T, 
+	template <typename> typename traits = range_traits, 
+	template <typename> typename policies = range_policies>
+concept Range = 
+	RangeTraits <traits <T>> and 
+	RangePolicies <policies <T>>;
 // requires (T& t)
 // {
 // 	{begin (t)} noexcept -> Iterator;

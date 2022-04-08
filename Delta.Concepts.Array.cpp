@@ -2,6 +2,7 @@ export module Delta.Concepts.Array;
 
 import Delta.Concepts.Size;
 import Delta.Concepts.Range;
+import :Traits;
 
 // template <typename T, auto N>
 // struct range_policies <T [N]>

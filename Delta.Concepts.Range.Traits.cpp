@@ -8,6 +8,7 @@ import Delta.Concepts.Iterator;
 export template <typename T>
 concept RangeTraits = requires ()
 {
+
 	// typename T::element_type;
 	requires IteratorTraits <typename T::iterator_traits>;
 	// requires Iterator <typename T::iterator_type>;
