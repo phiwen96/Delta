@@ -39,7 +39,7 @@ concept Char = AnyOf <[] <typename U> {return Convertible <T, U>;}, char_types>;
 	concept Char = char_types | any_of (<Char> {});
 	*/
 
-static_assert (AnyOf <[] <typename A> {return Char <A>;}, char_types>);
+static_assert (AllOf <[] <typename T> {return Char <T>;}, char_types>);
 
 
 
