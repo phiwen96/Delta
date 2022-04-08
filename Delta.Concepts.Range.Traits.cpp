@@ -1,4 +1,4 @@
-export module Delta.Concepts.Range.Traits;
+export module Delta.Concepts.Range:Traits;
 
 import Delta.Concepts.Bool;
 import Delta.Concepts.Size;
