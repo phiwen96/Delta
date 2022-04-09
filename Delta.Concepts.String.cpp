@@ -1,7 +1,7 @@
 export module Delta.Concepts.String;
 
 import Delta.Concepts.Char;
-import Delta.Concepts.Range;
+// import Delta.Concepts.Range;
 import Delta.Concepts.Iterator;
 import Delta.Concepts.Array;
 import Delta.Types;
@@ -23,7 +23,7 @@ import Delta.Types;
 // };
 
 export template <typename T>
-concept String = Range <T> and Char <element_type <T>>;
+concept String = true; //Range <T> and Char <element_type <T>>;
 
 // export template <Char T = unsigned char>
 // using string_types = typelist <>;

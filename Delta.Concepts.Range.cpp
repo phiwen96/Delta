@@ -8,13 +8,13 @@ export module Delta.Concepts.Range;
 // import Delta.Mimic;
 // export import Delta.Concepts.Array;
 export import Delta.Concepts.Iterator;
-export import Delta.Concepts.Range.Begin;
-export import Delta.Concepts.Range.End;
-export import Delta.Concepts.Range.Policies;
 export import Delta.Concepts.Range.Traits;
+// export import Delta.Concepts.Range.End;
+// import :Policies;
+// import :Traits;
 
 // export import Delta.Concepts.Range.Contiguous;
-
+		
 // export template <typename T>
 // requires Array <T>
 // struct range_traits <T>// : array_traits <T>
@@ -24,13 +24,22 @@ export import Delta.Concepts.Range.Traits;
 
 
 
-export template <typename T, template <typename> typename traits = range_traits>
-concept Range = RangeTraits <traits <T>>;
+export template <typename T>
+concept Range = RangeTraits <range_traits <T>>;
 
-
-import :End;
 export template <Range T>
-constexpr auto end (T& range) noexcept -> Iterator auto;
+constexpr auto begin (T& range) noexcept -> Iterator auto 
+{
+	return range_traits <T>::begin (range);
+}
+
+
+export template <Range T>
+constexpr auto end (T& range) noexcept -> Iterator auto 
+{
+	return range_traits <T>::end (range);
+}
+
 
 
 // requires (T& t)
