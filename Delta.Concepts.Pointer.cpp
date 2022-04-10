@@ -1,12 +1,12 @@
 export module Delta.Concepts.Pointer;
 import Delta.Types;
-import :Traits;
+export import :Traits;
 
 export template <typename T>
-concept Pointer = PointerTraits <pointer_traits <T>>;
+concept Pointer = PointerTraits <pointer_traits_t <T>>;
 
-export template <Pointer T>
-using element_type = typename pointer_traits <T>::element_type;
+// export template <Pointer T>
+// using element_type = typename pointer_traits_t <T>::element_type;
 
 
 

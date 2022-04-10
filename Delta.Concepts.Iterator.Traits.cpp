@@ -7,19 +7,27 @@ export import Delta.Concepts.Iterator.Traits.Sentinel;
 export template <typename T>
 concept IteratorTraits = requires()
 {
+	typename T::iterator_type;
 	typename T::element_type;
-	typename T::sentinel_traits;
+	// typename T::sentinel_traits;
 };
 
 export template <typename... T>
-struct iterator_traits_t ;
+struct iterator_traits_t;
+
+export template <typename iteratorType, typename elementType>
+struct iterator_traits_t <iteratorType, elementType>
+{
+	using iterator_type = iteratorType;
+	using element_type = elementType;
+};
+
 
 export template <Pointer T>
-struct iterator_traits_t <T>
-{
-	using iterator_type = T;
-	using element_type = 
-};
+struct iterator_traits_t <T> : iterator_traits_t <typename pointer_traits_t <T>::iterator_type, typename pointer_traits_t <T>::element_type> {};
+
+
+
 
 // export template <typename T>
 // struct iterator_traits_t <T *>

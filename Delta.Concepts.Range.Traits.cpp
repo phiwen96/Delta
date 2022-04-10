@@ -8,8 +8,10 @@ import Delta.Concepts.Iterator;
 export template <typename T>
 concept RangeTraits = requires ()
 {
-
-	// typename T::element_type;
+	// {T::begin (r)} noexcept -> Iterator;
+	// {T::end (r)} noexcept -> Iterator;
+	typename T::range_type;
+	
 	requires IteratorTraits <typename T::iterator_traits>;
 	// requires Iterator <typename T::iterator_type>;
 	
@@ -25,15 +27,18 @@ concept RangeTraits = requires ()
 export template <typename... T>
 struct range_traits_t;
 
-export template <IteratorTraits T>
-struct range_traits_t <T>
+export template <typename rangeType, IteratorTraits iteratorTraits>
+struct range_traits_t <rangeType, iteratorTraits>
 {
-	using iterator_traits = T;
+	using range_type = rangeType;
+	using iterator_traits = iteratorTraits;
 };
 
-export template <typename T>
-requires RangeTraits <range_traits_t <T>>
-using element_type = typename range_traits_t <T>::element_type;
+
+
+// export template <typename T>
+// requires RangeTraits <range_traits_t <T>>
+// using element_type = typename range_traits_t <T>::element_type;
 
 // export template <Iterator T>
 // requires (Sentinel <T>)

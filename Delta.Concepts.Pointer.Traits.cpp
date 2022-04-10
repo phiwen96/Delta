@@ -1,8 +1,9 @@
-module Delta.Concepts.Pointer:Traits;
+export module Delta.Concepts.Pointer:Traits;
 
 export template <typename T>
 concept PointerTraits =  requires () 
 {
+	typename T::pointer_type;
 	typename T::element_type;
 };
 
@@ -17,44 +18,23 @@ struct pointer_traits_t <pointerType, elementType>
 };
 
 export template <typename T>
-struct pointer_traits_t <T*>
-{
-	using element_type = T;
-};
+struct pointer_traits_t <T*> : pointer_traits_t <T*, T> {};
 
 export template <typename T>
-struct pointer_traits_t <T const *>
-{
-	using element_type = T;
-};
+struct pointer_traits_t <T const *> : pointer_traits_t <T const *, T> {};
 
 export template <typename T>
-struct pointer_traits_t <T const * &>
-{
-	using element_type = T;
-};
+struct pointer_traits_t <T const * &> : pointer_traits_t <T const * &, T> {};
 
 export template <typename T>
-struct pointer_traits_t <T * const>
-{
-	using element_type = T;
-};
+struct pointer_traits_t <T * const> : pointer_traits_t <T * const, T> {};
 
 export template <typename T>
-struct pointer_traits_t <T const * const>
-{
-	using element_type = T;
-};
+struct pointer_traits_t <T const * const> : pointer_traits_t <T const * const, T> {};
 
 export template <typename T>
-struct pointer_traits_t <T*&&>
-{
-	using element_type = T;
-};
+struct pointer_traits_t <T*&&> : pointer_traits_t <T*&&, T> {};
 
-template <typename T>
-struct pointer_traits_t <T*&>
-{
-	using element_type = T;
-};
+export template <typename T>
+struct pointer_traits_t <T*&> : pointer_traits_t <T*&, T> {};
 
