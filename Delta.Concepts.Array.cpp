@@ -1,8 +1,9 @@
 export module Delta.Concepts.Array;
 
 import Delta.Concepts.Size;
+import Delta.Types;
 // import Delta.Concepts.Range;
-import :Traits;
+export import :Traits;
 
 // template <typename T, auto N>
 // struct range_policies <T [N]>
@@ -23,35 +24,13 @@ import :Traits;
 // 	}
 // };
 
-// export template <typename T, auto N>
-// struct range_traits <T [N]>
-// {
-// 	using element_type = T;
-// 	using iterator_type = T*; //return_type_of <>;
-// 	static constexpr auto is_array = true;
-// 	static constexpr auto is_bounded = true;
-// };
-
-// export template <typename T, auto N>
-// struct range_traits <T const [N]>
-// {
-// 	using element_type = T;
-// 	using iterator_type = T const*;
-// 	static constexpr auto is_array = true;
-// 	static constexpr auto is_bounded = true;
-// };
-
-// export template <typename T, auto N>
-// struct range_traits <T const (&) [N]>
-// {
-// 	using element_type = T;
-// 	using iterator_type = T const*;
-// 	static constexpr auto is_array = true;
-// 	static constexpr auto is_bounded = true;
-// };
-
 export template <typename T>
-concept Array = true; //Range <T> and range_traits<T>::is_array;
+concept Array = ArrayTraits <array_traits_t <T>>; //Range <T> and range_traits<T>::is_array;
+
+export template <typename T, auto N>
+using array_types = typelist <T [N], T (&) [N], T const (&) [N]>;
+static_assert (Array <int[10]>);
+// static_assert (AllOf <[] <typename T> {return Array <T>;}, array_types <int, 10>>);
 
 // export constexpr auto length (Array auto const& range) noexcept -> auto 
 // {

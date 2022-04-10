@@ -22,27 +22,33 @@ concept RangeTraits = requires ()
 	// };
 };
 
-export template <typename T>
-struct range_traits;
+export template <typename... T>
+struct range_traits_t;
+
+export template <IteratorTraits T>
+struct range_traits_t <T>
+{
+	using iterator_traits = T;
+};
 
 export template <typename T>
-requires RangeTraits <range_traits <T>>
-using element_type = typename range_traits <T>::element_type;
+requires RangeTraits <range_traits_t <T>>
+using element_type = typename range_traits_t <T>::element_type;
 
 // export template <Iterator T>
 // requires (Sentinel <T>)
 // struct range_traits <>
 
 template <typename T>
-requires RangeTraits <range_traits <T>>
+requires RangeTraits <range_traits_t <T>>
 constexpr auto begin (T& range) noexcept -> Iterator auto 
 {
-	return range_traits <T>::begin (range);
+	return range_traits_t <T>::begin (range);
 }
 
 template <typename T>
-requires RangeTraits <range_traits <T>>
+requires RangeTraits <range_traits_t <T>>
 constexpr auto end (T& range) noexcept -> Iterator auto 
 {
-	return range_traits <T>::end (range);
+	return range_traits_t <T>::end (range);
 }
