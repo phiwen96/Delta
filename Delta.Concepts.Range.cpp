@@ -1,5 +1,5 @@
 export module Delta.Concepts.Range;
-
+export import Delta.Concepts.Range.Element;
 export import Delta.Concepts.Iterator;
 // export import Delta.Concepts.Range.Traits;
 export import Delta.Concepts.Range.Policies;

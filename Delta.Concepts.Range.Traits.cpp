@@ -3,14 +3,14 @@ export module Delta.Concepts.Range.Traits;
 import Delta.Concepts.Bool;
 import Delta.Concepts.Size;
 import Delta.Concepts.Same;
-
 import Delta.Concepts.Iterator;
+import Delta.Concepts.Range.Policies;
 
 export template <typename T>
 concept RangeTraits = requires (typename T::range_type& range)
 {
-	{T::begin (range)} noexcept -> Iterator;
-	{T::end (range)} noexcept -> Iterator;
+	requires IteratorTraits <typename T::iterator_traits>;
+	
 
 	// requires Same <typename T::iterator_traits::iterator_type, decltype (T::begin (range))>;
 
