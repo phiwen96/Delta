@@ -4,14 +4,18 @@ import Delta.Concepts.Function;
 
 import Delta.Concepts.Iterator;
 import Delta.Concepts.Size;
-
+/*
+	begin + end 
+		or 
+	begin + length
+*/
 export template <typename T>
 concept RangePolicies = requires (typename function_traits_t <decltype (T::begin)>::params::get <0> range)
 {
 	requires requires ()
 	{
 		{T::end (range)} noexcept -> Iterator;
-		
+
 	} or requires ()
 	{
 		{T::length (range)} noexcept -> Size;
