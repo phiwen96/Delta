@@ -5,11 +5,12 @@ import Delta.Concepts.Function;
 import Delta.Concepts.Iterator;
 
 export template <typename T>
-concept RangePolicies = requires ()
+concept RangePolicies = requires (typename function_traits_t <decltype (T::begin)>::params::get <0> range)
 {
-	// requires Function <&T::begin>;
-	//  function_traits_t <&T::begin>::params::get <0>;
-	true;
+	{T::begin (range)} noexcept -> Iterator;
+	{T::end (range)} noexcept -> Iterator;
+	
+	// true;
 	// {T::begin (t)} noexcept -> Iterator;
 	// {T::end (t)} noexcept -> Iterator;
 };
