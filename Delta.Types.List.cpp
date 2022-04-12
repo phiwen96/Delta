@@ -33,12 +33,12 @@ export template <typename... T>
 struct typelist;
 
 export template <typename T, typename... U>
-struct typelist <T, U...>
+struct typelist <T, U...> : numbered_typelist <0, T, U...>
 {
 	template <template <typename...> typename V>
 	using transform = V <T, U...>;
 
-	using params = numbered_typelist <0, T, U...>;
+	// using params = numbered_typelist <0, T, U...>;
 };
 
 // static_assert ()
