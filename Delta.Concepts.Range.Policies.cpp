@@ -3,12 +3,20 @@ export module Delta.Concepts.Range.Policies;
 import Delta.Concepts.Function;
 
 import Delta.Concepts.Iterator;
+import Delta.Concepts.Size;
 
 export template <typename T>
 concept RangePolicies = requires (typename function_traits_t <decltype (T::begin)>::params::get <0> range)
 {
-	{T::begin (range)} noexcept -> Iterator;
-	{T::end (range)} noexcept -> Iterator;
+	requires requires ()
+	{
+		{T::end (range)} noexcept -> Iterator;
+		
+	} or requires ()
+	{
+		{T::length (range)} noexcept -> Size;
+	};
+	
 	
 	// true;
 	// {T::begin (t)} noexcept -> Iterator;
@@ -36,5 +44,12 @@ template <typename T>
 requires RangePolicies <range_policies_t <T>>
 constexpr auto end (T range) noexcept -> Iterator auto 
 {
-	return range_policies_t <T>::end (range);
+	if constexpr (not requires {typename T::end;})
+	{
+		return range_policies_t <T>::begin (range) + range_policies_t <T>::length (range);
+
+	} else 
+	{
+		return range_policies_t <T>::end (range);
+	}
 }

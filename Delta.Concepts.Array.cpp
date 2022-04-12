@@ -5,8 +5,8 @@ import Delta.Types;
 
 export import :Traits;
 
-export template <typename T>
-concept Array = ArrayTraits <array_traits_t <T>>;
+// export template <typename T>
+// concept Array = ArrayTraits <array_traits_t <T>>;
 // ArrayTraits <array_traits_t <range_traits_t <T>>>;
 
 export template <typename T, auto N>
