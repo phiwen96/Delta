@@ -13,7 +13,6 @@ export import Delta.Concepts.Iterator.Bidirectional;
 export import Delta.Concepts.Iterator.RandomAccess;
 export import Delta.Concepts.Iterator.Contiguous;
 
-
 export template <typename T>
 concept Iterator =
 	InputIterator<T> or

@@ -1,8 +1,9 @@
-module Delta.Concepts.Function:Traits;
+export module Delta.Concepts.Function.Traits;
 
+export import Delta.Concepts.Function.Traits.Params;
 import Delta.Concepts.Number.Signed;
 
-template <typename T>
+export template <typename T>
 concept FunctionTraits = requires ()
 {
 	typename T::return_value;
@@ -10,22 +11,24 @@ concept FunctionTraits = requires ()
 	{T::params} -> Signed;
 };
 
-template <typename T>
+export template <typename T>
 struct function_traits_t;
 
 
-template <typename T>
+export template <typename T>
 struct function_traits_t <T()>
 {
 	using return_value = T;
 	constexpr static auto params = 0;
 };
 
-template <typename T, typename... U>
+export template <typename T, typename... U>
 struct function_traits_t <T(U...)>
 {
 	using return_value = T;
 	constexpr static auto params = sizeof...(U);
+	// template <auto n>
+	// using param = 
 };
 
 

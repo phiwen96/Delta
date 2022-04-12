@@ -2,17 +2,23 @@ export module Delta.Concepts.Range.Traits;
 
 import Delta.Concepts.Bool;
 import Delta.Concepts.Size;
+import Delta.Concepts.Same;
 
 import Delta.Concepts.Iterator;
 
 export template <typename T>
-concept RangeTraits = requires ()
+concept RangeTraits = requires (typename T::range_type& range)
 {
+	{T::begin (range)} noexcept -> Iterator;
+	{T::end (range)} noexcept -> Iterator;
+
+	// requires Same <typename T::iterator_traits::iterator_type, decltype (T::begin (range))>;
+
 	// {T::begin (r)} noexcept -> Iterator;
 	// {T::end (r)} noexcept -> Iterator;
-	typename T::range_type;
 	
-	requires IteratorTraits <typename T::iterator_traits>;
+	// requires IteratorTraits <typename T::iterator_traits>;
+
 	// requires Iterator <typename T::iterator_type>;
 	
 	// {T::is_array} -> Bool;
@@ -24,6 +30,9 @@ concept RangeTraits = requires ()
 	// };
 };
 
+export template <typename T>
+concept HasRangeTraits = RangeTraits <typename T::range_traits>;
+
 export template <typename... T>
 struct range_traits_t;
 
@@ -34,26 +43,16 @@ struct range_traits_t <rangeType, iteratorTraits>
 	using iterator_traits = iteratorTraits;
 };
 
-
-
-// export template <typename T>
+// template <typename T>
 // requires RangeTraits <range_traits_t <T>>
-// using element_type = typename range_traits_t <T>::element_type;
+// constexpr auto begin (T range) noexcept -> Iterator auto 
+// {
+// 	return range_traits_t <T>::begin (range);
+// }
 
-// export template <Iterator T>
-// requires (Sentinel <T>)
-// struct range_traits <>
-
-template <typename T>
-requires RangeTraits <range_traits_t <T>>
-constexpr auto begin (T& range) noexcept -> Iterator auto 
-{
-	return range_traits_t <T>::begin (range);
-}
-
-template <typename T>
-requires RangeTraits <range_traits_t <T>>
-constexpr auto end (T& range) noexcept -> Iterator auto 
-{
-	return range_traits_t <T>::end (range);
-}
+// template <typename T>
+// requires RangeTraits <range_traits_t <T>>
+// constexpr auto end (T range) noexcept -> Iterator auto 
+// {
+// 	return range_traits_t <T>::end (range);
+// }
