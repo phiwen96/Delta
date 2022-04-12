@@ -1,21 +1,9 @@
 export module Delta.Concepts.Array:Traits;
 
-import Delta.Concepts.Range;
+// import Delta.Concepts.Range;
 // import Delta.Concepts.Iterator.Traits;
 
-export template <typename T, auto N>
-struct range_policies_t <T [N]> 
-{
-	constexpr static auto begin (T (range) [N]) noexcept -> Iterator auto
-	{
-		return range;
-	}
 
-	constexpr static auto length (T (range) [N]) noexcept -> Size auto
-	{
-		return N;
-	}
-};
 
 // template <typename T>
 // concept ArrayTraits = requires ()

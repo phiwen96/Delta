@@ -36,8 +36,23 @@ struct function_traits_t <T()>
 	constexpr static auto nr_of_params = 0;
 };
 
+export template <typename T>
+struct function_traits_t <T() noexcept>
+{
+	using return_value = T;
+	constexpr static auto nr_of_params = 0;
+};
+
 export template <typename T, typename... U>
 struct function_traits_t <T(U...)>
+{
+	using return_value = T;
+	constexpr static auto nr_of_params = sizeof...(U);
+	using params = typelist <U...>;
+};
+
+export template <typename T, typename... U>
+struct function_traits_t <T(U...) noexcept>
 {
 	using return_value = T;
 	constexpr static auto nr_of_params = sizeof...(U);
