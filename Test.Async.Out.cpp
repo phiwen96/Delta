@@ -3,22 +3,11 @@ import Delta;
 #include <iostream>
 #include <string>
 
-// using std;
-
-template <typename T, typename... U>
-using first = T;
-
-
-
-// constexpr auto run (AnyOf <[]<typename U>{return Same <U, int>;}, int, char> auto yay)
-// {
-
-// }
-
 
 auto main (int, char**) -> int 
 {
 
+	
 	// run (4);
 		
 	auto msg = "start program by hitting enter\n";

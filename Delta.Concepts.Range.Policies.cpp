@@ -7,6 +7,8 @@ import Delta.Concepts.Iterator;
 export template <typename T>
 concept RangePolicies = requires ()
 {
+	// requires Function <&T::begin>;
+	//  function_traits_t <&T::begin>::params::get <0>;
 	true;
 	// {T::begin (t)} noexcept -> Iterator;
 	// {T::end (t)} noexcept -> Iterator;
