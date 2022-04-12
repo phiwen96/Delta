@@ -1,5 +1,7 @@
 export module Delta.Concepts.Range.Policies;
 
+import Delta.Concepts.Function;
+
 import Delta.Concepts.Iterator;
 
 export template <typename T>

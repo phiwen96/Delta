@@ -27,8 +27,12 @@ struct function_traits_t <T(U...)>
 {
 	using return_value = T;
 	constexpr static auto params = sizeof...(U);
+	template <template <typename...> typename V>
+	using transform = V <U...>;
 	// template <auto n>
 	// using param = 
 };
+
+
 
 
