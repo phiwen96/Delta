@@ -5,6 +5,7 @@ import Delta.Concepts.Size;
 import Delta.Concepts.Same;
 import Delta.Concepts.Iterator;
 import Delta.Concepts.Range.Policies;
+import Delta.Concepts.Range.Element;
 
 export template <typename T>
 concept RangeTraits = requires (typename T::range_type& range)
