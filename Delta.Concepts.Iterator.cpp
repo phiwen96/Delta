@@ -55,5 +55,5 @@ constexpr auto sentinel_value = sentinel_value_traits_t <T>::value;
 // export template <Iterator T>
 // using element_type = decltype (*std::declval <T> ());// decltype (*mimic <T> ());
 
-
-static_assert (AllOf <[] <typename T> {return Iterator <T>;}, pointer_types <int>>);
+static_assert (Iterator <int*>);
+// static_assert (AllOf <[] <typename T> {return Iterator <T>;}, pointer_types <int>>);

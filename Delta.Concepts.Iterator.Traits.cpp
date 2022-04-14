@@ -3,6 +3,7 @@ module;
 export module Delta.Concepts.Iterator.Traits;
 
 // import Delta.Concepts.Pointer;
+import Delta.Concepts.Convertible;
 import Delta.Concepts.Iterator.ReadOnly;
 import Delta.Concepts.Iterator.WriteOnly;
 import Delta.Concepts.Iterator.StepForward;
@@ -20,7 +21,8 @@ enum struct iterator_tag
 export template <typename T>
 concept IteratorTraits = requires()
 {
-	requires Same <decltype (T::tag), iterator_tag>;
+	// requires Same <decltype (T::tag), iterator_tag>;
+	{T::tag} -> Convertible <iterator_tag>;
 	typename T::type;
 	typename T::element_type;
 	// typename T::sentinel_traits;
