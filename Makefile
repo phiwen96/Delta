@@ -1,4 +1,4 @@
-GCC=g++-12 -std=gnu++2a -fcoroutines -fmodules-ts -fconcepts-diagnostics-depth=2
+GCC=g++-12 -std=gnu++2a -fcoroutines -fmodules-ts -fconcepts-diagnostics-depth=1
 APP=main
 apps:= App.Server App.Client
 tests:= Test.Yolo Test.Async.Out
@@ -35,13 +35,13 @@ delta: Delta.Concepts.Convertible.cpp Delta.Concepts.Same.cpp Delta.Types.IfElse
 	$(GCC) -c Delta.Concepts.Function.Traits.cpp
 	$(GCC) -c Delta.Concepts.Function.cpp
 	$(GCC) -c Delta.Concepts.Char.cpp
-	$(GCC) -c Delta.Concepts.Iterator.Traits.Sentinel.cpp
-	$(GCC) -c Delta.Concepts.Iterator.Traits.cpp
 	$(GCC) -c Delta.Concepts.Iterator.ReadOnly.cpp
 	$(GCC) -c Delta.Concepts.Iterator.WriteOnly.cpp
 	$(GCC) -c Delta.Concepts.Iterator.StepForward.cpp
 	$(GCC) -c Delta.Concepts.Iterator.StepBackward.cpp
 	$(GCC) -c Delta.Concepts.Iterator.Jump.cpp
+	$(GCC) -c Delta.Concepts.Iterator.Traits.Sentinel.cpp
+	$(GCC) -c Delta.Concepts.Iterator.Traits.cpp
 	$(GCC) -c Delta.Concepts.Iterator.Input.cpp
 	$(GCC) -c Delta.Concepts.Iterator.Output.cpp
 	$(GCC) -c Delta.Concepts.Iterator.Forward.cpp
@@ -50,7 +50,7 @@ delta: Delta.Concepts.Convertible.cpp Delta.Concepts.Same.cpp Delta.Types.IfElse
 	$(GCC) -c Delta.Concepts.Iterator.Contiguous.cpp
 	$(GCC) -c Delta.Concepts.Iterator.cpp
 	$(GCC) -c Delta.Concepts.Range.Element.cpp
-	$(GCC) -c Delta.Concepts.Range.Element.cpp Delta.Concepts.Range.Policies.cpp
+	$(GCC) -c Delta.Concepts.Range.Policies.cpp
 	$(GCC) -c Delta.Concepts.Range.Traits.cpp
 	$(GCC) -c Delta.Concepts.Range.Contiguous.cpp
 	$(GCC) -c Delta.Concepts.Range.cpp

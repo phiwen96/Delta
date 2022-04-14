@@ -10,7 +10,7 @@ import Delta.Concepts.Size;
 	begin + length
 */
 export template <typename T>
-concept RangePolicies = requires (typename function_traits_t <decltype (T::begin)>::params::get <0> range)
+concept RangePolicies = requires (typename function_traits_t <decltype (T::begin)>::params::get <0>& range)
 {
 	requires requires 
 	{
@@ -57,3 +57,27 @@ constexpr auto end (T range) noexcept -> Iterator auto
 		return range_policies_t <T>::end (range);
 	}
 }
+
+
+
+export template <Iterator T>
+requires HasSentinelValue <T>
+struct range_policies_t <T>
+{
+	constexpr static auto begin (T iter) noexcept -> Iterator auto
+	{
+		return iter;
+	}
+
+	constexpr static auto end (T iter) noexcept -> Size auto
+	{
+		auto i = iter;
+
+		while (i != sentinel_value <T>)
+		{
+			++i;
+		}
+
+		return i;
+	}
+};	

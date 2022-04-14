@@ -3,7 +3,9 @@ module;
 export module Delta.Concepts.Iterator;
 
 import Delta.Mimic;
+import Delta.Types;
 import Delta.Concepts.Convertible;
+import Delta.Concepts.Pointer;
 export import Delta.Concepts.Iterator.Traits;
 // export import Delta.Concepts.Iterator.Sentinel;
 export import Delta.Concepts.Iterator.Input;
@@ -14,29 +16,24 @@ export import Delta.Concepts.Iterator.RandomAccess;
 export import Delta.Concepts.Iterator.Contiguous;
 
 export template <typename T>
-concept Iterator =
-	InputIterator<T> or
-	OutputIterator<T> or 
-	ForwardIterator<T> or 
-	BidirectionalIterator<T> or 
-	RandomAccessIterator<T>;
+concept Iterator = IteratorTraits <iterator_traits_t <T>>;
+	// InputIterator<T> or
+	// OutputIterator<T> or 
+	// ForwardIterator<T> or 
+	// BidirectionalIterator<T> or 
+	// RandomAccessIterator<T>;
 	// or ContiguousIterator<T>;
 
 export template <typename T>
-concept Sentinel = 
-	Iterator <T> and 
-	sentinel_traits <T>::has_sentinel == true and 
-	requires 
-	{
-		sentinel_traits <T>::value;
-	};
+concept HasSentinelValue = Iterator <T> and SentinelValueTraits <sentinel_value_traits_t <T>>;
+	
+	
 
-template <typename T>
-concept HasValue = Sentinel <T> and sentinel_traits<T>::has_sentinel and requires {sentinel_traits<T>::value;};
+// template <typename T>
+// concept HasValue = Sentinel <T> and sentinel_traits<T>::has_sentinel and requires {sentinel_traits<T>::value;};
 
-export template <Sentinel T>
-requires HasValue <T>
-constexpr auto sentinel_value = sentinel_traits <T>::value;
+export template <HasSentinelValue T>
+constexpr auto sentinel_value = sentinel_value_traits_t <T>::value;
 
 // export template <typename T>
 // struct sentinel_value_t;
@@ -53,7 +50,10 @@ constexpr auto sentinel_value = sentinel_traits <T>::value;
 // };
 
 
-static_assert (Iterator <char const*>);
+// static_assert (Iterator <char const*>);
 
 // export template <Iterator T>
 // using element_type = decltype (*std::declval <T> ());// decltype (*mimic <T> ());
+
+
+static_assert (AllOf <[] <typename T> {return Iterator <T>;}, pointer_types <int>>);
