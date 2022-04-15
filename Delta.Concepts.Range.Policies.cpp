@@ -10,8 +10,10 @@ import Delta.Concepts.Size;
 	begin + length
 */
 export template <typename T>
-concept RangePolicies = requires (typename function_traits_t <decltype (T::begin)>::params::get <0>& range)
+concept RangePolicies = requires (fun_param_type <decltype (T::begin), 0>& range)
 {
+	{T::begin (range)} noexcept -> Iterator;
+
 	requires requires 
 	{
 		{T::end (range)} noexcept -> Iterator;
@@ -27,6 +29,12 @@ concept RangePolicies = requires (typename function_traits_t <decltype (T::begin
 	// {T::end (t)} noexcept -> Iterator;
 };
 
+export template <typename... T>
+struct range_policies_t;
+
+export template <typename T>
+concept HasRangePolicies = RangePolicies <range_policies_t <T>>;
+
 // export template <typename T>
 // requires RangePolicies <typename T::range_policies>
 // struct get_range_policies_t <T>
@@ -34,17 +42,37 @@ concept RangePolicies = requires (typename function_traits_t <decltype (T::begin
 
 // };
  
-export template <typename... T>
-struct range_policies_t;
 
-template <typename T>
+export template <SentinelValue T>
+struct range_policies_t <T>
+{
+	constexpr static auto begin (T t) noexcept -> Iterator auto 
+	{
+		return t;
+	}
+
+	constexpr static auto end (T t) noexcept -> Iterator auto 
+	{
+		auto i = t;
+
+		while (i != sentinel_value <T>)
+		{
+			++i;
+		}
+		
+		return i;
+	}
+};
+
+
+export template <typename T>
 requires RangePolicies <range_policies_t <T>>
 constexpr auto begin (T range) noexcept -> Iterator auto 
 {
 	return range_policies_t <T>::begin (range);
 }
 
-template <typename T>
+export template <typename T>
 requires RangePolicies <range_policies_t <T>>
 constexpr auto end (T range) noexcept -> Iterator auto 
 {
@@ -57,27 +85,3 @@ constexpr auto end (T range) noexcept -> Iterator auto
 		return range_policies_t <T>::end (range);
 	}
 }
-
-
-
-export template <Iterator T>
-requires HasSentinelValue <T>
-struct range_policies_t <T>
-{
-	constexpr static auto begin (T iter) noexcept -> Iterator auto
-	{
-		return iter;
-	}
-
-	constexpr static auto end (T iter) noexcept -> Size auto
-	{
-		auto i = iter;
-
-		while (i != sentinel_value <T>)
-		{
-			++i;
-		}
-
-		return i;
-	}
-};	

@@ -37,4 +37,5 @@ using array_types = typelist <T [N], T (&) [N], T const (&) [N]>;
 
 
 // static_assert (Range <int [10]>);
-// static_assert (AllOf <[] <typename T> {return Range <T>;}, array_types <int, 10>>);
+static_assert (AllOf <[] <typename T> {return Range <T>;}, array_types <int, 10>>);
+// static_assert (ContiguousRange <T>);

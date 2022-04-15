@@ -25,14 +25,18 @@ concept Iterator = IteratorTraits <iterator_traits_t <T>>;
 	// or ContiguousIterator<T>;
 
 export template <typename T>
-concept HasSentinelValue = Iterator <T> and SentinelValueTraits <sentinel_value_traits_t <T>>;
+concept SentinelValue = Iterator <T> and SentinelValueTraits <sentinel_value_traits_t <T>>;
 	
+export template <typename T>
+requires requires {typename iterator_type_t <T>::type;}
+using iterator_type = typename iterator_type_t <T>::type;
+
 	
 
 // template <typename T>
 // concept HasValue = Sentinel <T> and sentinel_traits<T>::has_sentinel and requires {sentinel_traits<T>::value;};
 
-export template <HasSentinelValue T>
+export template <SentinelValue T>
 constexpr auto sentinel_value = sentinel_value_traits_t <T>::value;
 
 // export template <typename T>

@@ -6,42 +6,35 @@ import Delta.Concepts.Same;
 import Delta.Concepts.Iterator;
 import Delta.Concepts.Range.Policies;
 import Delta.Concepts.Range.Element;
+import Delta.Concepts.Function;
+
+
+template <typename T>
+requires RangePolicies <range_policies_t <T>>
+using begin_param_type = fun_param_type <decltype (range_policies_t <T>::begin), 0>;
+
+template <typename T>
+requires RangePolicies <range_policies_t <T>>
+using begin_ret_type = fun_ret_type <decltype (range_policies_t <T>::begin)>;
+
 
 export template <typename T>
-concept RangeTraits = requires (typename T::range_type& range)
-{
-	requires IteratorTraits <typename T::iterator_traits>;
-	
-
-	// requires Same <typename T::iterator_traits::iterator_type, decltype (T::begin (range))>;
-
-	// {T::begin (r)} noexcept -> Iterator;
-	// {T::end (r)} noexcept -> Iterator;
-	
-	// requires IteratorTraits <typename T::iterator_traits>;
-
-	// requires Iterator <typename T::iterator_type>;
-	
-	// {T::is_array} -> Bool;
-	// {T::is_bounded} -> Bool;
-
-	// requires not T::is_bounded or requires 
-	// {
-	// 	{T::length} -> Size;
-	// };
-};
-
-export template <typename T>
-concept HasRangeTraits = RangeTraits <typename T::range_traits>;
+concept RangeTraits = 
+	Same <begin_param_type <T>, typename T::range_type> and
+	Same <begin_ret_type <T>, typename T::iterator_type>;
 
 export template <typename... T>
 struct range_traits_t;
 
-export template <typename rangeType, IteratorTraits iteratorTraits>
-struct range_traits_t <rangeType, iteratorTraits>
+export template <typename T>
+concept HasRangeTraits = RangeTraits <range_traits_t <T>>;
+
+export template <typename T>
+requires RangePolicies <range_policies_t <T>>
+struct range_traits_t <T>
 {
-	using range_type = rangeType;
-	using iterator_traits = iteratorTraits;
+	using range_type = fun_param_type <decltype (T::begin), 0>;
+	using iterator_type = fun_ret_type <decltype (T::begin)>;
 };
 
 // template <typename T>

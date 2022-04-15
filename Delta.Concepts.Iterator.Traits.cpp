@@ -2,7 +2,7 @@ module;
 #include <utility>
 export module Delta.Concepts.Iterator.Traits;
 
-// import Delta.Concepts.Pointer;
+import Delta.Concepts.Pointer;
 import Delta.Concepts.Convertible;
 import Delta.Concepts.Iterator.ReadOnly;
 import Delta.Concepts.Iterator.WriteOnly;
@@ -32,6 +32,25 @@ export template <typename... T>
 struct iterator_traits_t;
 
 export template <typename T>
+concept HasDefinedIteratorTraits = IteratorTraits <iterator_traits_t <T>>;
+
+// export template <itera T>
+// struct iterator_traits_t <T>
+// {
+// 	constexpr static auto tag = iterator_tag::INPUT;
+// 	using type = T;
+// 	using element_type = decltype (*std::declval <T> ());//typename pointer_traits_t <T>::element_type;
+// };
+
+// export template <Pointer T>
+// struct iterator_traits_t <T>
+// {
+// 	constexpr static auto tag = iterator_tag::CONTIGUOUS;
+// 	using type = typename pointer_traits_t <T>::pointer_type;
+// 	using element_type = typename pointer_traits_t <T>::element_type;
+// };
+
+export template <typename T>
 requires (ReadOnly <T> and StepForward <T>)
 struct iterator_traits_t <T>
 {
@@ -58,6 +77,11 @@ struct iterator_traits_t <T>
 	using element_type = decltype (*std::declval <T> ());//typename pointer_traits_t <T>::element_type;
 };
 
+// constexpr auto random_access_if_not (iterator_tag t) noexcept -> auto 
+// {
+// 	if constexpr (t == )
+// }
+
 export template <typename T>
 requires (ReadOnly <T> and
 	WriteOnly <T> and 
@@ -69,6 +93,15 @@ struct iterator_traits_t <T>
 	constexpr static auto tag = iterator_tag::RANDOM_ACCESS;
 	using type = T;
 	using element_type = decltype (*std::declval <T> ());//typename pointer_traits_t <T>::element_type;
+};
+
+export template <typename...>
+struct iterator_type_t;
+
+export template <HasDefinedIteratorTraits T>
+struct iterator_type_t <T>
+{
+	using type = typename iterator_traits_t <T>::type;
 };
 
 // export template <typename iteratorType, typename elementType>
