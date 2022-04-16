@@ -9,44 +9,41 @@ import Delta.Concepts.Range.Element;
 import Delta.Concepts.Function;
 
 
-template <typename T>
-requires RangePolicies <range_policies_t <T>>
+template <HasDefinedRangePolicies T>
 using begin_param_type = fun_param_type <decltype (range_policies_t <T>::begin), 0>;
 
-template <typename T>
-requires RangePolicies <range_policies_t <T>>
+template <HasDefinedRangePolicies T>
 using begin_ret_type = fun_ret_type <decltype (range_policies_t <T>::begin)>;
 
 
 export template <typename T>
 concept RangeTraits = 
-	Same <begin_param_type <T>, typename T::range_type> and
+	HasDefinedRangePolicies <T> and 
+	Same <begin_param_type <T>, typename T::type> and
 	Same <begin_ret_type <T>, typename T::iterator_type>;
 
 export template <typename... T>
 struct range_traits_t;
 
 export template <typename T>
-concept HasRangeTraits = RangeTraits <range_traits_t <T>>;
+concept HasDefinedRangeTraits = RangeTraits <range_traits_t <T>>;
 
-export template <typename T>
-requires RangePolicies <range_policies_t <T>>
+export template <HasDefinedRangePolicies T>
 struct range_traits_t <T>
 {
-	using range_type = fun_param_type <decltype (T::begin), 0>;
+	using type = fun_param_type <decltype (T::begin), 0>;
 	using iterator_type = fun_ret_type <decltype (T::begin)>;
 };
 
-// template <typename T>
-// requires RangeTraits <range_traits_t <T>>
-// constexpr auto begin (T range) noexcept -> Iterator auto 
-// {
-// 	return range_traits_t <T>::begin (range);
-// }
+export template <HasDefinedRangeTraits T>
+struct element_type_t <T> : element_type_t <typename range_traits_t <T>::iterator_type>
+{
+	
+};
 
-// template <typename T>
-// requires RangeTraits <range_traits_t <T>>
-// constexpr auto end (T range) noexcept -> Iterator auto 
-// {
-// 	return range_traits_t <T>::end (range);
-// }
+export template <HasDefinedRangeTraits T>
+struct iterator_type_t <T> : iterator_type_t <typename range_traits_t <T>::iterator_type>
+{
+	
+};
+

@@ -1,35 +1,35 @@
-module;
-#include <utility>
+// module;
+// #include <utility>
 export module Delta.Concepts.Iterator;
 
-import Delta.Mimic;
-import Delta.Types;
-import Delta.Concepts.Convertible;
-import Delta.Concepts.Pointer;
+// import Delta.Mimic;
+// import Delta.Types;
+// import Delta.Concepts.Convertible;
+// export import Delta.Concepts.Pointer;
+import Delta.Concepts.Char;
 export import Delta.Concepts.Iterator.Traits;
 // export import Delta.Concepts.Iterator.Sentinel;
-export import Delta.Concepts.Iterator.Input;
-export import Delta.Concepts.Iterator.Output;
-export import Delta.Concepts.Iterator.Forward;
-export import Delta.Concepts.Iterator.Bidirectional;
-export import Delta.Concepts.Iterator.RandomAccess;
-export import Delta.Concepts.Iterator.Contiguous;
+// export import Delta.Concepts.Iterator.Input;
+// export import Delta.Concepts.Iterator.Output;
+// export import Delta.Concepts.Iterator.Forward;
+// export import Delta.Concepts.Iterator.Bidirectional;
+// export import Delta.Concepts.Iterator.RandomAccess;
+// export import Delta.Concepts.Iterator.Contiguous;
 
 export template <typename T>
-concept Iterator = IteratorTraits <iterator_traits_t <T>>;
-	// InputIterator<T> or
-	// OutputIterator<T> or 
-	// ForwardIterator<T> or 
-	// BidirectionalIterator<T> or 
-	// RandomAccessIterator<T>;
-	// or ContiguousIterator<T>;
+concept Iterator = HasDefinedIteratorTraits <T>;
 
-export template <typename T>
-concept SentinelValue = Iterator <T> and SentinelValueTraits <sentinel_value_traits_t <T>>;
-	
 export template <typename T>
 requires requires {typename iterator_type_t <T>::type;}
 using iterator_type = typename iterator_type_t <T>::type;
+
+export template <typename T>
+concept SentinelValue = Iterator <T> and HasDefinedSentinelValueTraits <T>;
+
+export template <typename T>
+concept Sentinel = SentinelValue <T>;
+	
+
 
 	
 
@@ -38,6 +38,13 @@ using iterator_type = typename iterator_type_t <T>::type;
 
 export template <SentinelValue T>
 constexpr auto sentinel_value = sentinel_value_traits_t <T>::value;
+
+export template <typename T>
+requires (Iterator <T> and Char <typename iterator_traits_t <T>::element_type>)
+struct sentinel_value_traits_t <T>
+{
+	constexpr static element_type <T> value = '\0';
+};
 
 // export template <typename T>
 // struct sentinel_value_t;

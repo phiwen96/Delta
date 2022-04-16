@@ -33,7 +33,7 @@ export template <typename... T>
 struct range_policies_t;
 
 export template <typename T>
-concept HasRangePolicies = RangePolicies <range_policies_t <T>>;
+concept HasDefinedRangePolicies = RangePolicies <range_policies_t <T>>;
 
 // export template <typename T>
 // requires RangePolicies <typename T::range_policies>
@@ -43,37 +43,54 @@ concept HasRangePolicies = RangePolicies <range_policies_t <T>>;
 // };
  
 
-export template <SentinelValue T>
-struct range_policies_t <T>
-{
-	constexpr static auto begin (T t) noexcept -> Iterator auto 
-	{
-		return t;
-	}
+// export template <SentinelValue T>
+// struct range_policies_t <T>
+// {
+// 	constexpr static auto begin (T t) noexcept -> Iterator auto 
+// 	{
+// 		return t;
+// 	}
 
-	constexpr static auto end (T t) noexcept -> Iterator auto 
-	{
-		auto i = t;
+// 	constexpr static auto end (T t) noexcept -> Iterator auto 
+// 	{
+// 		auto i = t;
 
-		while (i != sentinel_value <T>)
-		{
-			++i;
-		}
+// 		while (i != sentinel_value <T>)
+// 		{
+// 			++i;
+// 		}
 		
-		return i;
-	}
-};
+// 		return i;
+// 	}
+// };
+
+// export template <SentinelValue T>
+// constexpr auto begin (T range) noexcept -> Iterator auto 
+// {
+// 	return range;
+// }
+
+// export template <SentinelValue T>
+// constexpr auto end (T range) noexcept -> Iterator auto 
+// {
+// 	auto i = range;
+
+// 		while (i != sentinel_value <T>)
+// 		{
+// 			++i;
+// 		}
+		
+// 		return i;
+// }
 
 
-export template <typename T>
-requires RangePolicies <range_policies_t <T>>
+export template <HasDefinedRangePolicies T>
 constexpr auto begin (T range) noexcept -> Iterator auto 
 {
 	return range_policies_t <T>::begin (range);
 }
 
-export template <typename T>
-requires RangePolicies <range_policies_t <T>>
+export template <HasDefinedRangePolicies T>
 constexpr auto end (T range) noexcept -> Iterator auto 
 {
 	if constexpr (not requires {typename T::end;})

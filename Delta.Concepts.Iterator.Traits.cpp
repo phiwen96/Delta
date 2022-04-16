@@ -2,7 +2,7 @@ module;
 #include <utility>
 export module Delta.Concepts.Iterator.Traits;
 
-import Delta.Concepts.Pointer;
+export import Delta.Concepts.Pointer;
 import Delta.Concepts.Convertible;
 import Delta.Concepts.Iterator.ReadOnly;
 import Delta.Concepts.Iterator.WriteOnly;
@@ -13,9 +13,9 @@ import Delta.Concepts.Same;
 
 export import Delta.Concepts.Iterator.Traits.Sentinel;
 
-enum struct iterator_tag 
+export enum struct iterator_tag 
 {
-	INPUT, OUTPUT, FORWARD, RANDOM_ACCESS, CONTIGUOUS
+	INPUT, OUTPUT, FORWARD, BIDIRECTIONAL, RANDOM_ACCESS, CONTIGUOUS
 };
 
 export template <typename T>
@@ -34,14 +34,6 @@ struct iterator_traits_t;
 export template <typename T>
 concept HasDefinedIteratorTraits = IteratorTraits <iterator_traits_t <T>>;
 
-// export template <itera T>
-// struct iterator_traits_t <T>
-// {
-// 	constexpr static auto tag = iterator_tag::INPUT;
-// 	using type = T;
-// 	using element_type = decltype (*std::declval <T> ());//typename pointer_traits_t <T>::element_type;
-// };
-
 // export template <Pointer T>
 // struct iterator_traits_t <T>
 // {
@@ -57,6 +49,8 @@ struct iterator_traits_t <T>
 	constexpr static auto tag = iterator_tag::INPUT;
 	using type = T;
 	using element_type = decltype (*std::declval <T> ());//typename pointer_traits_t <T>::element_type;
+
+	
 };
 
 export template <typename T>
@@ -77,10 +71,17 @@ struct iterator_traits_t <T>
 	using element_type = decltype (*std::declval <T> ());//typename pointer_traits_t <T>::element_type;
 };
 
-// constexpr auto random_access_if_not (iterator_tag t) noexcept -> auto 
-// {
-// 	if constexpr (t == )
-// }
+export template <typename T>
+requires (ReadOnly <T> and
+	WriteOnly <T> and 
+	StepForward <T> and 
+	StepBackward <T>)
+struct iterator_traits_t <T>
+{
+	constexpr static auto tag = iterator_tag::BIDIRECTIONAL;
+	using type = T;
+	using element_type = decltype (*std::declval <T> ());//typename pointer_traits_t <T>::element_type;
+};
 
 export template <typename T>
 requires (ReadOnly <T> and
@@ -93,6 +94,12 @@ struct iterator_traits_t <T>
 	constexpr static auto tag = iterator_tag::RANDOM_ACCESS;
 	using type = T;
 	using element_type = decltype (*std::declval <T> ());//typename pointer_traits_t <T>::element_type;
+};
+
+export template <HasDefinedIteratorTraits T>
+struct element_type_t <T>
+{
+	using type = typename iterator_traits_t <T>::element_type;
 };
 
 export template <typename...>

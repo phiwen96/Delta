@@ -10,6 +10,9 @@ concept PointerTraits =  requires ()
 export template <typename... T>
 struct pointer_traits_t;
 
+export template <typename T>
+concept HasDefinedPointerTraits = PointerTraits <pointer_traits_t <T>>;
+
 export template <typename pointerType, typename elementType>
 struct pointer_traits_t <pointerType, elementType>
 {
@@ -38,3 +41,11 @@ struct pointer_traits_t <T*&&> : pointer_traits_t <T*&&, T> {};
 export template <typename T>
 struct pointer_traits_t <T*&> : pointer_traits_t <T*&, T> {};
 
+export template <typename...>
+struct element_type_t;
+
+export template <HasDefinedPointerTraits T>
+struct element_type_t <T>
+{
+	using type = typename pointer_traits_t <T>::pointer_type;
+};

@@ -3,13 +3,15 @@ import Delta.Types;
 export import :Traits;
 
 export template <typename T>
-concept Pointer = PointerTraits <pointer_traits_t <T>>;
+concept Pointer = HasDefinedPointerTraits <T>;
 
 // export template <Pointer T>
 // using element_type = typename pointer_traits_t <T>::element_type;
 
 
-
+export template <typename T>
+requires requires {typename element_type_t <T>::type;}
+using element_type = typename element_type_t <T>::type;
 
 
 export template <typename T>
