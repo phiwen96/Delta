@@ -9,7 +9,7 @@ import Delta;
 auto main (int, char**) -> int 
 {
 
-	
+	// Array auto a = "hej";
 	// run (4);
 		
 	auto msg = "start program by hitting enter\n";

@@ -39,12 +39,12 @@ concept Sentinel = SentinelValue <T>;
 export template <SentinelValue T>
 constexpr auto sentinel_value = sentinel_value_traits_t <T>::value;
 
-export template <typename T>
-requires (Iterator <T> and Char <typename iterator_traits_t <T>::element_type>)
-struct sentinel_value_traits_t <T>
-{
-	constexpr static element_type <T> value = '\0';
-};
+// export template <typename T>
+// requires (Iterator <T> and Char <element_type <>>)
+// struct sentinel_value_traits_t <T>
+// {
+// 	constexpr static element_type <T> value = '\0';
+// };
 
 // export template <typename T>
 // struct sentinel_value_t;

@@ -29,19 +29,33 @@ concept RangePolicies = requires (fun_param_type <decltype (T::begin), 0>& range
 	// {T::end (t)} noexcept -> Iterator;
 };
 
+export template <typename...>
+struct get_range_policies_t;
+
+export template <typename T>
+requires RangePolicies <typename get_range_policies_t <T>::type>
+using get_range_policies = typename get_range_policies_t <T>::type;
+
 export template <typename... T>
 struct range_policies_t;
 
 export template <typename T>
-concept HasDefinedRangePolicies = RangePolicies <range_policies_t <T>>;
+concept HasDefinedRangePolicies = RangePolicies <get_range_policies <T>>;
 
-// export template <typename T>
-// requires RangePolicies <typename T::range_policies>
-// struct get_range_policies_t <T>
-// {
+export template <HasDefinedRangePolicies T>
+using begin_param_type = fun_param_type <decltype (range_policies_t <T>::begin), 0>;
 
-// };
- 
+export template <HasDefinedRangePolicies T>
+using begin_ret_type = fun_ret_type <decltype (range_policies_t <T>::begin)>;
+
+
+
+export template <typename T>
+requires RangePolicies <range_policies_t <T>>
+struct get_range_policies_t <T>
+{
+	using type = range_policies_t <T>;
+};
 
 // export template <SentinelValue T>
 // struct range_policies_t <T>
@@ -63,26 +77,6 @@ concept HasDefinedRangePolicies = RangePolicies <range_policies_t <T>>;
 // 		return i;
 // 	}
 // };
-
-// export template <SentinelValue T>
-// constexpr auto begin (T range) noexcept -> Iterator auto 
-// {
-// 	return range;
-// }
-
-// export template <SentinelValue T>
-// constexpr auto end (T range) noexcept -> Iterator auto 
-// {
-// 	auto i = range;
-
-// 		while (i != sentinel_value <T>)
-// 		{
-// 			++i;
-// 		}
-		
-// 		return i;
-// }
-
 
 export template <HasDefinedRangePolicies T>
 constexpr auto begin (T range) noexcept -> Iterator auto 

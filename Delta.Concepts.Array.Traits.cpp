@@ -1,38 +1,44 @@
-export module Delta.Concepts.Array:Traits;
-
-// import Delta.Concepts.Range;
-// import Delta.Concepts.Iterator.Traits;
-
-
-
-// template <typename T>
-// concept ArrayTraits = requires ()
-// {
-// 	requires RangeTraits <typename T::range_traits>;
-// };
-
-// export template <typename... T>
-// struct array_traits_t;
-
-// export template <RangeTraits rangeTraits>
-// struct array_traits_t <rangeTraits>
-// {
-// 	using range_traits = rangeTraits;
-// };
-
-// export template <typename T, auto N>
-// struct array_traits_t <T [N]>
-// {
-// 	using range_traits = range_traits_t <T [N], iterator_traits_t <T*, T>>;
-// 	// using range_type = T [N];
-// 	// using iterator_traits = iterator_traits_t <T*, T>;
-// };
+export module Delta.Concepts.Array.Traits;
+import Delta.Concepts.Function;
+import Delta.Concepts.Size;
+import Delta.Concepts.Range;
+import Delta.Concepts.Array.Policies;
 
 
-// export template <typename T, auto N>
-// struct range_traits_t <T [N]> : array_traits_t <range_traits_t <T [N]>>
-// {
-// 	// using range_traits = range_traits_t <T [N]>;
-// 	using range_type = T [N];
-// 	using iterator_traits = iterator_traits_t <T*, T>;
-// };
+template <typename T>
+concept ArrayTraits = requires ()
+{
+	{T::array_type};
+	requires Iterator <typename T::iterator_type>;
+};
+
+export template <typename... T>
+struct array_traits_t;
+
+export template <typename T>
+concept HasDefinedArrayTraits = ArrayTraits <array_traits_t <T>>;
+
+export template <HasDefinedArrayPolicies T>
+struct array_traits_t <T> 
+{
+	using array_type = fun_param_type <decltype (T::begin), 0>;
+	using iterator_type = fun_ret_type <decltype (T::begin)>;
+};
+
+export template <HasDefinedArrayTraits T>
+struct element_type_t <T> : element_type_t <typename array_traits_t <T>::iterator_type>
+{
+	
+};
+
+export template <HasDefinedArrayTraits T>
+struct iterator_type_t <T> : iterator_type_t <typename array_traits_t <T>::iterator_type>
+{
+	
+};
+
+export template <HasDefinedArrayTraits T>
+struct range_type_t <T>
+{
+	using type = typename array_traits_t <T>::array_type;
+};
