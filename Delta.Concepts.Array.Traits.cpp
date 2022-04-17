@@ -13,16 +13,31 @@ concept ArrayTraits = requires ()
 };
 
 export template <typename... T>
+struct get_array_traits_t;
+
+export template <typename T>
+requires ArrayTraits <typename get_array_traits_t <T>::result>
+using get_array_traits = typename get_array_traits_t <T>::result;
+
+export template <typename T>
+concept HasDefinedArrayTraits = ArrayTraits <get_array_traits <T>>;
+
+export template <typename... T>
 struct array_traits_t;
 
 export template <typename T>
-concept HasDefinedArrayTraits = ArrayTraits <array_traits_t <T>>;
+requires ArrayTraits <array_traits_t <T>>
+struct get_array_traits_t <T>
+{
+	using result = array_traits_t <T>;
+};
+
 
 export template <HasDefinedArrayPolicies T>
 struct array_traits_t <T> 
 {
-	using array_type = fun_param_type <decltype (T::begin), 0>;
-	using iterator_type = fun_ret_type <decltype (T::begin)>;
+	using array_type = fun_param_type <decltype (get_array_policies <T>::begin), 0>;
+	using iterator_type = fun_ret_type <decltype (get_array_policies <T>::begin)>;
 };
 
 export template <HasDefinedArrayTraits T>

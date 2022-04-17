@@ -26,6 +26,9 @@ export template <typename T>
 requires RangeTraits <typename get_range_traits_t <T>::result>
 using get_range_traits = typename get_range_traits_t <T>::result;
 
+export template <typename T>
+concept HasDefinedRangeTraits = RangeTraits <get_range_traits <T>>;
+
 export template <typename... T>
 struct range_traits_t;
 
@@ -36,17 +39,11 @@ struct get_range_traits_t <T>
 	using result = range_traits_t <T>;
 };
 
-
-
-
-export template <typename T>
-concept HasDefinedRangeTraits = RangeTraits <get_range_traits <T>>;
-
 export template <HasDefinedRangePolicies T>
 struct range_traits_t <T>
 {
-	using range_type = fun_param_type <decltype (T::begin), 0>;
-	using iterator_type = fun_ret_type <decltype (T::begin)>;
+	using range_type = fun_param_type <decltype (get_range_policies <T>::begin), 0>;
+	using iterator_type = fun_ret_type <decltype (get_range_policies <T>::begin)>;
 };
 
 export template <HasDefinedRangeTraits T>

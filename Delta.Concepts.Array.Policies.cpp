@@ -8,12 +8,24 @@ export template <typename T>
 concept ArrayPolicies = RangePolicies <T>;
 
 export template <typename... T>
+struct get_array_policies_t;
+
+export template <typename T>
+requires ArrayPolicies <typename get_array_policies_t <T>::result>
+using get_array_policies = typename get_array_policies_t <T>::result;
+
+export template <typename T>
+concept HasDefinedArrayPolicies = ArrayPolicies <get_array_policies <T>>;
+
+export template <typename...>
 struct array_policies_t;
 
 export template <typename T>
-concept HasDefinedArrayPolicies = ArrayPolicies <array_policies_t <T>>;
-
-
+requires ArrayPolicies <array_policies_t <T>>
+struct get_array_policies_t <T>
+{
+	using result = array_policies_t <T>;
+};
 
 export template <typename T, auto N>
 struct array_policies_t <T [N]> 
