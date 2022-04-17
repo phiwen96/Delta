@@ -20,8 +20,8 @@ export template <typename T>
 concept Iterator = HasDefinedIteratorTraits <T>;
 
 export template <typename T>
-requires requires {typename iterator_type_t <T>::type;}
-using iterator_type = typename iterator_type_t <T>::type;
+requires requires {typename iterator_type_t <T>::result;}
+using iterator_type = typename iterator_type_t <T>::result;
 
 export template <typename T>
 concept SentinelValue = Iterator <T> and HasDefinedSentinelValueTraits <T>;
@@ -66,5 +66,5 @@ constexpr auto sentinel_value = sentinel_value_traits_t <T>::value;
 // export template <Iterator T>
 // using element_type = decltype (*std::declval <T> ());// decltype (*mimic <T> ());
 
-static_assert (Iterator <int*>);
+// static_assert (Iterator <int*>);
 // static_assert (AllOf <[] <typename T> {return Iterator <T>;}, pointer_types <int>>);

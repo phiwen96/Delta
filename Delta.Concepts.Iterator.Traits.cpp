@@ -23,16 +23,42 @@ concept IteratorTraits = requires()
 {
 	// requires Same <decltype (T::tag), iterator_tag>;
 	{T::tag} -> Convertible <iterator_tag>;
-	typename T::type;
+	typename T::iterator_type;
 	typename T::element_type;
 	// typename T::sentinel_traits;
 };
 
 export template <typename... T>
-struct iterator_traits_t;
+struct get_iterator_traits_t;
 
 export template <typename T>
-concept HasDefinedIteratorTraits = IteratorTraits <iterator_traits_t <T>>;
+requires IteratorTraits <typename get_iterator_traits_t <T>::result>
+using get_iterator_traits = typename get_iterator_traits_t <T>::result;
+
+export template <typename T>
+concept HasDefinedIteratorTraits = IteratorTraits <get_iterator_traits <T>>;
+
+export template <typename... T>
+struct iterator_traits_t;
+
+export template <typename...>
+struct get_element_type_t;
+
+export template <HasDefinedIteratorTraits T>
+struct get_element_type_t <T>
+{
+	using result = typename get_iterator_traits <T>::element_type;
+};
+
+export template <typename T>
+requires IteratorTraits <iterator_traits_t <T>>
+struct get_iterator_traits_t <T>
+{
+	using result = iterator_traits_t <T>;
+};
+
+
+
 
 // export template <Pointer T>
 // struct iterator_traits_t <T>
@@ -47,7 +73,7 @@ requires (ReadOnly <T> and StepForward <T>)
 struct iterator_traits_t <T>
 {
 	constexpr static auto tag = iterator_tag::INPUT;
-	using type = T;
+	using iterator_type = T;
 	using element_type = decltype (*std::declval <T> ());//typename pointer_traits_t <T>::element_type;
 
 	
@@ -58,7 +84,7 @@ requires (WriteOnly <T> and StepForward <T>)
 struct iterator_traits_t <T>
 {
 	constexpr static auto tag = iterator_tag::OUTPUT;
-	using type = T;
+	using iterator_type = T;
 	using element_type = decltype (*std::declval <T> ());//typename pointer_traits_t <T>::element_type;
 };
 
@@ -67,7 +93,7 @@ requires (ReadOnly <T> and WriteOnly <T> and StepForward <T>)
 struct iterator_traits_t <T>
 {
 	constexpr static auto tag = iterator_tag::FORWARD;
-	using type = T;
+	using iterator_type = T;
 	using element_type = decltype (*std::declval <T> ());//typename pointer_traits_t <T>::element_type;
 };
 
@@ -79,7 +105,7 @@ requires (ReadOnly <T> and
 struct iterator_traits_t <T>
 {
 	constexpr static auto tag = iterator_tag::BIDIRECTIONAL;
-	using type = T;
+	using iterator_type = T;
 	using element_type = decltype (*std::declval <T> ());//typename pointer_traits_t <T>::element_type;
 };
 
@@ -92,24 +118,11 @@ requires (ReadOnly <T> and
 struct iterator_traits_t <T>
 {
 	constexpr static auto tag = iterator_tag::RANDOM_ACCESS;
-	using type = T;
+	using iterator_type = T;
 	using element_type = decltype (*std::declval <T> ());//typename pointer_traits_t <T>::element_type;
 };
 
-export template <HasDefinedIteratorTraits T>
-struct element_type_t <T>
-{
-	using type = typename iterator_traits_t <T>::element_type;
-};
 
-export template <typename...>
-struct iterator_type_t;
-
-export template <HasDefinedIteratorTraits T>
-struct iterator_type_t <T>
-{
-	using type = typename iterator_traits_t <T>::type;
-};
 
 // export template <typename iteratorType, typename elementType>
 // struct iterator_traits_t <iteratorType, elementType>

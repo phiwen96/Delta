@@ -16,7 +16,7 @@ export template <typename... T>
 struct get_array_traits_t;
 
 export template <typename T>
-requires ArrayTraits <typename get_array_traits_t <T>::result>
+// requires ArrayTraits <typename get_array_traits_t <T>::result>
 using get_array_traits = typename get_array_traits_t <T>::result;
 
 export template <typename T>
@@ -32,7 +32,6 @@ struct get_array_traits_t <T>
 	using result = array_traits_t <T>;
 };
 
-
 export template <HasDefinedArrayPolicies T>
 struct array_traits_t <T> 
 {
@@ -41,19 +40,4 @@ struct array_traits_t <T>
 };
 
 export template <HasDefinedArrayTraits T>
-struct element_type_t <T> : element_type_t <typename array_traits_t <T>::iterator_type>
-{
-	
-};
-
-export template <HasDefinedArrayTraits T>
-struct iterator_type_t <T> : iterator_type_t <typename array_traits_t <T>::iterator_type>
-{
-	
-};
-
-export template <HasDefinedArrayTraits T>
-struct get_range_traits_t <T>
-{
-	using result = array_traits_t <T>;
-};
+struct get_range_traits_t <T> : get_array_traits <T> {};

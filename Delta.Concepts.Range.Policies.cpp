@@ -50,10 +50,10 @@ struct get_range_policies_t <T>
 };
 
 export template <HasDefinedRangePolicies T>
-using begin_param_type = fun_param_type <decltype (range_policies_t <T>::begin), 0>;
+using begin_param_type = fun_param_type <decltype (get_range_policies <T>::begin), 0>;
 
 export template <HasDefinedRangePolicies T>
-using begin_ret_type = fun_ret_type <decltype (range_policies_t <T>::begin)>;
+using begin_ret_type = fun_ret_type <decltype (get_range_policies <T>::begin)>;
 
 
 
@@ -82,7 +82,7 @@ using begin_ret_type = fun_ret_type <decltype (range_policies_t <T>::begin)>;
 export template <HasDefinedRangePolicies T>
 constexpr auto begin (T range) noexcept -> Iterator auto 
 {
-	return range_policies_t <T>::begin (range);
+	return get_range_policies <T>::begin (range);
 }
 
 export template <HasDefinedRangePolicies T>
@@ -90,10 +90,10 @@ constexpr auto end (T range) noexcept -> Iterator auto
 {
 	if constexpr (not requires {typename T::end;})
 	{
-		return range_policies_t <T>::begin (range) + range_policies_t <T>::length (range);
+		return get_range_policies <T>::begin (range) + get_range_policies <T>::length (range);
 
 	} else 
 	{
-		return range_policies_t <T>::end (range);
+		return get_range_policies <T>::end (range);
 	}
 }

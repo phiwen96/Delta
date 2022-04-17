@@ -27,6 +27,9 @@ struct get_array_policies_t <T>
 	using result = array_policies_t <T>;
 };
 
+export template <HasDefinedArrayPolicies T>
+struct get_range_policies_t <T> : get_array_policies <T> {};
+
 export template <typename T, auto N>
 struct array_policies_t <T [N]> 
 {
@@ -54,9 +57,5 @@ struct array_policies_t <T (&) [N]>
 		return N;
 	}	
 };
-export template <HasDefinedArrayPolicies T>
-struct get_range_policies_t <T> //: array_policies_t <T>
-{
-	using type = array_policies_t <T>;
-};
+
 
