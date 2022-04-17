@@ -38,7 +38,7 @@ struct iterator_type_t <T> : iterator_type_t <typename array_traits_t <T>::itera
 };
 
 export template <HasDefinedArrayTraits T>
-struct range_type_t <T>
+struct get_range_traits_t <T>
 {
-	using type = typename array_traits_t <T>::array_type;
+	using result = array_traits_t <T>;
 };
