@@ -12,8 +12,8 @@ import Delta.Concepts.Function;
 export template <typename T>
 concept RangeTraits = requires ()
 {
-	{T::range_type};
-	// requires Iterator <typename T::iterator_type>;
+	typename T::range_type;
+	requires Iterator <typename T::iterator_type>;
 };
 	// HasDefinedRangePolicies <T> and 
 	// Same <begin_param_type <T>, typename T::type> and

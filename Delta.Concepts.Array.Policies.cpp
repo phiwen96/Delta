@@ -11,7 +11,7 @@ export template <typename... T>
 struct get_array_policies_t;
 
 export template <typename T>
-requires ArrayPolicies <typename get_array_policies_t <T>::result>
+// requires ArrayPolicies <typename get_array_policies_t <T>::result>
 using get_array_policies = typename get_array_policies_t <T>::result;
 
 export template <typename T>
@@ -27,8 +27,8 @@ struct get_array_policies_t <T>
 	using result = array_policies_t <T>;
 };
 
-export template <HasDefinedArrayPolicies T>
-struct get_range_policies_t <T> : get_array_policies <T> {};
+// export template <HasDefinedArrayPolicies T>
+// struct get_range_policies_t <T> : get_array_policies <T> {};
 
 export template <typename T, auto N>
 struct array_policies_t <T [N]> 

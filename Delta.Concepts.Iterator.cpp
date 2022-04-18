@@ -20,10 +20,6 @@ export template <typename T>
 concept Iterator = HasDefinedIteratorTraits <T>;
 
 export template <typename T>
-requires requires {typename iterator_type_t <T>::result;}
-using iterator_type = typename iterator_type_t <T>::result;
-
-export template <typename T>
 concept SentinelValue = Iterator <T> and HasDefinedSentinelValueTraits <T>;
 
 export template <typename T>
