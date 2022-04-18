@@ -23,7 +23,7 @@ export template <typename... T>
 struct get_range_traits_t;
 
 export template <typename T>
-requires RangeTraits <typename get_range_traits_t <T>::result>
+// requires RangeTraits <typename get_range_traits_t <T>::result>
 using get_range_traits = typename get_range_traits_t <T>::result;
 
 export template <typename T>

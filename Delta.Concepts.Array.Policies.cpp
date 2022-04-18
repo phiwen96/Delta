@@ -27,6 +27,13 @@ struct get_array_policies_t <T>
 	using result = array_policies_t <T>;
 };
 
+export template <typename T>
+requires RangePolicies <array_policies_t <T>>
+struct get_range_policies_t <T>
+{
+	using result = array_policies_t <T>;
+};
+
 // export template <HasDefinedArrayPolicies T>
 // struct get_range_policies_t <T> : get_array_policies <T> {};
 

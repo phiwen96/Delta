@@ -8,14 +8,14 @@ export import Delta.Concepts.Array.Traits;
 
 
 export template <typename T>
-concept Array = /*HasDefinedArrayPolicies <T> and */HasDefinedArrayTraits <T>;
+concept Array = HasDefinedArrayPolicies <T> and HasDefinedArrayTraits <T>;
 
 export template <typename T, auto N>
 using array_types = typelist <T [N], T (&) [N], T const (&) [N]>;
 
 
 static_assert (Array <int [10]>);
-// static_assert (Range <int [10]>);
+static_assert (Range <int [10]>);
 // static_assert (Range <int [10]>);
 // static_assert (AllOf <[] <typename T> {return Array <T>;}, array_types <int, 10>>);
 // static_assert (AllOf <[] <typename T> {return Range <T>;}, array_types <int, 10>>);
