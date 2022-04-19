@@ -1,8 +1,12 @@
+
 export module Delta.Concepts.Array.Policies;
 
+// import Delta.Concepts.Range.Policies;
+// import Delta.Concepts.Iterator;
 import Delta.Concepts.Range.Policies;
-import Delta.Concepts.Iterator;
 import Delta.Concepts.Size;
+import Delta.Concepts.Function;
+
 
 export template <typename T>
 concept ArrayPolicies = RangePolicies <T>;
@@ -27,12 +31,18 @@ struct get_array_policies_t <T>
 	using result = array_policies_t <T>;
 };
 
-export template <typename T>
-requires RangePolicies <array_policies_t <T>>
+export template <HasDefinedArrayPolicies T>
 struct get_range_policies_t <T>
 {
-	using result = array_policies_t <T>;
+	using result = get_array_policies <T>;
 };
+
+// export template <typename T>
+// requires (RangePolicies <array_policies_t <T>> and not RangePolicies <get_range_policies <T>>)
+// struct get_range_policies_t <T>
+// {
+// 	using result = array_policies_t <T>;
+// };
 
 // export template <HasDefinedArrayPolicies T>
 // struct get_range_policies_t <T> : get_array_policies <T> {};
@@ -40,12 +50,12 @@ struct get_range_policies_t <T>
 export template <typename T, auto N>
 struct array_policies_t <T [N]> 
 {
-	constexpr static auto begin (T (&range) [N]) noexcept -> Iterator auto
+	constexpr static auto begin (T (range) [N]) noexcept -> auto*
 	{
 		return range;
 	}
 
-	constexpr static auto length (T (&range) [N]) noexcept -> Size auto
+	constexpr static auto length (T (range) [N]) noexcept -> Size auto
 	{
 		return N;
 	}	
@@ -53,8 +63,8 @@ struct array_policies_t <T [N]>
 
 export template <typename T, auto N>
 struct array_policies_t <T (&) [N]> 
-{	
-	constexpr static auto begin (T (&range) [N]) noexcept -> Iterator auto
+{
+	constexpr static auto begin (T (&range) [N]) noexcept -> auto*
 	{
 		return range;
 	}
@@ -64,5 +74,15 @@ struct array_policies_t <T (&) [N]>
 		return N;
 	}	
 };
+// static_assert (ArrayPolicies <array_policies_t <int[10]>>);
+// static_assert (HasDefinedArrayPolicies <int[10]>);
+// static_assert (HasDefinedArrayPolicies <int [10]>);
+// static_assert (HasDefinedRangePolicies <int [10]>);
 
+consteval auto test_array () noexcept -> bool 
+{
+	
+	return true;
+}
 
+static_assert (test_array ());

@@ -2,7 +2,7 @@ export module Delta.Concepts.String;
 
 
 // export import Delta.Concepts.Range;
-// import Delta.Concepts.Iterator;
+import Delta.Concepts.Iterator;
 import Delta.Concepts.Range;
 import Delta.Concepts.Array;
 // import Delta.Concepts.Array;
