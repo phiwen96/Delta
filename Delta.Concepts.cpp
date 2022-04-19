@@ -15,3 +15,11 @@ export import Delta.Concepts.Array;
 export import Delta.Concepts.String;
 export import Delta.Concepts.Future;
 
+import Delta.Types;
+
+static_assert (Range <int[10]>);
+
+// static_assert (AllOf <[] <typename T> {return Range <T>;}, array_types <int, 10>>);
+
+// static_assert (AllOf <[] <typename T> {return Array <T>;}, array_types <int, 10>>);
+

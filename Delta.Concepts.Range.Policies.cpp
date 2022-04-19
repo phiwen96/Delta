@@ -1,9 +1,10 @@
 export module Delta.Concepts.Range.Policies;
 
-import Delta.Concepts.Function;
 
-import Delta.Concepts.Iterator;
-import Delta.Concepts.Size;
+export import Delta.Concepts.Function;
+export import Delta.Concepts.Size;
+export import Delta.Concepts.Iterator;
+
 /*
 	begin + end 
 		or 

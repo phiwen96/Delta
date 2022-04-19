@@ -1,4 +1,4 @@
-export module Delta.Concepts.Pointer:Traits;
+export module Delta.Concepts.Pointer.Traits;
 
 export template <typename T>
 concept PointerTraits =  requires () 

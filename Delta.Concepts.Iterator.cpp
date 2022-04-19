@@ -1,6 +1,6 @@
 export module Delta.Concepts.Iterator;
 
-import Delta.Concepts.Char;
+// import Delta.Concepts.Char;
 export import Delta.Concepts.Iterator.Traits;
 
 

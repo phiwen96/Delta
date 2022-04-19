@@ -3,7 +3,7 @@ export module Delta.Concepts.Array.Policies;
 
 // import Delta.Concepts.Range.Policies;
 // import Delta.Concepts.Iterator;
-import Delta.Concepts.Range.Policies;
+export import Delta.Concepts.Range;
 import Delta.Concepts.Size;
 import Delta.Concepts.Function;
 

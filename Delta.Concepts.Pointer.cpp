@@ -1,6 +1,6 @@
 export module Delta.Concepts.Pointer;
-import Delta.Types;
-export import :Traits;
+export import Delta.Types;
+export import Delta.Concepts.Pointer.Traits;
 
 export template <typename T>
 concept Pointer = HasDefinedPointerTraits <T>;
