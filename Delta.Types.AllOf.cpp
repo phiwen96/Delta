@@ -15,9 +15,13 @@ struct all_of_t <predicate, T>
 	constexpr static auto value = predicate.template operator() <T> () ? true : false;
 };
 
-// typelist
+// expand nested typelist, but what if vector
+
 template <auto predicate, template <typename...> typename T, typename... U>
 struct all_of_t <predicate, T <U...>> : all_of_t <predicate, U...> {};
+
+template <auto predicate, template <typename...> typename T, typename... U, typename... V>
+struct all_of_t <predicate, T <U...>, V...> : all_of_t <predicate, U..., V...> {};
 
 
 template <auto predicate, typename... T>

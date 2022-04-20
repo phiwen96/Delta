@@ -17,10 +17,12 @@ export import Delta.Concepts.Char;
 // 	constexpr static element_type <T> value = '\0';
 // };
 
-// export template <typename T>
-// concept String = Range <T> and Char <get_element_type <T>>;
+export template <typename T>
+concept String = Range <T> and Char <get_element_type <T>>;
 
 
+export template <Char T = char, Size auto N = 10>
+using string_types = typelist <array_types <T, N>>;
 // static_assert (String <char const*>);
 
 
@@ -35,4 +37,4 @@ export import Delta.Concepts.Char;
 // static_assert (test_string ());
 
 
-// static_assert (AllOf <[] <typename T> {return Array <T>;}, array_types <int, 10>>);
+// static_assert (AllOf <[] <typename T> {return String <T>;}, string_types>);

@@ -5,6 +5,12 @@ import Delta.Types.IfElse;
 template <auto, typename...>
 struct numbered_typelist;
 
+// template <auto N, auto M, typename... U, typename... V>
+// struct numbered_typelist <N, numbered_typelist <M, U...>, V...> : numbered_typelist <N, U..., V...>
+// {
+
+// };	
+
 template <auto N, typename T, typename... U>
 struct numbered_typelist <N, T, U...>
 {
@@ -15,6 +21,12 @@ struct numbered_typelist <N, T, U...>
 	requires (i >= N and i <= N + sizeof... (U))
 	using get = if_else <i == index, type, typename numbered_typelist <N + 1, U...>::type>;
 };
+
+// template <auto N, auto M, typename... T>
+// struct numbered_typelist <N, numbered_typelist <M, T...>> : numbered_typelist <N, T...>
+// {
+
+// };
 
 template <auto N, typename T>
 struct numbered_typelist <N, T>
@@ -42,6 +54,8 @@ struct typelist <T, U...> : numbered_typelist <0, T, U...>
 };
 
 // static_assert ()
+
+
 
 
 

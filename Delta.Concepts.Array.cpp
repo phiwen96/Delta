@@ -20,6 +20,25 @@ concept HasDefinedArrayPolicies = ArrayPolicies <get_array_policies <T>>;
 export template <typename...>
 struct array_policies_t;
 
+export template <typename T>
+requires ArrayPolicies <array_policies_t <T>>
+struct get_array_policies_t <T>
+{
+	using result = array_policies_t <T>;
+};
+
+export template <HasDefinedArrayPolicies T>
+struct get_range_policies_t <T>
+{
+	using result = get_array_policies <T>;
+};
+
+export template <typename T>
+concept Array = HasDefinedArrayPolicies <T>;
+
+export template <typename T, auto N>
+using array_types = typelist <T [N], T (&) [N], T const (&) [N]>;
+
 export template <typename T, auto N>
 struct array_policies_t <T [N]> 
 {
@@ -48,26 +67,6 @@ struct array_policies_t <T (&) [N]>
 	}	
 };
 
-export template <typename T>
-requires ArrayPolicies <array_policies_t <T>>
-struct get_array_policies_t <T>
-{
-	using result = array_policies_t <T>;
-};
-
-export template <HasDefinedArrayPolicies T>
-struct get_range_policies_t <T>
-{
-	using result = get_array_policies <T>;
-};
-
-
-export template <typename T>
-concept Array = HasDefinedArrayPolicies <T>;
-
-export template <typename T, auto N>
-using array_types = typelist <T [N], T (&) [N], T const (&) [N]>;
-
 static_assert (AllOf <[] <typename T> {return Array <T>;}, array_types <int, 10>>);
 static_assert (AllOf <[] <typename T> {return Range <T>;}, array_types <int, 10>>);
 
@@ -77,7 +76,3 @@ consteval auto test_array () noexcept -> bool
 	return true;
 }
 
-static_assert (test_array ());
-static_assert (Range <int[10]>);
-static_assert (RangePolicies <get_range_policies <int[10]>>);
-static_assert (RangePolicies <get_array_policies <int[10]>>);
