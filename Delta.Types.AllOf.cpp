@@ -2,6 +2,7 @@ export module Delta.Types.AllOf;
 
 // import Delta.Types.Predicate;
 import Delta.Types.Predicate;
+import Delta.Types.List;
 
 template <auto predicate, typename T, typename... U>
 struct all_of_t
@@ -17,11 +18,11 @@ struct all_of_t <predicate, T>
 
 // expand nested typelist, but what if vector
 
-template <auto predicate, template <typename...> typename T, typename... U>
-struct all_of_t <predicate, T <U...>> : all_of_t <predicate, U...> {};
+template <auto predicate, typename... U>
+struct all_of_t <predicate, typelist <U...>> : all_of_t <predicate, U...> {};
 
-template <auto predicate, template <typename...> typename T, typename... U, typename... V>
-struct all_of_t <predicate, T <U...>, V...> : all_of_t <predicate, U..., V...> {};
+template <auto predicate, typename... U, typename... V>
+struct all_of_t <predicate, typelist <U...>, V...> : all_of_t <predicate, U..., V...> {};
 
 
 template <auto predicate, typename... T>

@@ -1,5 +1,6 @@
 #include <iostream>
 #include <string>
+#include <vector>
 
 import Delta;
 
@@ -14,7 +15,10 @@ struct bajs
 
 static_assert (Array <int[10]>);
 static_assert (Range <int[10]>);
+using types = std::vector <int>;
 
+
+// static_assert (AllOf <[]<typename T>{return Same <T, std::vector<int>>;}, types>);
 auto main (int, char**) -> int 
 {
 

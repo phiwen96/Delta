@@ -39,16 +39,35 @@ struct numbered_typelist <N, T>
 	using get = type;
 };
 
-
-
 export template <typename... T>
 struct typelist;
 
+
+
+template <typename... T>
+struct node;
+
+template <typename T>
+struct node <T>
+{
+	using type = T;
+	// constexpr static auto length = 
+};
+
+
+
+
+
 export template <typename T, typename... U>
-struct typelist <T, U...> : numbered_typelist <0, T, U...>
+struct typelist <T, U...> //: indexed_element <0, T>
 {
 	template <template <typename...> typename V>
 	using transform = V <T, U...>;
+
+	constexpr static auto reversed_index = sizeof... (U);
+
+	template <auto i> 
+	using get = numbered_typelist <0, T, U...>::template get <i>;
 
 	// using params = numbered_typelist <0, T, U...>;
 };

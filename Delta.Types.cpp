@@ -17,6 +17,7 @@ export import Delta.Types.List;
 import Delta.Concepts.Same;
 
 static_assert (not Same <char, typelist <char, int>::get <1>>);
+static_assert (Same <typelist <int, double>, typelist <char, typelist <int, double>>::get <1>>);
 static_assert (Same <char, typelist <char, int>::get <0>>);
 static_assert (Same <int, typelist <char, int>::get <1>>);
 static_assert (Same <int, typelist <char, int, bool>::get <1>>);
