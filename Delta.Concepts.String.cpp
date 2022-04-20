@@ -7,7 +7,7 @@ export module Delta.Concepts.String;
 export import Delta.Concepts.Array;
 // import Delta.Concepts.Array;
 
-import Delta.Concepts.Char;
+export import Delta.Concepts.Char;
 // // import Delta.Types;
 
 // export template <typename T>
@@ -17,8 +17,8 @@ import Delta.Concepts.Char;
 // 	constexpr static element_type <T> value = '\0';
 // };
 
-export template <typename T>
-concept String = Range <T> and Char <get_element_type <T>>;
+// export template <typename T>
+// concept String = Range <T> and Char <get_element_type <T>>;
 
 
 // static_assert (String <char const*>);

@@ -2,6 +2,8 @@ export module Delta.Concepts.Iterator;
 
 // import Delta.Concepts.Char;
 export import Delta.Concepts.Iterator.Traits;
+export import Delta.Concepts.Size;
+
 
 
 export template <typename T>

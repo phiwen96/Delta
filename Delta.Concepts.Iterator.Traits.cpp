@@ -2,7 +2,7 @@ module;
 #include <utility>
 export module Delta.Concepts.Iterator.Traits;
 
-export import Delta.Concepts.Pointer;
+// export import Delta.Concepts.Pointer;
 import Delta.Concepts.Convertible;
 import Delta.Concepts.Iterator.ReadOnly;
 import Delta.Concepts.Iterator.WriteOnly;
