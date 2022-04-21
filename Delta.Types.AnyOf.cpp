@@ -2,6 +2,7 @@ export module Delta.Types.AnyOf;
 
 // import Delta.Types.Predicate;
 import Delta.Types.Predicate;
+import Delta.Types.List;
 
 template <auto predicate, typename T, typename... U>
 struct any_of_t
@@ -16,8 +17,14 @@ struct any_of_t <predicate, T>
 };
 
 // typelist
-template <auto predicate, template <typename...> typename T, typename... U>
-struct any_of_t <predicate, T <U...>> : any_of_t <predicate, U...> {};
+
+template <auto predicate, typename... U>
+struct any_of_t <predicate, typelist <U...>> : any_of_t <predicate, U...> {};
+
+template <auto predicate, typename... U, typename... V>
+struct any_of_t <predicate, typelist <U...>, V...> : any_of_t <predicate, U..., V...> {};
+
+
 
 
 template <auto predicate, typename... T>

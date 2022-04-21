@@ -35,3 +35,5 @@ concept AllOf = (TypePredicate <decltype (predicate), T> and ... ) and all_of <p
 // {
 // 	true;
 // };
+
+// static_assert (not AllOf <[]<typename T>{return }>)
