@@ -1,10 +1,10 @@
 export module Delta.Concepts.Range;
 
 
-
-export import Delta.Concepts.Iterator;
-export import Delta.Concepts.Function;
-export import Delta.Types;
+import Delta.Concepts.Size;
+import Delta.Concepts.Iterator;
+import Delta.Concepts.Function;
+import Delta.Types;
 
 
 /*
@@ -73,7 +73,7 @@ struct get_range_policies_t <T>
 // struct begin_ret_type_t <T> : begin_ret_type_t <get_range_policies <T>> {};
 
 
-export template <SentinelValue T>
+export template <Sentinel T>
 struct range_policies_t <T>
 {
 	constexpr static auto begin (T t) noexcept -> Iterator auto 
@@ -85,7 +85,7 @@ struct range_policies_t <T>
 	{
 		auto i = t;
 
-		while (i != sentinel_value <T>)
+		while (*i != sentinel_value <T>)
 		{
 			++i;
 		}
@@ -113,11 +113,11 @@ constexpr auto end (T range) noexcept -> Iterator auto
 	}
 }
 
-export template <typename T>
-concept RangeTraits = IteratorTraits <typename T::iterator_traits> and requires ()
-{
-	typename T::range_type;
-};
+// export template <typename T>
+// concept RangeTraits = IteratorTraits <typename T::iterator_traits> and requires ()
+// {
+// 	typename T::range_type;
+// };
 
 export template <typename T>
 concept Range = HasDefinedRangePolicies <T>;// and HasDefinedRangeTraits <T>;

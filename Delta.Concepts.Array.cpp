@@ -2,7 +2,9 @@ export module Delta.Concepts.Array;
 
 // import Delta.Concepts.Size;
 // import Delta.Types;
-export import Delta.Concepts.Range;
+import Delta.Concepts.Size;
+import Delta.Concepts.Range;
+import Delta.Types;
 
 export template <typename T>
 concept ArrayPolicies = RangePolicies <T>;
@@ -67,8 +69,7 @@ struct array_policies_t <T (&) [N]>
 	}	
 };
 
-static_assert (AllOf <[] <typename T> {return Array <T>;}, array_types <int, 10>>);
-static_assert (AllOf <[] <typename T> {return Range <T>;}, array_types <int, 10>>);
+
 
 consteval auto test_array () noexcept -> bool 
 {

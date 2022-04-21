@@ -7,6 +7,25 @@ export import Delta.Algorithms;
 export import Delta.Async;
 export import Delta.Net;
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+static_assert (AllOf <[] <typename T> {return Array <T>;}, array_types <int, 10>>);
+static_assert (AllOf <[] <typename T> {return Range <T>;}, array_types <int, 10>>);
+
+
+
+static_assert (AllOf <[]<typename T>{return Same <T, int>;}, typelist <typelist <typelist <int>>>>);
 static_assert (AllOf <[]<typename T>{return Same <T, int>;}, typelist <int, typelist <int, int>>>);
 static_assert (AllOf <[]<typename T>{return Same <T, int>;}, typelist <typelist <int, int>, int>>);
 static_assert (AllOf <[]<typename T>{return Same <T, int>;}, typelist <int, typelist <typelist <int, int>, int>>>);
