@@ -1,10 +1,10 @@
-export module Delta.Concepts.Array;
+export module Delta:Array;
 
 // import Delta.Concepts.Size;
 // import Delta.Types;
-import Delta.Concepts.Size;
-import Delta.Concepts.Range;
-import Delta.Types;
+import :Size;
+import :Range;
+import :Types;
 
 export template <typename T>
 concept ArrayPolicies = RangePolicies <T>;

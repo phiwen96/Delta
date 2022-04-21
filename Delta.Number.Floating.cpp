@@ -1,6 +1,6 @@
-export module Delta.Concepts.Number.Floating;
+export module Delta:Number.Floating;
 
-import Delta.Concepts.Convertible;
+import :Convertible;
 
 export template <typename T>
 concept Floating = 

@@ -4,11 +4,9 @@ module;
 #include "errno.h"
 #include <signal.h>
 #include <coroutine>
-export module Delta.Async.Write;
+export module Delta:Async.Write;
 
-import Delta.Async.Task;
-import Delta.Concepts;
-import Delta.Concepts.String;
+
 
 export namespace async
 {

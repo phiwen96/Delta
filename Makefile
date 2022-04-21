@@ -9,9 +9,9 @@ std_headers:
 
 # Delta.Concepts: 
 
-delta: Delta.Concepts.Convertible.cpp Delta.Concepts.Same.cpp Delta.Types.IfElse.cpp Delta.Types.List.cpp Delta.Types.Predicate.cpp Delta.Types.BinaryPredicate.cpp Delta.Types.AnyOf.cpp Delta.Types.AllOf.cpp Delta.Types.Transform.cpp Delta.Types.cpp Delta.Mimic.cpp Delta.Concepts.Bool.cpp Delta.Concepts.Number.Floating.cpp Delta.Concepts.Number.Integer.cpp Delta.Concepts.Number.Signed.cpp Delta.Concepts.Number.Unsigned.cpp Delta.Concepts.Number.cpp Delta.Concepts.Size.cpp Delta.Concepts.Pointer.Traits.cpp Delta.Concepts.Pointer.cpp Delta.Concepts.Class.cpp Delta.Concepts.Function.Traits.Params.cpp Delta.Concepts.Function.Traits.cpp Delta.Concepts.Function.cpp Delta.Concepts.Char.cpp Delta.Concepts.Iterator.cpp Delta.Concepts.Range.cpp Delta.Concepts.Array.cpp Delta.Concepts.String.cpp Delta.Concepts.Future.cpp Delta.Concepts.cpp Delta.Algorithms.CopyPaste.cpp Delta.Algorithms.cpp Delta.Async.Task.cpp Delta.Async.Write.cpp Delta.Async.Out.cpp Delta.Async.cpp Delta.Net.cpp Delta.cpp
-	$(GCC) -c Delta.Concepts.Convertible.cpp
-	$(GCC) -c Delta.Concepts.Same.cpp 
+delta: Delta.Convertible.cpp Delta.Same.cpp Delta.Types.IfElse.cpp Delta.Types.List.cpp Delta.Types.Predicate.cpp Delta.Types.BinaryPredicate.cpp Delta.Types.AnyOf.cpp Delta.Types.AllOf.cpp Delta.Types.Transform.cpp Delta.Types.cpp Delta.Mimic.cpp Delta.Bool.cpp Delta.Number.Floating.cpp Delta.Number.Integer.cpp Delta.Number.Signed.cpp Delta.Number.Unsigned.cpp Delta.Number.cpp Delta.Size.cpp Delta.Pointer.cpp Delta.Class.cpp Delta.Function.cpp Delta.Char.cpp Delta.Iterator.cpp Delta.Range.cpp Delta.Array.cpp Delta.String.cpp Delta.Future.cpp Delta.cpp
+	$(GCC) -c Delta.Convertible.cpp
+	$(GCC) -c Delta.Same.cpp 
 	$(GCC) -c Delta.Types.IfElse.cpp
 	$(GCC) -c Delta.Types.List.cpp
 	$(GCC) -c Delta.Types.Predicate.cpp
@@ -21,35 +21,24 @@ delta: Delta.Concepts.Convertible.cpp Delta.Concepts.Same.cpp Delta.Types.IfElse
 	$(GCC) -c Delta.Types.Transform.cpp
 	$(GCC) -c Delta.Types.cpp
 	$(GCC) -c Delta.Mimic.cpp
-	$(GCC) -c Delta.Concepts.Bool.cpp 
-	$(GCC) -c Delta.Concepts.Number.Floating.cpp
-	$(GCC) -c Delta.Concepts.Number.Integer.cpp
-	$(GCC) -c Delta.Concepts.Number.Signed.cpp
-	$(GCC) -c Delta.Concepts.Number.Unsigned.cpp
-	$(GCC) -c Delta.Concepts.Number.cpp
-	$(GCC) -c Delta.Concepts.Size.cpp
-	$(GCC) -c Delta.Concepts.Pointer.Traits.cpp
-	$(GCC) -c Delta.Concepts.Pointer.cpp
-	$(GCC) -c Delta.Concepts.Class.cpp
-	$(GCC) -c Delta.Concepts.Function.Traits.Params.cpp
-	$(GCC) -c Delta.Concepts.Function.Traits.cpp
-	$(GCC) -c Delta.Concepts.Function.cpp
-	$(GCC) -c Delta.Concepts.Char.cpp
-	$(GCC) -c Delta.Concepts.Iterator.cpp
-	$(GCC) -c Delta.Concepts.Range.cpp
-	$(GCC) -c Delta.Concepts.Array.cpp
-	$(GCC) -c Delta.Concepts.String.cpp
-	$(GCC) -c Delta.Concepts.Future.cpp
-	$(GCC) -c Delta.Concepts.cpp
-	$(GCC) -c Delta.Algorithms.CopyPaste.cpp
-	$(GCC) -c Delta.Algorithms.cpp
-	$(GCC) -c Delta.Async.Task.cpp
-	$(GCC) -c Delta.Async.Write.cpp
-	$(GCC) -c Delta.Async.Out.cpp
-	$(GCC) -c Delta.Async.cpp
-	$(GCC) -c Delta.Net.TLS.cpp
-	$(GCC) -c Delta.Net.cpp
+	$(GCC) -c Delta.Bool.cpp 
+	$(GCC) -c Delta.Number.Floating.cpp
+	$(GCC) -c Delta.Number.Integer.cpp
+	$(GCC) -c Delta.Number.Signed.cpp
+	$(GCC) -c Delta.Number.Unsigned.cpp
+	$(GCC) -c Delta.Number.cpp
+	$(GCC) -c Delta.Size.cpp
+	$(GCC) -c Delta.Pointer.cpp
+	$(GCC) -c Delta.Class.cpp
+	$(GCC) -c Delta.Function.cpp
+	$(GCC) -c Delta.Char.cpp
+	$(GCC) -c Delta.Iterator.cpp
+	$(GCC) -c Delta.Range.cpp
+	$(GCC) -c Delta.Array.cpp
+	$(GCC) -c Delta.String.cpp
+	$(GCC) -c Delta.Future.cpp
 	$(GCC) -c Delta.cpp
+
 
 # App.Server: App.Server.cpp delta std_headers
 # 	$(GCC) $< *.o -o $@ -lrt -lpthread

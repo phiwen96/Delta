@@ -1,9 +1,9 @@
-export module Delta.Concepts.Number.Signed;
+export module Delta:Number.Integer;
 
-import Delta.Concepts.Convertible;
+import :Convertible;
 
 export template <typename T>
-concept Signed =
+concept Integer = 
 	Convertible <T, short> or 
 	Convertible <T, short int> or 
 	Convertible <T, signed short> or 
@@ -18,4 +18,12 @@ concept Signed =
 	Convertible <T, long long> or 
 	Convertible <T, long long int> or 
 	Convertible <T, signed long long> or 
-	Convertible <T, signed long long int>;
+	Convertible <T, signed long long int> or 
+	Convertible <T, unsigned short> or 
+	Convertible <T, unsigned short int> or 
+	Convertible <T, unsigned> or 
+	Convertible <T, unsigned int> or 
+	Convertible <T, unsigned long> or 
+	Convertible <T, unsigned long int> or 
+	Convertible <T, unsigned long long> or
+	Convertible <T, unsigned long long int>;

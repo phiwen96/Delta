@@ -1,4 +1,6 @@
-export module Delta.Concepts.Pointer.Traits;
+export module Delta:Pointer;
+import :Types;
+
 
 export template <typename T>
 concept PointerTraits =  requires () 
@@ -53,3 +55,12 @@ struct pointer_traits_t <T*&>
 {
 	using pointer_type = T*&;
 };
+
+
+export template <typename T>
+concept Pointer = HasDefinedPointerTraits <T>;
+
+export template <typename T>
+using pointer_types = typelist <T*, T*&, T*&&, T const*, T const*&, T *const, T const * const>;
+
+static_assert (AllOf <[] <typename T> {return Pointer <T>;}, pointer_types <int>>);

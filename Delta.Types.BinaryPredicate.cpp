@@ -1,3 +1,3 @@
-export module Delta.Types.BinaryPredicate;
+export module Delta:Types.BinaryPredicate;
 
-import Delta.Types.Predicate;
+import Delta:Types.Predicate;

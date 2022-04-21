@@ -1,4 +1,4 @@
-export module Delta.Concepts.Size;
+export module Delta:Size;
 
 export template <typename T>
 concept Size = requires (T t, decltype(alignof(char)) u)

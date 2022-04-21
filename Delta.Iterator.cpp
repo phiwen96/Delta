@@ -1,16 +1,16 @@
 module;
 #include <utility>
-export module Delta.Concepts.Iterator;
+export module Delta:Iterator;
 
-// import Delta.Concepts.Char;
-// export import Delta.Concepts.Iterator.Traits;
-import Delta.Concepts.Size;
+// import Char;
+// export import Iterator.Traits;
+import :Size;
 
-import Delta.Concepts.Convertible;
+import :Convertible;
 
-import Delta.Concepts.Same;
+import :Same;
 
-// export import Delta.Concepts.Iterator.Traits.Sentinel;
+// export import Iterator.Traits.Sentinel;
 
 
 

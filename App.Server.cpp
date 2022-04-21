@@ -175,10 +175,10 @@ int main(int, char **)
         }
     };
 
-	auto test_range = [] (Range auto const&)
-	{
+	// auto test_range = [] (Range auto const&)
+	// {
 
-	};
+	// };
 
 	
 	// async::out << "hej\n";

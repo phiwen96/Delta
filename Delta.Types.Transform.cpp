@@ -1,4 +1,4 @@
-export module Delta.Types.Transform;
+export module Delta:Types.Transform;
 
 // import Delta.Types.List;
 

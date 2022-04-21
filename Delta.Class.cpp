@@ -1,4 +1,4 @@
-export module Delta.Concepts.Class;
+export module Delta:Class;
 
 template <class T> char test(int T::*);   //this line
 struct two

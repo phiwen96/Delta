@@ -1,7 +1,7 @@
 module;
 #include <type_traits>
 
-export module Delta.Mimic;
+export module Delta:Mimic;
 
 template <typename T>
 struct add_r_value_t

@@ -1,8 +1,8 @@
-export module Delta.Types.AnyOf;
+export module Delta:Types.AnyOf;
 
-// import Delta.Types.Predicate;
-import Delta.Types.Predicate;
-import Delta.Types.List;
+// import Types.Predicate;
+import Delta:Types.Predicate;
+import Delta:Types.List;
 
 template <auto predicate, typename T, typename... U>
 struct any_of_t

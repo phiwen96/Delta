@@ -1,7 +1,7 @@
-export module Delta.Algorithms.CopyPaste;
+export module Algorithms.CopyPaste;
 
-import Delta.Concepts.Pointer;
-import Delta.Concepts.Size;
+import Pointer;
+import Size;
 
 export auto copy_paste (Pointer auto src, Pointer auto dst, Size auto n) -> void
 {

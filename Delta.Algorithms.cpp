@@ -1,3 +1,3 @@
-export module Delta.Algorithms;
+export module Algorithms;
 
-export import Delta.Algorithms.CopyPaste;
+// export import Delta.Algorithms.CopyPaste;

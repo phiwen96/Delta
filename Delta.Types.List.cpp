@@ -1,6 +1,6 @@
-export module Delta.Types.List;
+export module Delta:Types.List;
 
-import Delta.Types.IfElse;
+import Delta:Types.IfElse;
 
 template <auto, typename...>
 struct numbered_typelist;

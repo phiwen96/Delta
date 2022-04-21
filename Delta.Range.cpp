@@ -1,10 +1,10 @@
-export module Delta.Concepts.Range;
+export module Delta:Range;
 
 
-import Delta.Concepts.Size;
-import Delta.Concepts.Iterator;
-import Delta.Concepts.Function;
-import Delta.Types;
+import :Size;
+import :Iterator;
+import :Function;
+import :Types;
 
 
 /*

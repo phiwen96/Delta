@@ -1,8 +1,8 @@
-export module Delta.Types.AllOf;
+export module Delta:Types.AllOf;
 
-// import Delta.Types.Predicate;
-import Delta.Types.Predicate;
-import Delta.Types.List;
+// import Types.Predicate;
+import Delta:Types.Predicate;
+import Delta:Types.List;
 
 template <auto predicate, typename T, typename... U>
 struct all_of_t

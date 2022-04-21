@@ -1,6 +1,6 @@
 module;
 #include <coroutine>
-export module Delta.Async.Task;
+export module Delta:Async.Task;
 
 export namespace async
 {

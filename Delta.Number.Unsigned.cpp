@@ -1,6 +1,6 @@
-export module Delta.Concepts.Number.Unsigned;
+export module Delta:Number.Unsigned;
 
-import Delta.Concepts.Convertible;
+import :Convertible;
 
 export template <typename T>
 concept Unsigned = 

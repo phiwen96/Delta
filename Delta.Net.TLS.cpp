@@ -14,9 +14,9 @@ module;
 #include <cstring>
 #include <stdio.h>
 
-export module Delta.Net.TLS;
+export module Delta:Net.TLS;
 
-import Delta.Algorithms.CopyPaste;
+import Delta:Algorithms.CopyPaste;
 
 #if BYTE_ORDER == BIG_ENDIAN
 
