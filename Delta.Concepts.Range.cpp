@@ -73,26 +73,26 @@ struct get_range_policies_t <T>
 // struct begin_ret_type_t <T> : begin_ret_type_t <get_range_policies <T>> {};
 
 
-export template <Sentinel T>
-struct range_policies_t <T>
-{
-	constexpr static auto begin (T t) noexcept -> Iterator auto 
-	{
-		return t;
-	}
+// export template <Sentinel T>
+// struct range_policies_t <T>
+// {
+// 	constexpr static auto begin (T t) noexcept -> Iterator auto 
+// 	{
+// 		return t;
+// 	}
 
-	constexpr static auto end (T t) noexcept -> Iterator auto 
-	{
-		auto i = t;
+// 	constexpr static auto end (T t) noexcept -> Iterator auto 
+// 	{
+// 		auto i = t;
 
-		while (*i != sentinel_value <T>)
-		{
-			++i;
-		}
+// 		while (*i != sentinel_value <T>)
+// 		{
+// 			++i;
+// 		}
 		
-		return i;
-	}
-};
+// 		return i;
+// 	}
+// };
 
 export template <HasDefinedRangePolicies T>
 constexpr auto begin (T range) noexcept -> Iterator auto 

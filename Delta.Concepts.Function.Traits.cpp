@@ -1,7 +1,6 @@
 export module Delta.Concepts.Function.Traits;
 
 import Delta.Types.List;
-export import Delta.Concepts.Function.Traits.Params;
 import Delta.Concepts.Number.Signed;
 
 constexpr auto is_function (auto&&...) noexcept -> bool

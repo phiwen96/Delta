@@ -178,11 +178,11 @@ concept HasDefinedSentinelTraits = SentinelTraits <get_sentinel_traits <T>>;
 export template <typename T>
 concept Iterator = HasDefinedIteratorTraits <T>;
 
-export template <typename T>
-concept Sentinel = Iterator <T> and HasDefinedSentinelTraits <T>;
+// export template <typename T>
+// concept Sentinel = Iterator <T> and HasDefinedSentinelTraits <T>;
 	
-export template <Sentinel T>
-constexpr auto sentinel_value = sentinel_traits_t <T>::value;
+// export template <Sentinel T>
+// constexpr auto sentinel_value = sentinel_traits_t <T>::value;
 
 
 // static_assert (Iterator <char const*>);

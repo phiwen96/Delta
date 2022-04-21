@@ -6,8 +6,8 @@ import Delta.Concepts.Char;
 import Delta.Concepts.Same;
 import Delta.Types;
 import Delta.Concepts.Iterator;
-import Delta.Concepts.Range;
-import Delta.Concepts.Array;
+// import Delta.Concepts.Range;
+// import Delta.Concepts.Array;
 // import Delta.Concepts.Array;
 
 
@@ -15,14 +15,14 @@ import Delta.Concepts.Array;
 
 
 export template <typename T>
-requires Same <get_element_type <T>, char>
+requires Same <typename get_iterator_traits <T>::element_type, char>
 struct sentinel_traits_t <T>
 {
 	constexpr static auto value = '\0';
 };
 
-export template <typename T>
-concept String = Range <T> and Char <get_element_type <T>>;
+// export template <typename T>
+// concept String = Range <T> and Char <get_element_type <T>>;
 
 
 

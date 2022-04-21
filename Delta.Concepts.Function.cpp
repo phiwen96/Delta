@@ -1,6 +1,6 @@
 export module Delta.Concepts.Function;
 
-export import Delta.Concepts.Function.Traits;
+import Delta.Concepts.Function.Traits;
 
 
 
