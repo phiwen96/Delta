@@ -1,10 +1,10 @@
-export module Delta:Range;
+export module Delta.Range;
 
 
-import :Size;
-import :Iterator;
-import :Function;
-import :Types;
+import Delta.Size;
+import Delta.Iterator;
+import Delta.Function;
+import Delta.Types;
 
 
 /*

@@ -15,10 +15,25 @@ all: $(apps) $(tests)
 # Delta.pcm: Delta.cpp
 # 	$(CXX) $(CXX_FLAGS) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@
 
+Delta.String.pcm: Delta.String.cpp Delta.Iterator.pcm Delta.Size.pcm Delta.Char.pcm
+	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@
+
+Delta.Array.pcm: Delta.Array.cpp Delta.Range.pcm Delta.Size.pcm Delta.Types.pcm
+	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@
+
+Delta.Range.pcm: Delta.Range.cpp Delta.Size.pcm Delta.Iterator.pcm Delta.Types.pcm Delta.Function.pcm
+	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@
+
 Delta.Iterator.pcm: Delta.Iterator.cpp Delta.Size.pcm Delta.Convertible.pcm Delta.Same.pcm
 	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@
 
 Delta.Size.pcm: Delta.Size.cpp
+	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@
+
+Delta.Char.pcm: Delta.Char.cpp
+	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@
+
+Delta.Function.pcm: Delta.Function.cpp Delta.Types.pcm
 	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@
 
 Delta.Types.pcm: Delta.Types.cpp Delta.Types.IfElse.pcm Delta.Types.Predicate.pcm Delta.Types.List.pcm Delta.Types.AnyOf.pcm Delta.Types.AllOf.pcm
@@ -54,7 +69,7 @@ Delta.Mimic.pcm: Delta.Mimic.cpp
 # App.Client: App.Client.cpp delta 
 # 	$(GCC) $< *.o -o $@ -lrt -lpthread
 
-Delta.pcm: Delta.cpp Delta.Mimic.pcm Delta.Same.pcm Delta.Convertible.pcm Delta.Types.pcm Delta.Size.pcm Delta.Iterator.pcm 
+Delta.pcm: Delta.cpp Delta.Mimic.pcm Delta.Same.pcm Delta.Convertible.pcm Delta.Types.pcm Delta.Function.pcm Delta.Char.pcm Delta.Size.pcm Delta.Iterator.pcm Delta.Range.pcm Delta.Array.pcm Delta.String.pcm
 	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@
 
 App.%: App.%.cpp Delta.pcm

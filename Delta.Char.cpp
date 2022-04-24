@@ -1,7 +1,7 @@
-export module Delta:Char;
+export module Delta.Char;
 
-import :Convertible;
-import :Types;
+import Delta.Convertible;
+import Delta.Types;
 
 using char_types = typelist <char, signed char, unsigned char, char16_t, char32_t, wchar_t>;
 
