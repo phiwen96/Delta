@@ -1,6 +1,6 @@
-export module Delta:Types.Predicate;
+export module Delta.Types.Predicate;
 
-import :Same;
+import Delta.Same;
 
 /*
 	A type predicate is a lambda that, when called 

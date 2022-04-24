@@ -2,7 +2,7 @@ export module Delta:Array;
 
 // import Delta.Concepts.Size;
 // import Delta.Types;
-import :Size;
+
 import :Range;
 import :Types;
 

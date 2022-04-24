@@ -1,4 +1,4 @@
-export module Delta:Convertible;
+export module Delta.Convertible;
 
 // template <typename T, typename U>
 // struct convertible_to_t 

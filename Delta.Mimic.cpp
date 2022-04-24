@@ -1,7 +1,7 @@
-module;
-#include <type_traits>
+// module;
+// #include <type_traits>
 
-export module Delta:Mimic;
+export module Delta.Mimic;
 
 template <typename T>
 struct add_r_value_t
@@ -39,7 +39,7 @@ requires requires
 {
 	add_r_value_t <T>::type;
 }
-using add_r_value = add_r_value_t <T>::type;
+using add_r_value = typename add_r_value_t <T>::type;
 
 
 export template <class T>

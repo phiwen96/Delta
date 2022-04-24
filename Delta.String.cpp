@@ -1,25 +1,20 @@
 export module Delta:String;
 
+import :Char;
+import :Same;
+import :Iterator;
+// import :Range;
+// import :Range;
+// import :Array;
 
-// export import Delta.Concepts.Range;
-// import :Char;
-// import :Same;
-// import Delta.Types;
-// import :Iterator;
-// import Delta.Concepts.Range;
-// import Delta.Concepts.Array;
-// import Delta.Concepts.Array;
+struct bajs;
 
-
-// // import Delta.Types;
-
-
-// export template <typename T>
-// requires Same <typename get_iterator_traits <T>::element_type, char>
-// struct sentinel_traits_t <T>
-// {
-// 	constexpr static auto value = '\0';
-// };
+ template <typename T>
+requires Same <T, bajs>
+struct sentinel_traits_t <T>
+{
+	constexpr static auto value = '\0';
+};
 
 // export template <typename T>
 // concept String = Range <T> and Char <get_element_type <T>>;

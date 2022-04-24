@@ -1,4 +1,4 @@
-export module Delta:Types.IfElse;
+export module Delta.Types.IfElse;
 
 template <bool, typename T, typename U>
 struct if_else_t;

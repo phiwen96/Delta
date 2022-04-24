@@ -1,44 +1,52 @@
-GCC=g++-12 -std=gnu++2a -fcoroutines -fmodules-ts -fconcepts-diagnostics-depth=1
+# GCC=g++-12 -std=gnu++2a -fcoroutines -fmodules-ts -fconcepts-diagnostics-depth=1
+CXX = clang++-13
+CXX_FLAGS = -std=c++2a
+CXX_MODULES = -fmodules-ts -fmodules -fbuiltin-module-map -fimplicit-modules -fimplicit-module-maps -fprebuilt-module-path=.
 APP=main
-apps:= App.Server App.Client
+apps:= #App.Server App.Client
 tests:= Test.Yolo Test.Async.Out
 all: $(apps) $(tests)
 
-std_headers:
-	$(GCC) -xc++-system-header iostream
+# std_headers:
+# 	$(GCC) -xc++-system-header iostream
 
 # Delta.Concepts: 
 
-delta: Delta.Convertible.cpp Delta.Same.cpp Delta.Types.IfElse.cpp Delta.Types.List.cpp Delta.Types.Predicate.cpp Delta.Types.BinaryPredicate.cpp Delta.Types.AnyOf.cpp Delta.Types.AllOf.cpp Delta.Types.Transform.cpp Delta.Types.cpp Delta.Mimic.cpp Delta.Bool.cpp Delta.Number.Floating.cpp Delta.Number.Integer.cpp Delta.Number.Signed.cpp Delta.Number.Unsigned.cpp Delta.Number.cpp Delta.Size.cpp Delta.Pointer.cpp Delta.Class.cpp Delta.Function.cpp Delta.Char.cpp Delta.Iterator.cpp Delta.Range.cpp Delta.Array.cpp Delta.String.cpp Delta.Future.cpp Delta.cpp
-	$(GCC) -c Delta.Convertible.cpp
-	$(GCC) -c Delta.Same.cpp 
-	$(GCC) -c Delta.Types.IfElse.cpp
-	$(GCC) -c Delta.Types.List.cpp
-	$(GCC) -c Delta.Types.Predicate.cpp
-	$(GCC) -c Delta.Types.BinaryPredicate.cpp
-	$(GCC) -c Delta.Types.AnyOf.cpp
-	$(GCC) -c Delta.Types.AllOf.cpp
-	$(GCC) -c Delta.Types.Transform.cpp
-	$(GCC) -c Delta.Types.cpp
-	$(GCC) -c Delta.Mimic.cpp
-	$(GCC) -c Delta.Bool.cpp 
-	$(GCC) -c Delta.Number.Floating.cpp
-	$(GCC) -c Delta.Number.Integer.cpp
-	$(GCC) -c Delta.Number.Signed.cpp
-	$(GCC) -c Delta.Number.Unsigned.cpp
-	$(GCC) -c Delta.Number.cpp
-	$(GCC) -c Delta.Size.cpp
-	$(GCC) -c Delta.Pointer.cpp
-	$(GCC) -c Delta.Class.cpp
-	$(GCC) -c Delta.Function.cpp
-	$(GCC) -c Delta.Char.cpp
-	$(GCC) -c Delta.Iterator.cpp
-	$(GCC) -c Delta.Range.cpp
-	$(GCC) -c Delta.Array.cpp
-	$(GCC) -c Delta.String.cpp
-	$(GCC) -c Delta.Future.cpp
-	$(GCC) -c Delta.cpp
+# Delta.pcm: Delta.cpp
+# 	$(CXX) $(CXX_FLAGS) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@
 
+Delta.Iterator.pcm: Delta.Iterator.cpp Delta.Size.pcm Delta.Convertible.pcm Delta.Same.pcm
+	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@
+
+Delta.Size.pcm: Delta.Size.cpp
+	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@
+
+Delta.Types.pcm: Delta.Types.cpp Delta.Types.IfElse.pcm Delta.Types.Predicate.pcm Delta.Types.List.pcm Delta.Types.AnyOf.pcm Delta.Types.AllOf.pcm
+	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@
+
+Delta.Types.AllOf.pcm: Delta.Types.AllOf.cpp Delta.Types.Predicate.pcm Delta.Types.List.pcm
+	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@
+
+Delta.Types.AnyOf.pcm: Delta.Types.AnyOf.cpp Delta.Types.Predicate.pcm Delta.Types.List.pcm
+	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@
+
+Delta.Types.List.pcm: Delta.Types.List.cpp Delta.Types.IfElse.pcm
+	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@
+
+Delta.Types.Predicate.pcm: Delta.Types.Predicate.cpp Delta.Same.pcm
+	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@
+
+Delta.Types.IfElse.pcm: Delta.Types.IfElse.cpp
+	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@
+
+Delta.Convertible.pcm: Delta.Convertible.cpp
+	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@
+
+Delta.Same.pcm: Delta.Same.cpp
+	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@
+
+Delta.Mimic.pcm: Delta.Mimic.cpp
+	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@
 
 # App.Server: App.Server.cpp delta std_headers
 # 	$(GCC) $< *.o -o $@ -lrt -lpthread
@@ -46,15 +54,22 @@ delta: Delta.Convertible.cpp Delta.Same.cpp Delta.Types.IfElse.cpp Delta.Types.L
 # App.Client: App.Client.cpp delta 
 # 	$(GCC) $< *.o -o $@ -lrt -lpthread
 
-App.%: App.%.cpp delta
-	$(GCC) $< *.o -o $@ -lrt -lpthread
+Delta.pcm: Delta.cpp Delta.Mimic.pcm Delta.Same.pcm Delta.Convertible.pcm Delta.Types.pcm Delta.Size.pcm Delta.Iterator.pcm 
+	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@
 
-Test.%: Test.%.cpp delta
-	$(GCC) $< *.o -o $@ -lrt -lpthread
+App.%: App.%.cpp Delta.pcm
+	$(CXX) $(CXX_FLAGS) $^ -o $@ -lrt -lpthread
+
+Test.%: Test.%.cpp Delta.pcm
+	$(CXX) $(CXX_FLAGS) $^ -o $@ -lrt -lpthread
+
+# Test.%: Test.%.cpp delta
+# 	$(GCC) $< *.o -o $@ -lrt -lpthread
 	
 
 clean:
 	@rm -rf gcm.cache/
 	@rm -f *.o
+	@rm -f *.pcm
 	@rm -f $(apps)
 	@rm -f $(tests)

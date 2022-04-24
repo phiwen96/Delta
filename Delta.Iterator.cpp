@@ -1,14 +1,18 @@
-module;
-#include <utility>
-export module Delta:Iterator;
-
+// module;
+// #include <utility>
+export module Delta.Iterator;
+// import <utility>;
 // import Char;
 // export import Iterator.Traits;
-import :Size;
+import Delta.Mimic;
+import Delta.Size;
 
-import :Convertible;
+import Delta.Convertible;
 
-import :Same;
+import Delta.Same;
+
+
+
 
 // export import Iterator.Traits.Sentinel;
 
@@ -76,7 +80,7 @@ struct get_element_type_t <T>
 };
 
 template <typename T>
-using defer = decltype (*std::declval <T> ());
+using defer = decltype (*mimic <T> ());
 
 template <typename T>
 concept ReadOnly = requires (T t)

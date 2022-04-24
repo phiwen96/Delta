@@ -1,6 +1,6 @@
-export module Delta:Types.List;
+export module Delta.Types.List;
 
-import Delta:Types.IfElse;
+import Delta.Types.IfElse;
 
 template <auto, typename...>
 struct numbered_typelist;
@@ -67,7 +67,7 @@ struct typelist <T, U...> //: indexed_element <0, T>
 	constexpr static auto reversed_index = sizeof... (U);
 
 	template <auto i> 
-	using get = numbered_typelist <0, T, U...>::template get <i>;
+	using get = typename numbered_typelist <0, T, U...>::template get <i>;
 
 	// using params = numbered_typelist <0, T, U...>;
 };
