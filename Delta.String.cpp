@@ -8,24 +8,14 @@ import Delta.Iterator;
 import Delta.Range;
 import Delta.Array;
 import Delta.Char;
+import Delta.Same;
 // import :Range;
 // import :Range;
 // import :Array;
 
 
 
-export template <Iterator T>
-// requires Char <get_element_type <T>>
-struct sentinel_traits_t <T>
-{
-	static constexpr get_element_type <T> value = '\0';
-};
 
-// export template <typename T>
-// using get_sentinel_traits_t <>
-
-export template <typename T>
-concept String = Range <T> and Char <get_element_type <T>>;
 
 
 // static_assert (Array <char[10]>);

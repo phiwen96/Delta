@@ -6,11 +6,6 @@ export module Delta.Convertible;
 // 	constexpr static bool value = false;
 // };
 
-export template <typename T, typename U>
-concept Convertible = requires (T t, U u)
-{
-	u = t;
-};
 
 
 
