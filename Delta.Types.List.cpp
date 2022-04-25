@@ -2,7 +2,7 @@ export module Delta.Types.List;
 
 import Delta.Types.IfElse;
 
-template <auto, typename...>
+export template <auto, typename...>
 struct numbered_typelist;
 
 // template <auto N, auto M, typename... U, typename... V>
@@ -11,7 +11,7 @@ struct numbered_typelist;
 
 // };	
 
-template <auto N, typename T, typename... U>
+export template <auto N, typename T, typename... U>
 struct numbered_typelist <N, T, U...>
 {
 	using type = T;
@@ -28,7 +28,7 @@ struct numbered_typelist <N, T, U...>
 
 // };
 
-template <auto N, typename T>
+export template <auto N, typename T>
 struct numbered_typelist <N, T>
 {
 	using type = T;

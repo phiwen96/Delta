@@ -1,5 +1,5 @@
-export module Delta:Pointer;
-import :Types;
+export module Delta.Pointer;
+import Delta.Types;
 
 
 export template <typename T>

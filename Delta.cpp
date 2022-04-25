@@ -1,9 +1,11 @@
 export module Delta;
 export import Delta.Mimic;
 export import Delta.Same;
+export import Delta.Strip;
 export import Delta.Convertible;
 export import Delta.Types;
 export import Delta.Function;
+export import Delta.Pointer;
 export import Delta.Char;
 export import Delta.Size;
 export import Delta.Iterator;
@@ -34,16 +36,20 @@ export import Delta.String;
 
 
 
+static_assert (Array <char[10]>);
+static_assert (String <char[10]>);
+static_assert (Iterator <char const*>);
+// static_assert (HasDefinedSentinelTraits <char const*>);
+// static_assert (String <char const*>);
 
 
 
 
+// static_assert (AllOf <[]<typename T>{return Same <strip <T>, int>;}, pointer_types <int>>);
 
 
-
-
-// static_assert (AllOf <[] <typename T> {return Array <T>;}, array_types <int, 10>>);
-// static_assert (AllOf <[] <typename T> {return Range <T>;}, array_types <int, 10>>);
+static_assert (AllOf <[] <typename T> {return Array <T>;}, array_types <int, 10>>);
+static_assert (AllOf <[] <typename T> {return Range <T>;}, array_types <int, 10>>);
 
 
 

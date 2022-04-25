@@ -4,6 +4,7 @@ export module Delta.Array;
 // import Delta.Types;
 import Delta.Types;
 import Delta.Size;
+// import Delta.Iterator;
 import Delta.Range;
 
 
@@ -71,7 +72,9 @@ struct array_policies_t <T (&) [N]>
 	}	
 };
 
+static_assert (AllOf <[]<typename T>{return Array <T>;}, array_types <char, 10>>);
 
+static_assert (Array <char[10]>);
 
 consteval auto test_array () noexcept -> bool 
 {

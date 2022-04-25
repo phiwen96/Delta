@@ -85,10 +85,10 @@ struct get_range_policies_t <T>
 // 	{
 // 		auto i = t;
 
-// 		while (*i != sentinel_value <T>)
-// 		{
-// 			++i;
-// 		}
+// 		// while (*i != sentinel_value <T>)
+// 		// {
+// 		// 	++i;
+// 		// }
 		
 // 		return i;
 // 	}

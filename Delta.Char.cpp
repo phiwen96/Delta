@@ -1,7 +1,9 @@
 export module Delta.Char;
 
-import Delta.Convertible;
+// import Delta.Convertible;
+// import Delta.Same;
 import Delta.Types;
+import Delta.Strip;
 
 using char_types = typelist <char, signed char, unsigned char, char16_t, char32_t, wchar_t>;
 
@@ -27,7 +29,7 @@ using char_types = typelist <char, signed char, unsigned char, char16_t, char32_
 
 
 export template <typename T>
-concept Char = AnyOf <[] <typename U> {return Convertible <T, U>;}, char_types>;
+concept Char = AnyOf <[] <typename C> {return Strip <T, C>;}, char_types>;
 	// Convertible <T, char> or 
 	// Convertible <T, signed char> or 
 	// Convertible <T, unsigned char> or 

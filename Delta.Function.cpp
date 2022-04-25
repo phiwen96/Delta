@@ -1,6 +1,6 @@
 export module Delta.Function;
 
-import Delta.Types;
+export import Delta.Types.List;
 
 
 constexpr auto is_function (auto&&...) noexcept -> bool

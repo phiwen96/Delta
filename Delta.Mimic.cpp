@@ -37,7 +37,7 @@ struct add_r_value_t <T const&>
 template <typename T>
 requires requires 
 {
-	add_r_value_t <T>::type;
+	typename add_r_value_t <T>::type;
 }
 using add_r_value = typename add_r_value_t <T>::type;
 
