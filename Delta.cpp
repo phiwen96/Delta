@@ -48,8 +48,8 @@ static_assert (Iterator <char const*>);
 // static_assert (AllOf <[]<typename T>{return Same <strip <T>, int>;}, pointer_types <int>>);
 
 
-static_assert (AllOf <[] <typename T> {return Array <T>;}, array_types <int, 10>>);
-static_assert (AllOf <[] <typename T> {return Range <T>;}, array_types <int, 10>>);
+static_assert (AllOf <[] <typename T> {return Array <T>;}, array_types <typelist, int, 10>>);
+static_assert (AllOf <[] <typename T> {return Range <T>;}, array_types <typelist, int, 10>>);
 
 
 

@@ -4,12 +4,12 @@ export module Delta.Iterator;
 // import <utility>;
 // import Char;
 // export import Iterator.Traits;
-import Delta.Mimic;
-import Delta.Size;
+export import Delta.Mimic;
+export import Delta.Size;
 
-import Delta.Convertible;
+export import Delta.Convertible;
 
-import Delta.Same;
+export import Delta.Same;
 
 
 

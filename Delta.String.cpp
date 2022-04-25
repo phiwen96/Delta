@@ -1,11 +1,13 @@
 export module Delta.String;
 
-import Delta.Types;
-// import Delta.Same;
-import Delta.Char;
+// export import Delta.Types;
+// // export import Delta.Same;
+// export import Delta.Char;
+// export import Delta.Iterator;
 import Delta.Iterator;
 import Delta.Range;
 import Delta.Array;
+import Delta.Char;
 // import :Range;
 // import :Range;
 // import :Array;
@@ -13,7 +15,7 @@ import Delta.Array;
 
 
 export template <Iterator T>
-requires Char <get_element_type <T>>
+// requires Char <get_element_type <T>>
 struct sentinel_traits_t <T>
 {
 	static constexpr get_element_type <T> value = '\0';
@@ -24,7 +26,9 @@ struct sentinel_traits_t <T>
 
 export template <typename T>
 concept String = Range <T> and Char <get_element_type <T>>;
-static_assert (Array <char[10]>);
+
+
+// static_assert (Array <char[10]>);
 // static_assert (Array <char [10]>);
 // static_assert (String <char const*>);
 

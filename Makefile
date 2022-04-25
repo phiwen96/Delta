@@ -15,13 +15,13 @@ all: $(apps) $(tests)
 # Delta.pcm: Delta.cpp
 # 	$(CXX) $(CXX_FLAGS) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@
 
-Delta.String.pcm: Delta.String.cpp Delta.Size.pcm Delta.Char.pcm  Delta.Iterator.pcm Delta.Range.pcm Delta.Array.pcm 
+Delta.String.pcm: Delta.String.cpp Delta.Char.pcm Delta.Array.pcm 
 	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@
 
-Delta.Array.pcm: Delta.Array.cpp Delta.Range.pcm Delta.Size.pcm Delta.Types.pcm
+Delta.Array.pcm: Delta.Array.cpp Delta.Range.pcm
 	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@
 
-Delta.Range.pcm: Delta.Range.cpp Delta.Size.pcm Delta.Iterator.pcm Delta.Types.pcm Delta.Function.pcm
+Delta.Range.pcm: Delta.Range.cpp Delta.Types.pcm Delta.Function.pcm Delta.Iterator.pcm
 	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@
 
 Delta.Iterator.pcm: Delta.Iterator.cpp Delta.Mimic.pcm Delta.Size.pcm Delta.Convertible.pcm Delta.Same.pcm
@@ -30,7 +30,7 @@ Delta.Iterator.pcm: Delta.Iterator.cpp Delta.Mimic.pcm Delta.Size.pcm Delta.Conv
 Delta.Size.pcm: Delta.Size.cpp
 	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@
 
-Delta.Char.pcm: Delta.Char.cpp Delta.Strip.pcm
+Delta.Char.pcm: Delta.Char.cpp Delta.Types.pcm Delta.Strip.pcm
 	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@
 
 Delta.Pointer.pcm: Delta.Pointer.cpp
