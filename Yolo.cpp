@@ -55,9 +55,6 @@ struct strip_t;
 template <typename T>
 using strip = typename strip_t <T>::result;
 
-/*
-	auto t (Strip <int>)
-*/
 template <typename T, typename U>
 concept Strip = Same <strip <T>, U>;
 
@@ -70,25 +67,25 @@ struct strip_t <T>
 template <typename T>
 struct strip_t <T*>
 {
-	using result = typename strip_t <T>::result;
+	using result = strip <T>;
 };
 
 template <typename T>
 struct strip_t <T&>
 {
-	using result = typename strip_t <T>::result;
+	using result = strip <T>;
 };
 
 template <typename T>
 struct strip_t <T&&>
 {
-	using result = typename strip_t <T>::result;
+	using result = strip <T>;
 };
 
 template <typename T>
 struct strip_t <T const>
 {
-	using result = typename strip_t <T>::result;
+	using result = strip <T>;
 };
 
 static_assert (Same <strip <char const*>, char>);
@@ -378,28 +375,29 @@ concept IteratorTraits = requires
 	// typename T::sentinel_traits;
 };
 
-template <typename... T>
-struct get_iterator_traits_t;
+// template <typename... T>
+// struct get_iterator_traits_t;
 
-template <typename T>
-// requires IteratorTraits <typename get_iterator_traits_t <T>::result>
-using get_iterator_traits = typename get_iterator_traits_t <T>::result;
-
-template <typename T>
-concept HasDefinedIteratorTraits = IteratorTraits <get_iterator_traits <T>>;
-
-template <typename T>
-concept Iterator = HasDefinedIteratorTraits <T>;
-
+// template <typename T>
+// // requires IteratorTraits <typename get_iterator_traits_t <T>::result>
+// using get_iterator_traits = typename get_iterator_traits_t <T>::result;
 template <typename... T>
 struct iterator_traits_t;
 
 template <typename T>
-requires IteratorTraits <iterator_traits_t <T>>
-struct get_iterator_traits_t <T>
-{
-	using result = iterator_traits_t <T>;
-};
+concept HasDefinedIteratorTraits = IteratorTraits <iterator_traits_t <T>>;
+
+template <typename T>
+concept Iterator = HasDefinedIteratorTraits <T>;
+
+
+
+// template <typename T>
+// requires IteratorTraits <iterator_traits_t <T>>
+// struct get_iterator_traits_t <T>
+// {
+// 	using result = iterator_traits_t <T>;
+// };
 
 template <typename A, typename B, typename C>
 struct iterator_traits_t <A, B, C>
@@ -409,18 +407,18 @@ struct iterator_traits_t <A, B, C>
 	using element_type = C;
 };
 
-template <typename...>
-struct get_element_type_t;
+// template <typename...>
+// struct get_element_type_t;
 
-template <typename T>
-// requires requires {typename get_element_type_t <T>::element_type;}
-using get_element_type = typename get_element_type_t <T>::result;
+// template <typename T>
+// // requires requires {typename get_element_type_t <T>::element_type;}
+// using get_element_type = typename get_element_type_t <T>::result;
 
-template <HasDefinedIteratorTraits T>
-struct get_element_type_t <T>
-{
-	using result = typename get_iterator_traits <T>::element_type;
-};
+// template <HasDefinedIteratorTraits T>
+// struct get_element_type_t <T>
+// {
+// 	using result = typename get_iterator_traits <T>::element_type;
+// };
 
 template <typename T>
 using defer = decltype (*mimic <T> ());
@@ -432,7 +430,7 @@ concept ReadOnly = requires (T t)
 };
 
 template <typename T>
-concept WriteOnly = requires (T t, decltype (*t) u)
+concept WriteOnly = requires (T t, defer <T> u)
 {
 	*t = u;
 };
@@ -462,41 +460,37 @@ concept Jump =  requires (T t)
 };
 
 template <typename T>
-requires (ReadOnly <T> and StepForward <T>)
-struct iterator_traits_t <T> : iterator_traits_t <iterator_tag::INPUT, T, defer <T>> {};
+concept InputIterator = ReadOnly <T> and StepForward <T>;
 
 template <typename T>
-requires (WriteOnly <T> and StepForward <T>)
-struct iterator_traits_t <T> : iterator_traits_t <iterator_tag::OUTPUT, T, defer <T>> {};
+concept OutputIterator = WriteOnly <T> and StepForward <T>;
 
 template <typename T>
-requires (ReadOnly <T> and WriteOnly <T> and StepForward <T>)
-struct iterator_traits_t <T> : iterator_traits_t <iterator_tag::FORWARD, T, defer <T>> {};
+concept ForwardIterator = InputIterator <T> and WriteOnly <T>;
 
 template <typename T>
-requires (ReadOnly <T> and
-	WriteOnly <T> and 
-	StepForward <T> and 
-	StepBackward <T>)
-struct iterator_traits_t <T> : iterator_traits_t <iterator_tag::BIDIRECTIONAL, T, defer <T>> {};
+concept BidirectionalIterator = ForwardIterator <T> and StepBackward <T>;
 
 template <typename T>
-requires (ReadOnly <T> and
-	WriteOnly <T> and 
-	StepForward <T> and 
-	StepBackward <T> and 
-	Jump <T>)
-struct iterator_traits_t <T> : iterator_traits_t <iterator_tag::RANDOM_ACCESS, T, defer <T>> {};
+concept RandomAccessIterator = BidirectionalIterator <T> and Jump <T>;
+
+template <typename T>
+struct is_contiguous_iterator_t {constexpr static auto result = false;};
+
+template <typename T>
+constexpr auto is_contiguous_iterator = is_contiguous_iterator_t <T>::result;
+
+template <typename T>
+concept ContiguousIterator = RandomAccessIterator <T> and is_contiguous_iterator <T>;
 
 template <typename T>
 concept SentinelTraits = requires
-{	
-	// T::value;
-	true;
+{
+	T::value;
 };
 
-template <typename...>
-struct get_sentinel_traits_t;
+// template <typename...>
+// struct get_sentinel_traits_t;
 
 
 
@@ -512,15 +506,15 @@ struct sentinel_traits_t <T>
 
 
 
-template <typename T>
-requires SentinelTraits <sentinel_traits_t <T>>
-struct get_sentinel_traits_t <T>
-{
-	using result = sentinel_traits_t <T>;
-};
+// template <typename T>
+// requires SentinelTraits <sentinel_traits_t <T>>
+// struct get_sentinel_traits_t <T>
+// {
+// 	using result = sentinel_traits_t <T>;
+// };
 
-template <typename T>
-using get_sentinel_traits = typename get_sentinel_traits_t <T>::result;
+// template <typename T>
+// using get_sentinel_traits = typename get_sentinel_traits_t <T>::result;
 
 template <typename T>
 concept HasDefinedSentinelTraits = SentinelTraits <sentinel_traits_t <T>>;
@@ -529,7 +523,7 @@ template <typename T>
 concept Sentinel = Iterator <T> and HasDefinedSentinelTraits <T>;
 
 template <Sentinel T>
-constexpr auto sentinel_value = get_sentinel_traits <T>::value;
+constexpr auto sentinel_value = sentinel_traits_t <T>::value;
 
 /*
 	begin + end 
@@ -552,35 +546,36 @@ concept RangePolicies = requires (fun_param_type <decltype (T::begin), 0>& range
 	// };
 };
 
-template <typename...>
-struct get_range_policies_t;
+// template <typename...>
+// struct get_range_policies_t;
 
-template <typename T>
+// template <typename T>
 // requires RangePolicies <typename get_range_policies_t <T>::result>
-using get_range_policies = typename get_range_policies_t <T>::result;
-
-template <typename T>
-concept HasDefinedRangePolicies = RangePolicies <get_range_policies <T>>;
-
-template <HasDefinedRangePolicies T>
-requires (not HasDefinedIteratorTraits <T>)
-struct get_element_type_t <T>
-{
-	using result = defer <fun_ret_type <decltype (get_range_policies <T>::begin)>>;
-};
-
-template <typename T>
-concept Range = HasDefinedRangePolicies <T>;// and HasDefinedRangeTraits <T>;
-
+// using get_range_policies = typename get_range_policies_t <T>::result;
 template <typename... T>
 struct range_policies_t;
 
 template <typename T>
-requires RangePolicies <range_policies_t <T>>
-struct get_range_policies_t <T>
-{
-	using result = range_policies_t <T>;
-};
+concept HasDefinedRangePolicies = RangePolicies <range_policies_t <T>>;
+
+// template <HasDefinedRangePolicies T>
+// requires (not HasDefinedIteratorTraits <T>)
+// struct get_element_type_t <T>
+// {
+// 	using result = defer <fun_ret_type <decltype (get_range_policies <T>::begin)>>;
+// };
+
+template <typename T>
+concept Range = HasDefinedRangePolicies <T>;// and HasDefinedRangeTraits <T>;
+
+
+
+// template <typename T>
+// requires RangePolicies <range_policies_t <T>>
+// struct get_range_policies_t <T>
+// {
+// 	using result = range_policies_t <T>;
+// };
 
 // template <typename...>
 // struct begin_param_type_t;
@@ -609,7 +604,7 @@ struct get_range_policies_t <T>
 template <Range T>
 constexpr auto begin (T range) noexcept -> Iterator auto 
 {
-	return get_range_policies <T>::begin (range);
+	return range_policies_t <T>::begin (range);
 }
 
 template <Range T>
@@ -617,11 +612,11 @@ constexpr auto end (T range) noexcept -> Iterator auto
 {
 	if constexpr (not requires {typename T::end;})
 	{
-		return get_range_policies <T>::begin (range) + get_range_policies <T>::length (range);
+		return range_policies_t <T>::begin (range) + range_policies_t <T>::length (range);
 
 	} else 
 	{
-		return get_range_policies <T>::end (range);
+		return range_policies_t <T>::end (range);
 	}
 }
 
@@ -636,34 +631,36 @@ constexpr auto end (T range) noexcept -> Iterator auto
 template <typename T>
 concept ArrayPolicies = RangePolicies <T>;
 
-template <typename... T>
-struct get_array_policies_t;
+// template <typename... T>
+// struct get_array_policies_t;
 
-template <typename T>
-// requires ArrayPolicies <typename get_array_policies_t <T>::result>
-using get_array_policies = typename get_array_policies_t <T>::result;
-
-template <typename T>
-concept HasDefinedArrayPolicies = ArrayPolicies <get_array_policies <T>>;
-
-template <typename T>
-concept Array = HasDefinedArrayPolicies <T>;
-
+// template <typename T>
+// // requires ArrayPolicies <typename get_array_policies_t <T>::result>
+// using get_array_policies = typename get_array_policies_t <T>::result;
 template <typename...>
 struct array_policies_t;
 
 template <typename T>
-requires ArrayPolicies <array_policies_t <T>>
-struct get_array_policies_t <T>
-{
-	using result = array_policies_t <T>;
-};
+concept HasDefinedArrayPolicies = ArrayPolicies <array_policies_t <T>>;
 
 template <HasDefinedArrayPolicies T>
-struct get_range_policies_t <T>
-{
-	using result = get_array_policies <T>;
-};
+struct range_policies_t <T> : array_policies_t <T> {};
+
+template <typename T>
+concept Array = HasDefinedArrayPolicies <T>;
+
+// template <typename T>
+// requires ArrayPolicies <array_policies_t <T>>
+// struct get_array_policies_t <T>
+// {
+// 	using result = array_policies_t <T>;
+// };
+
+// template <HasDefinedArrayPolicies T>
+// struct get_range_policies_t <T>
+// {
+// 	using result = get_array_policies <T>;
+// };
 
 template <template <typename...> typename T, typename U, auto N>
 using array_types = T <U [N], U (&) [N], U const (&) [N]>;
@@ -696,50 +693,51 @@ struct array_policies_t <T (&) [N]>
 	}	
 };
 
-template <Sentinel T>
-requires (not Array <T>)
-struct range_policies_t <T>
-{
-	constexpr static auto begin (T t) noexcept -> Iterator auto 
-	{
-		return t;
-	}
 
-	constexpr static auto end (T t) noexcept -> Iterator auto 
-	{
-		auto i = t;
+// template <Sentinel T>
+// requires (not Array <T>)
+// struct range_policies_t <T>
+// {
+// 	constexpr static auto begin (T t) noexcept -> Iterator auto 
+// 	{
+// 		return t;
+// 	}
 
-		while (*i != sentinel_value <T>)
-		{
-			++i;
-		}
+// 	constexpr static auto end (T t) noexcept -> Iterator auto 
+// 	{
+// 		auto i = t;
+
+// 		while (*i != sentinel_value <T>)
+// 		{
+// 			++i;
+// 		}
 		
-		return i;
-	}
-};
+// 		return i;
+// 	}
+// };
 
-
+static_assert (not Iterator <char[10]>);
 
 // template <typename T>
 // using get_sentinel_traits_t <>
 
 
-static_assert (Char <get_element_type <char const*>>);
+// static_assert (Char <get_element_type <char const*>>);
 
 
 
-template <typename T>
-concept String = Range <T> and Char <get_element_type <T>>;
+// template <typename T>
+// concept String = Range <T> and Char <get_element_type <T>>;
 
-static_assert (Iterator <char const*>);
-static_assert (HasDefinedIteratorTraits <char const*>);
-static_assert (Sentinel <char const*>);
-// static_assert (sentinel_traits_t <char const*>::value == '\0');
-static_assert (String <char const*>);
-// static_assert (Same <get_element_type <int[10]>, int>);
-static_assert (String <char [1]>);
-static_assert (Strip <get_element_type <char const*>, char>);
-static_assert (Strip <get_element_type <char[10]>, char>);
+// static_assert (Iterator <char const*>);
+// static_assert (HasDefinedIteratorTraits <char const*>);
+// static_assert (Sentinel <char const*>);
+// // static_assert (sentinel_traits_t <char const*>::value == '\0');
+// static_assert (String <char const*>);
+// // static_assert (Same <get_element_type <int[10]>, int>);
+// static_assert (String <char [1]>);
+// static_assert (Strip <get_element_type <char const*>, char>);
+// static_assert (Strip <get_element_type <char[10]>, char>);
 // static_assert (Same <get_element_type <char[10]>, char>);
 // static_assert ()
 
