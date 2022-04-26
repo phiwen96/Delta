@@ -738,12 +738,15 @@ static_assert (Sentinel <char const*>);
 static_assert (String <char const*>);
 // static_assert (Same <get_element_type <int[10]>, int>);
 static_assert (String <char [1]>);
-static_assert (Same <get_element_type <char[10]>, char>);
+static_assert (Strip <get_element_type <char const*>, char>);
+static_assert (Strip <get_element_type <char[10]>, char>);
+// static_assert (Same <get_element_type <char[10]>, char>);
 // static_assert ()
 
 
 auto main (int, char**) -> int 
 {
+
 	// String auto s = "hej";
 	return 0;
 }
