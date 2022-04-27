@@ -32,8 +32,18 @@ struct add_r_value_t<T const &>
 template <typename T>
 using add_r_value = typename add_r_value_t<T>::type;
 
-template <typename T>
-constexpr auto mimic() noexcept -> add_r_value<T>;
+template<typename _Tp, typename _Up = _Tp&&>
+    constexpr _Up
+    __mimic(int) noexcept;
+
+  template<typename _Tp>
+    constexpr _Tp
+    __mimic(long) noexcept;
+
+  template<typename _Tp>
+    constexpr auto mimic() noexcept -> decltype(__mimic<_Tp>(0));
+// template <typename T>
+// constexpr auto mimic() noexcept -> add_r_value<T>;
 
 template <typename T, typename U>
 struct same_t
@@ -327,6 +337,12 @@ struct pointer_traits_t<T *const>
 };
 
 template <typename T>
+struct pointer_traits_t<T *const&>
+{
+	using pointer_type = T *const&;
+};
+
+template <typename T>
 struct pointer_traits_t<T const *const>
 {
 	using pointer_type = T const *const;
@@ -348,11 +364,10 @@ template <typename T>
 concept Pointer = HasDefinedPointerTraits<T>;
 
 template <typename T>
-using pointer_types = typelist<T *, T *&, T *&&, T const *, T const *&, T *const, T const *const>;
+using pointer_types = typelist<T *, T *&, T *&&, T const *, T const *&, T *const, T *const&, T const *const>;
 
-static_assert(AllOf<[]<typename T>
-					{ return Pointer<T>; },
-					pointer_types<int>>);
+static_assert(AllOf<[]<typename T>{ return Pointer<T>; },pointer_types<int>>);
+static_assert(AllOf<[]<typename T>{ return Strip<T, int>; },pointer_types<int>>);
 
 using char_types = typelist<char, signed char, unsigned char, char16_t, char32_t, wchar_t>;
 
@@ -416,6 +431,8 @@ struct iterator_traits_t<A, B, C>
 
 template <typename T>
 using defer = decltype(*mimic<T>());
+
+static_assert (Char<defer<char const*>>);
 
 template <typename T>
 concept ReadOnly = requires(T t)
@@ -496,23 +513,23 @@ template <typename T>
 using element_type = typename element_type_t<T>::result;
 
 template <typename...>
-struct sentinel_traits_t;
+struct sentinel_value_t;
 
 // template <typename T>
-// concept HasDefinedSentinelTraits = SentinelTraits <sentinel_traits_t <T>>;
+// concept HasDefinedSentinelTraits = SentinelTraits <sentinel_value_t <T>>;
 
 // static_assert (HasDefinedSentinelTraits <char const*>);
 
 template <typename T>
-concept Sentinel = Iterator<T> and requires {sentinel_traits_t <T>::value;};
+concept Sentinel = Iterator<T> and requires {sentinel_value_t <T>::value;};
 
-// static_assert(requires {typename sentinel_traits_t <char const*>;});
-// static_assert(requires {{sentinel_traits_t <char const*>::value()};});
+// static_assert(requires {typename sentinel_value_t <char const*>;});
+// static_assert(requires {{sentinel_value_t <char const*>::value()};});
 
 // static_assert (Sentinel <char const*>);
 
 // template <Sentinel T>
-// constexpr auto sentinel_value = sentinel_traits_t <T>::value;
+// constexpr auto sentinel_value = sentinel_value_t <T>::value;
 
 template <typename T>
 struct bounded_t
@@ -537,20 +554,11 @@ concept RangePolicies = requires(fun_param_type<decltype(T::begin), 0> &range)
 	noexcept->Iterator;
 	// true;
 
-	requires requires
-	{
 		{
 			T::end(range)
 		}
 		noexcept->Iterator;
 
-	} or requires
-	{
-		{
-			T::length(range)
-		}
-		noexcept->Size;
-	};
 };
 
 template <typename... T>
@@ -564,41 +572,33 @@ struct range_policies_t;
 // struct get_range_policies <T> : range_policies_t <T> {};
 
 template <typename T>
-constexpr auto begin(T range) noexcept -> Iterator auto requires requires
+concept Range = RangePolicies <range_policies_t <T>>;
+
+constexpr auto begin(Range auto&& range) noexcept -> Iterator auto requires requires
 {
 	{
-		range_policies_t<T>::begin(range)
+		range_policies_t<decltype (range)>::begin(range)
 	}
 	noexcept->Iterator;
 }
 {
-	return range_policies_t<T>::begin(range);
+	return range_policies_t<decltype (range)>::begin(range);
 }
 
-template <typename T>
-constexpr auto end(T range) noexcept -> Iterator auto requires requires
+constexpr auto end(Range auto&& range) noexcept -> Iterator auto requires requires
 {
-	{
-		range_policies_t<T>::end(range)
-	}
-	noexcept->Iterator;
+	{range_policies_t<decltype (range)>::end(range)} noexcept->Iterator;
 }
 {
-	return range_policies_t<T>::end(range);
+	return range_policies_t<decltype (range)>::end(range);
 }
 
-template <typename T>
-concept Range = requires(T &t)
-{
-	{
-		begin(t)
-	}
-	noexcept->Iterator;
-	{
-		end(t)
-	}
-	noexcept->Iterator;
-};
+
+// {
+
+// 	{begin(t)} noexcept->Iterator;
+// 	{end(t)} noexcept->Iterator;
+// };
 
 // template <Range T>
 // requires (not Iterator <T>)
@@ -619,7 +619,7 @@ requires(not Bounded<T>) struct range_policies_t<T>
 	{
 		auto i = t;
 
-		while (*i != sentinel_traits_t<T>::value)
+		while (*i != sentinel_value_t<T>::value)
 		{
 			++i;
 		}
@@ -657,39 +657,39 @@ using array_types = typelist<U[N], U (&)[N], U const (&)[N]>;
 template <typename T, auto N>
 struct array_policies_t<T[N]>
 {
-	constexpr static auto begin(T(range)[N]) noexcept -> auto *
+	constexpr static auto begin(T(range)[N]) noexcept -> Iterator auto
 	{
 		return range;
 	}
 
-	constexpr static auto length(T(range)[N]) noexcept -> Size auto
+	constexpr static auto end(T(range)[N]) noexcept -> Iterator auto
 	{
-		return N;
+		return range + N;
 	}
 };
 
 template <typename T, auto N>
 struct array_policies_t<T (&)[N]>
 {
-	constexpr static auto begin(T (&range)[N]) noexcept -> auto *
+	constexpr static auto begin(T (&range)[N]) noexcept -> Iterator auto
 	{
 		return range;
 	}
 
-	constexpr static auto length(T (&range)[N]) noexcept -> Size auto
+	constexpr static auto end(T (&range)[N]) noexcept -> Iterator auto
 	{
-		return N;
+		return range + N;
 	}
 };
 
-static_assert(AllOf<[]<typename T>
-					{ return Array<T>; },
-					array_types<int, 10>>);
+// static_assert (Range <int[10]>);
+
+
 // static_assert (AllOf <[]<typename T>{return Range <T>;}, array_types <int, 10>>);
 // static_assert(Range<int[10]>);
 
 // template <typename T>
-// using get_sentinel_traits_t <>
+// using get_sentinel_value_t <>
 
 // static_assert (Char <get_element_type <char const*>>);
 
@@ -697,17 +697,56 @@ static_assert(AllOf<[]<typename T>
 
 // static_assert (sentinel_value <char const*> == '\0');
 // static_assert (Char <element_type <char const*>>);
-template <Iterator T>
-requires Char<defer<T>>
-struct sentinel_traits_t<T>
+
+constexpr auto unref (auto&& u) noexcept 
 {
-	static constexpr auto value = '\0';
+	return *u;
+}
+static_assert (Char <element_type <char const*>>);
+
+template <Iterator T>
+requires Char <element_type <T>>
+struct sentinel_value_t <T>
+{
+	static constexpr T value = '\0';
 };
+#include <utility>
+
+// static_assert (AllOf <[]<typename T>{return Sentinel <T>;}, pointer_types <char>>);
+// static_assert (Sentinel <char *>);
+// static_assert (Sentinel <char const*>);
+// T *, T *&, T *&&, T const *, T const *&, T *const, T *const&, T const *const
+// template <>
+// struct sentinel_value_t<char const*>
+// {
+// 	static constexpr auto value = '\0';
+// };
+
+
+
+/*
+	funkar med
+
+		template <>
+		struct sentinel_value_t<char const*>
+		{
+			static constexpr auto value = '\0';
+		};
+
+	men inte med 
+
+		template <Iterator T>
+		requires Char<defer<T>>
+		struct sentinel_value_t<T>
+		{
+			static constexpr auto value = '\0';
+		};
+*/
 static_assert (Iterator <char const*>);
 static_assert (Char <defer <char const*>>);
 
 // template <>
-// struct sentinel_traits_t<char const*>
+// struct sentinel_value_t<char const*>
 // {
 // 	static constexpr auto value = '\0';
 // };
@@ -715,19 +754,17 @@ static_assert (Char <defer <char const*>>);
 template <typename T>
 concept String = Range<T> and Char<defer<fun_ret_type<decltype (range_policies_t<T>::begin)>>>;
 
-// static_assert(Iterator<char const *>);
-// static_assert (HasDefinedIteratorTraits <char const*>);
-
-// // static_assert (sentinel_traits_t <char const*>::value == '\0');
-// static_assert(String<char const *>);
-// static_assert (Char <element_type <char[10]>>);
-// // static_assert (Same <get_element_type <int[10]>, int>);
-// static_assert (String <char [10]>);
-// static_assert (Strip <get_element_type <char const*>, char>);
-// static_assert (Strip <get_element_type <char[10]>, char>);
-// static_assert (Same <get_element_type <char[10]>, char>);
-// static_assert ()
-
+static_assert(AllOf<[]<typename T>{ return Array<T>; },array_types<char, 10>>);
+static_assert(AllOf<[]<typename T>{ return Array<T>; },array_types<int, 10>>);
+// static_assert (String <char*>);
+// static_assert (AllOf <[] <typename T> {return String <T>;}, pointer_types <char>>);
+// static_assert(AllOf<[]<typename T>{ return Range<T>; },array_types<int, 10>>);
+// static_assert (Range <int[10]>);
+// static_assert (Range <char [10]>);
+// static_assert (Range <int(&)[10]>);
+// static_assert (Strip <char const *&, char>);
+// static_assert (String <char const*>);
+// static_assert (String <char[10]>);
 
 // template <typename...>
 // struct sentinel_value_t;
@@ -756,9 +793,10 @@ concept String = Range<T> and Char<defer<fun_ret_type<decltype (range_policies_t
 // };
 
 // static_assert (Sentinel <char const*>);
-static_assert (String <char const*>);
+
 auto main(int, char **) -> int
 {
+	// Sentinel auto h = "hej";
 	// test ("hej");
 	// String auto s = "hej";
 	return 0;
