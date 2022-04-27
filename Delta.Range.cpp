@@ -72,7 +72,8 @@ export constexpr auto end(Range auto&& range) noexcept -> Iterator auto requires
 // };
 
 export template <Sentinel T>
-requires(not Bounded<T>) struct range_policies_t<T>
+requires(not Bounded<T>) 
+struct range_policies_t<T>
 {
 	constexpr static auto begin(T t) noexcept -> Iterator auto
 	{
