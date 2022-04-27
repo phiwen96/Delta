@@ -1,19 +1,58 @@
 export module Delta.Array;
 
-// import Delta.Concepts.Size;
-// import Delta.Types;
-// import Delta.Types;
-import Delta.Size;
-// import Delta.Iterator;
-import Delta.Range;
+export import Delta.Range;
 
 
+export template <typename T>
+concept ArrayPolicies = RangePolicies<T>;
 
+export template <typename...>
+struct array_policies_t;
 
+export template <typename T>
+concept HasDefinedArrayPolicies = ArrayPolicies<array_policies_t<T>>;
 
-// static_assert (AllOf <[]<typename T>{return Array <T>;}, array_types <char, 10>>);
+export template <HasDefinedArrayPolicies T>
+struct range_policies_t<T> : array_policies_t<T>
+{
+};
 
-// static_assert (Array <char[10]>);
+export template <typename T>
+concept Array = HasDefinedArrayPolicies<T>;
 
+export template <Array T>
+struct bounded_t<T>
+{
+	constexpr static auto value = true;
+};
 
+export template <typename U, auto N>
+using array_types = typelist<U[N], U (&)[N], U const (&)[N]>;
 
+export template <typename T, auto N>
+struct array_policies_t<T[N]>
+{
+	constexpr static auto begin(T(range)[N]) noexcept -> Iterator auto
+	{
+		return range;
+	}
+
+	constexpr static auto end(T(range)[N]) noexcept -> Iterator auto
+	{
+		return range + N;
+	}
+};
+
+export template <typename T, auto N>
+struct array_policies_t<T (&)[N]>
+{
+	constexpr static auto begin(T (&range)[N]) noexcept -> Iterator auto
+	{
+		return range;
+	}
+
+	constexpr static auto end(T (&range)[N]) noexcept -> Iterator auto
+	{
+		return range + N;
+	}
+};

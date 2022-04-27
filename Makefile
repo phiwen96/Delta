@@ -1,10 +1,10 @@
 # GCC=g++-12 -std=gnu++2a -fcoroutines -fmodules-ts -fconcepts-diagnostics-depth=1
 CXX = clang++-13
-CXX_FLAGS = -std=c++2a
+CXX_FLAGS = -std=c++2b -Wall
 CXX_MODULES = -fmodules-ts -fmodules -fbuiltin-module-map -fimplicit-modules -fimplicit-module-maps -fprebuilt-module-path=.
 APP=main
 apps:= #App.Server App.Client
-tests:= Test.Yolo Test.Async.Out
+tests:= Test.Yolo
 all: $(apps) $(tests)
 
 # std_headers:
@@ -12,8 +12,23 @@ all: $(apps) $(tests)
 
 # Delta.Concepts: 
 
-# Delta.pcm: Delta.cpp
-# 	$(CXX) $(CXX_FLAGS) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@
+Delta.pcm: Delta.cpp Delta.String.pcm
+	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@
+
+Delta.String.pcm: Delta.String.cpp Delta.Array.pcm
+	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@
+
+Delta.Array.pcm: Delta.Array.cpp Delta.Range.pcm
+	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@
+
+Delta.Range.pcm: Delta.Range.cpp Delta.Iterator.pcm
+	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@
+
+Delta.Iterator.pcm: Delta.Iterator.cpp Delta.Common.pcm
+	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@
+
+Delta.Common.pcm: Delta.Common.cpp
+	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@
 
 # Delta.String.pcm: Delta.String.cpp Delta.Char.pcm Delta.Array.pcm 
 # 	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@
@@ -81,9 +96,11 @@ all: $(apps) $(tests)
 
 # App.%: App.%.cpp Delta.pcm
 # 	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $^ -o $@ -lrt -lpthread
+Test.%: Test.%.o 
+	$(CXX) $(CXX_FLAGS) $< -o $@ -lrt -lpthread
 
-Test.%: Test.%.cpp
-	$(CXX) $(CXX_FLAGS) $^ -o $@ -lrt -lpthread
+Test.%.o: Test.%.cpp Delta.pcm
+	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -o $@
 
 # Test.%: Test.%.cpp delta
 # 	$(GCC) $< *.o -o $@ -lrt -lpthread
