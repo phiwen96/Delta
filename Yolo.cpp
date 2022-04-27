@@ -1,3 +1,4 @@
+#include <utility>
 
 template <typename T>
 struct add_r_value_t
@@ -430,7 +431,7 @@ struct iterator_traits_t<A, B, C>
 };
 
 template <typename T>
-using defer = decltype(*mimic<T>());
+using defer = decltype(*std::declval<T>());
 
 static_assert (Char<defer<char const*>>);
 
@@ -708,9 +709,9 @@ template <Iterator T>
 requires Char <element_type <T>>
 struct sentinel_value_t <T>
 {
-	static constexpr T value = '\0';
+	static constexpr element_type <T> value = '\0';
 };
-#include <utility>
+
 
 // static_assert (AllOf <[]<typename T>{return Sentinel <T>;}, pointer_types <char>>);
 // static_assert (Sentinel <char *>);
@@ -756,6 +757,12 @@ concept String = Range<T> and Char<defer<fun_ret_type<decltype (range_policies_t
 
 static_assert(AllOf<[]<typename T>{ return Array<T>; },array_types<char, 10>>);
 static_assert(AllOf<[]<typename T>{ return Array<T>; },array_types<int, 10>>);
+static_assert (RangePolicies <range_policies_t <char const*>>);
+static_assert (RangePolicies <range_policies_t <char *>>);
+static_assert (Range <char const*>);
+// static_assert (Range <char *>);
+// static_assert (Char<defer<fun_ret_type<decltype (range_policies_t<char const*>::begin)>>>);
+// static_assert (Sentinel <char*>);
 // static_assert (String <char*>);
 // static_assert (AllOf <[] <typename T> {return String <T>;}, pointer_types <char>>);
 // static_assert(AllOf<[]<typename T>{ return Range<T>; },array_types<int, 10>>);
