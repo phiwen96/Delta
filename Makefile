@@ -1,5 +1,5 @@
 # GCC=g++-12 -std=gnu++2a -fcoroutines -fmodules-ts -fconcepts-diagnostics-depth=1
-CXX = clang++-13
+CXX = clang++
 CXX_FLAGS = -std=c++2b -Wall
 CXX_MODULES = -fmodules-ts -fmodules -fbuiltin-module-map -fimplicit-modules -fimplicit-module-maps -fprebuilt-module-path=.
 APP=main
@@ -96,8 +96,22 @@ Delta.Common.pcm: Delta.Common.cpp
 
 # App.%: App.%.cpp Delta.pcm
 # 	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $^ -o $@ -lrt -lpthread
+
+CXX_APP_FLAGS = -lpthread
+
+ifeq ($(detected_OS),Windows)
+
+endif
+ifeq ($(detected_OS),Darwin)
+  
+endif
+ifeq ($(detected_OS),Linux)
+    CXX_APP_FLAGS += -lrt
+endif
+
+
 Test.%: Test.%.o 
-	$(CXX) $(CXX_FLAGS) $< -o $@ -lrt -lpthread
+	$(CXX) $(CXX_FLAGS) $< -o $@ $(CXX_APP_FLAGS)
 
 Test.%.o: Test.%.cpp Delta.pcm
 	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -o $@
