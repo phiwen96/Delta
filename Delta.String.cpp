@@ -16,6 +16,10 @@ struct sentinel_value_t <T>
 export template <typename T>
 concept String = Range<T> and Char<defer<fun_ret_type<decltype (range_policies_t<T>::begin)>>>;
 
+
+
+static_assert (AllOf <[] <typename T>{return String <T>;}>, )
+// static_assert (Range <char[10]>);
 // static_assert (String <char[10]>);
 // static_assert (Range <char const*>);
 // static_assert (Range <char *>);

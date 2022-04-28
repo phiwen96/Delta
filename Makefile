@@ -99,13 +99,20 @@ Delta.Common.pcm: Delta.Common.cpp
 
 CXX_APP_FLAGS = -lpthread
 
-ifeq ($(detected_OS),Windows)
+ifeq ($(OS),Windows_NT) 
+    detected_OS := Windows
+else
+    detected_OS := $(shell sh -c 'uname 2>/dev/null || echo Unknown')
+endif
 
+ifeq ($(detected_OS),Windows)
+	CXX_FLAGS += -D Windows
 endif
 ifeq ($(detected_OS),Darwin)
-  
+	CXX_FLAGS += -D Darwin
 endif
 ifeq ($(detected_OS),Linux)
+	CXX_FLAGS += -D Linux
     CXX_APP_FLAGS += -lrt
 endif
 
