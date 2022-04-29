@@ -383,7 +383,29 @@ concept Size = requires(T t, decltype(alignof(char)) u)
 {
 	u = t;
 };
+
+template <template <typename...> typename T, typename...>
+struct product_type_t;
+
+
+template <template <typename...> typename T, template <typename...> typename U, typename... V>
+struct product_type_t <T , U <V...>>
+{
+	using result = U <T <V>...>;
+};
+
+// template <template <typename...> typename T, typename... U>
+// using product_type = typename product_type_t <T, U...>::result;
+
 }
+
+template <typename T>
+using _p = typelist <T*, T*&>;
+
+using _c = typelist <char16_t, char32_t>;
+using _r = typename product_type_t <_p, _c>::result;
+
+static_assert (Same <_r, typelist <char16_t*, char16_t*&, char32_t*, char32_t*&>>);
 
 // static_assert(not Same<char, typelist<char, int>::get<1>>);
 // static_assert(Same<typelist<int, double>, typelist<char, typelist<int, double>>::get<1>>);
