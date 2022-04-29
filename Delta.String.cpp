@@ -18,7 +18,7 @@ concept String = Range<T> and Char<defer<fun_ret_type<decltype (range_policies_t
 
 
 
-static_assert (AllOf <[] <typename T>{return String <T>;}>, )
+static_assert (AllOf <[] <typename T>{return String <T>;}, array_types <char>>);
 // static_assert (Range <char[10]>);
 // static_assert (String <char[10]>);
 // static_assert (Range <char const*>);

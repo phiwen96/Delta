@@ -11,3 +11,7 @@ sudo apt install clang-12
 sudo apt install clang-13
 sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-13 100
 sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-13 100
+
+# Potential errors on mac 
+	error: invalid parameter name: 'module' is a keyword
+	fix: rename all occurences of it to something else
