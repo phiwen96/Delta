@@ -384,18 +384,19 @@ concept Size = requires(T t, decltype(alignof(char)) u)
 	u = t;
 };
 
+
 template <template <typename...> typename T, typename...>
 struct product_type_t;
 
 
-template <template <typename...> typename T, template <typename...> typename U, typename... V>
-struct product_type_t <T , U <V...>>
+template <template <typename...> typename TypeTransformer, template <typename...> typename Typelist, typename... Element>
+struct product_type_t <TypeTransformer , Typelist <Element...>>
 {
-	using result = U <T <V>...>;
+	using result = Typelist <TypeTransformer <Element>...>;
 };
 
-// template <template <typename...> typename T, typename... U>
-// using product_type = typename product_type_t <T, U...>::result;
+template <template <typename...> typename TypeTransformer, typename... Typelists>
+using product_type = typename product_type_t <TypeTransformer, Typelists...>::result;
 
 }
 
@@ -403,9 +404,10 @@ template <typename T>
 using _p = typelist <T*, T*&>;
 
 using _c = typelist <char16_t, char32_t>;
-using _r = typename product_type_t <_p, _c>::result;
-
-static_assert (Same <_r, typelist <char16_t*, char16_t*&, char32_t*, char32_t*&>>);
+using _r = product_type <_p, _c>;
+static_assert (Same <_r, typelist <typelist <char16_t*, char16_t*&>, typelist <char32_t*, char32_t*&>>>);
+static_assert (AllOf <[]<typename T>{return Pointer <T>;}, _r>);
+// static_assert (Same <_r, typelist <char16_t*, char16_t*&, char32_t*, char32_t*&>>);
 
 // static_assert(not Same<char, typelist<char, int>::get<1>>);
 // static_assert(Same<typelist<int, double>, typelist<char, typelist<int, double>>::get<1>>);
