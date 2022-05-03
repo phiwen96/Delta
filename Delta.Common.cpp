@@ -239,7 +239,7 @@ template <auto predicate, typename... T>
 constexpr auto all_of = all_of_t<predicate, T...>::value;
 
 template <auto predicate, typename... T>
-concept AllOf = (TypePredicate<decltype(predicate), T> and ...) and all_of<predicate, T...>;
+concept AllOf = all_of_t <predicate, T...>::value;//(TypePredicate<decltype(predicate), T> and ...) and all_of<predicate, T...>;
 
 
 
@@ -398,6 +398,38 @@ struct product_type_t <TypeTransformer , Typelist <Element...>>
 template <template <typename...> typename TypeTransformer, typename... Typelists>
 using product_type = typename product_type_t <TypeTransformer, Typelists...>::result;
 
+template <auto predicate, typename T, typename... U>
+// requires requires {predicate.template operator()<T>(); /*typename ball_of_t <predicate, U...>;*/}
+struct ball_of_t : ball_of_t <predicate, U...>
+{
+	constexpr static auto value = ball_of_t <predicate, U...>::value and requires {predicate.template operator()<T>();};
+};
+
+template <auto predicate, typename T>
+// requires requires {predicate.template operator()<T>();}
+struct ball_of_t<predicate, T>
+{
+	constexpr static auto value = requires {predicate.template operator()<T>();};
+	// constexpr static auto value = predicate.template operator()<T>() ? true : false;
+};
+
+// expand nested typelist, but what if vector
+
+template <auto predicate, typename... U>
+struct ball_of_t<predicate, typelist<U...>> : ball_of_t<predicate, U...>
+{
+};
+
+template <auto predicate, typename... U, typename... V>
+struct ball_of_t<predicate, typelist<U...>, V...> : ball_of_t<predicate, U..., V...>
+{
+};
+
+template <auto predicate, typename... T>
+constexpr auto ball_of = ball_of_t<predicate, T...>::value;
+
+template <auto predicate, typename... T>
+concept BallOf = ball_of_t <predicate, T...>::value;
 }
 
 template <typename T>
@@ -408,6 +440,14 @@ using _r = product_type <_p, _c>;
 static_assert (Same <_r, typelist <typelist <char16_t*, char16_t*&>, typelist <char32_t*, char32_t*&>>>);
 static_assert (AllOf <[]<typename T>{return Pointer <T>;}, _r>);
 // static_assert (Same <_r, typelist <char16_t*, char16_t*&, char32_t*, char32_t*&>>);
+
+
+using tp_test = typelist <int, char, bool, void>;
+
+static_assert (BallOf <[]<Same <int>>{}, typelist<int, int>>);
+static_assert (not BallOf <[]<Same <int>>{}, typelist<int, char>>);
+static_assert (not BallOf <[]<Same <int>>{}, typelist<int, char>>);
+
 
 // static_assert(not Same<char, typelist<char, int>::get<1>>);
 // static_assert(Same<typelist<int, double>, typelist<char, typelist<int, double>>::get<1>>);
