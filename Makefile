@@ -1,6 +1,6 @@
 # GCC=g++-12 -std=gnu++2a -fcoroutines -fmodules-ts -fconcepts-diagnostics-depth=1
 CXX = clang++
-CXX_FLAGS = -std=c++2b -Wall
+CXX_FLAGS = -std=c++2b -Wall --debug
 CXX_MODULES = -fmodules-ts -fmodules -fbuiltin-module-map -fimplicit-modules -fimplicit-module-maps -fprebuilt-module-path=.
 APP=main
 apps:= #App.Server App.Client

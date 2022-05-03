@@ -58,6 +58,8 @@ export constexpr auto end(Range auto&& range) noexcept -> Iterator auto requires
 }
 
 
+
+
 // {
 
 // 	{begin(t)} noexcept->Iterator;
@@ -71,27 +73,27 @@ export constexpr auto end(Range auto&& range) noexcept -> Iterator auto requires
 // 	using result = defer <fun_ret_type <decltype (range_policies_t <T>::begin)>>;
 // };
 
-// export template <Sentinel T>
-// requires(not Bounded<T>) 
-// struct range_policies_t<T>
-// {
-// 	constexpr static auto begin(T t) noexcept -> Iterator auto
-// 	{
-// 		return t;
-// 	}
+export template <Iterator T>
+requires(not Bounded<T>) 
+struct range_policies_t<T>
+{
+	constexpr static auto begin(T t) noexcept -> Iterator auto
+	{
+		return t;
+	}
 
-// 	constexpr static auto end(T t) noexcept -> Iterator auto
-// 	{
-// 		auto i = t;
+	constexpr static auto end(T t) noexcept -> Iterator auto
+	{
+		auto i = t;
 
-// 		while (*i != sentinel_value_t<T>::value)
-// 		{
-// 			++i;
-// 		}
+		while (*i != sentinel_value_t<T>::value)
+		{
+			++i;
+		}
 
-// 		return i;
-// 	}
-// };
+		return i;
+	}
+};
 
 
 

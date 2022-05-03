@@ -366,7 +366,13 @@ template <typename T>
 concept Pointer = HasDefinedPointerTraits<T>;
 
 template <typename T>
-using pointer_types = typelist<T *, T *&, T *&&, T const *, T const *&, T *const, T *const&, T const *const>;
+using non_pointer_const_types = typelist<T *, T *&, T *&&, T const *, T const *&>;
+
+template <typename T>
+using pointer_const_types = typelist <T *const, T *const&, T const *const>;
+
+template <typename T>
+using pointer_types = typelist <non_pointer_const_types <T>, pointer_const_types <T>>; 
 
 
 using char_types = typelist<char, signed char, unsigned char, char16_t, char32_t, wchar_t>;
@@ -428,8 +434,11 @@ struct ball_of_t<predicate, typelist<U...>, V...> : ball_of_t<predicate, U..., V
 template <auto predicate, typename... T>
 constexpr auto ball_of = ball_of_t<predicate, T...>::value;
 
-template <auto predicate, typename... T>
-concept BallOf = ball_of_t <predicate, T...>::value;
+template <auto predicate, typename T>
+concept BallOf = requires 
+{
+	requires ball_of_t <predicate, T>::value;
+};
 }
 
 template <typename T>
@@ -442,11 +451,11 @@ static_assert (AllOf <[]<typename T>{return Pointer <T>;}, _r>);
 // static_assert (Same <_r, typelist <char16_t*, char16_t*&, char32_t*, char32_t*&>>);
 
 
-using tp_test = typelist <int, char, bool, void>;
+// using tp_test = typelist <int, char, bool, void>;
 
-static_assert (BallOf <[]<Same <int>>{}, typelist<int, int>>);
-static_assert (not BallOf <[]<Same <int>>{}, typelist<int, char>>);
-static_assert (not BallOf <[]<Same <int>>{}, typelist<int, char>>);
+// static_assert (BallOf <[]<Same <int>>{}, typelist<int, int>>);
+// static_assert (not BallOf <[]<Same <int>>{}, typelist<int, char>>);
+// static_assert (BallOf <[]<Same <int>>{}, typelist<int, char>>);
 
 
 // static_assert(not Same<char, typelist<char, int>::get<1>>);
