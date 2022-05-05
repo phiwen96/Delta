@@ -116,8 +116,14 @@ constexpr auto is_contiguous_iterator = is_contiguous_iterator_t<T>::result;
 export template <typename T>
 concept ContiguousIterator = RandomAccessIterator<T> and is_contiguous_iterator<T>;
 
+export template <typename...>
+struct iterator_blacklist_t;
+
+// export template <typename T>
+// concept IteratorBlacklist = requires {typename iterator_blacklist_t <T>;};
+
 export template <typename T>
-concept Iterator = InputIterator<T> or OutputIterator<T> or ForwardIterator<T> or BidirectionalIterator<T> or RandomAccessIterator<T> or ContiguousIterator<T>;
+concept Iterator = (InputIterator<T> or OutputIterator<T> or ForwardIterator<T> or BidirectionalIterator<T> or RandomAccessIterator<T> or ContiguousIterator<T>);
 
 export template <typename...>
 struct element_type_t;

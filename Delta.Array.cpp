@@ -42,6 +42,20 @@ struct array_policies_t<T[N]>
 };
 
 export template <typename T, auto N>
+struct array_policies_t<T const(&)[N]>
+{
+	constexpr static auto begin(T const(&range)[N]) noexcept -> Iterator auto
+	{
+		return range;
+	}
+
+	constexpr static auto end(T const(&range)[N]) noexcept -> Iterator auto
+	{
+		return range + N;
+	}
+};
+
+export template <typename T, auto N>
 struct array_policies_t<T (&)[N]>
 {
 	constexpr static auto begin(T (&range)[N]) noexcept -> Iterator auto
