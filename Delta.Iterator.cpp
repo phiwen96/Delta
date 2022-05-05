@@ -140,4 +140,4 @@ struct sentinel_value_t;
 // static_assert (HasDefinedSentinelTraits <char const*>);
 
 export template <typename T>
-concept Sentinel = Iterator<T> and requires {sentinel_value_t <T>::value;};
+concept Sentinel = Iterator<T> and requires {sentinel_value_t <element_type <T>>::value;};

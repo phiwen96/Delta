@@ -38,6 +38,24 @@ struct range_policies_t;
 export template <typename T>
 concept Range = RangePolicies <range_policies_t <T>>;
 
+export template <typename...>
+struct range_type_t;
+
+export template <RangePolicies T>
+struct range_type_t <T>
+{
+	using result = fun_param_type<decltype(T::begin), 0>;
+};
+
+export template <Range T>
+struct range_type_t <T> : range_type_t <range_policies_t <T>>
+{
+
+};
+
+export template <typename T>
+using range_type = typename range_type_t <T>::result;//fun_param_type<decltype(range_policies_t <T>::begin), 0>;
+
 export constexpr auto begin(Range auto&& range) noexcept -> Iterator auto requires requires
 {
 	{
@@ -73,27 +91,7 @@ export constexpr auto end(Range auto&& range) noexcept -> Iterator auto requires
 // 	using result = defer <fun_ret_type <decltype (range_policies_t <T>::begin)>>;
 // };
 
-export template <Iterator T>
-requires(not Bounded<T>) 
-struct range_policies_t<T>
-{
-	constexpr static auto begin(T t) noexcept -> Iterator auto
-	{
-		return t;
-	}
 
-	constexpr static auto end(T t) noexcept -> Iterator auto
-	{
-		auto i = t;
-
-		while (*i != sentinel_value_t<T>::value)
-		{
-			++i;
-		}
-
-		return i;
-	}
-};
 
 
 

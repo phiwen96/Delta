@@ -6,11 +6,10 @@ export import Delta.Array;
 
 static_assert (Char <element_type <char const*>>);
 
-export template <Iterator T>
-requires Char <element_type <T>>
+export template <Char T>
 struct sentinel_value_t <T>
 {
-	static constexpr element_type <T> value = '\0';
+	static constexpr T value = '\0';
 };
 
 export template <typename T>
