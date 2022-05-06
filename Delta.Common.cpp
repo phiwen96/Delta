@@ -395,6 +395,24 @@ using floating_types = typelist <float, double, long double>;
 template <typename T>
 concept Floating = AnyOf<[]<typename C>{return Strip<T, C>;}, floating_types>;
 
+using integer_types = typelist <short, short int, signed short, signed short int, int, signed, signed int, long, long int, signed long, signed long int, long long, long long int, signed long long, signed long long int, unsigned short, unsigned short int, unsigned, unsigned int, unsigned long, unsigned long int, unsigned long long, unsigned long long int>;
+
+template <typename T>
+concept Integer = AnyOf <[]<typename U>{return Strip <T, U>;}, integer_types>;
+
+using signed_types = typelist <short, short int, signed short, signed short int, int, signed, signed int, long, long int, signed long, signed long int, long long, long long int, signed long long, signed long long int>;
+
+template <typename T>
+concept Signed = AnyOf <[]<typename U>{return Strip <T, U>;}, signed_types>;
+
+using unsigned_types = typelist <unsigned short, unsigned short int, unsigned, unsigned int, unsigned long, unsigned long int, unsigned long long, unsigned long long int>;
+
+template <typename T>
+concept Unsigned = AnyOf <[]<typename U>{return Strip <T, U>;}, unsigned_types>;
+
+template <typename T>
+concept Number = Signed <T> or Unsigned <T>;
+
 // using number_types = typelist <>
 
 
