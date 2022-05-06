@@ -53,6 +53,13 @@ struct range_type_t <T> : range_type_t <range_policies_t <T>>
 
 };
 
+export template <Range T>
+requires (not Iterator <T>)
+struct element_type_t <T>
+{
+	using result = strip <defer <fun_ret_type <decltype(range_policies_t <T>::begin)>>>;
+};
+
 export template <typename T>
 using range_type = typename range_type_t <T>::result;//fun_param_type<decltype(range_policies_t <T>::begin), 0>;
 

@@ -58,6 +58,9 @@ static_assert (Range <int const(&)[10]>);
 static_assert (not Iterator <int(&)[10]>);
 static_assert (not Iterator <int const(&)[10]>);
 // static_assert (not Iterator <int[10]>);
+static_assert (Same <element_type <int[10]>, int>);
+static_assert (Same <element_type <int(&)[10]>, int>);
+// export using bajw = element_type <int[10]>;
 // static_assert (Range <int[10]>);
 // static_assert (AllOf <[]<typename T> {return Bounded <T>;}, array_types <char_types>>);
 

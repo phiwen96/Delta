@@ -123,7 +123,7 @@ struct iterator_blacklist_t;
 // concept IteratorBlacklist = requires {typename iterator_blacklist_t <T>;};
 
 export template <typename T>
-concept Iterator = (InputIterator<T> or OutputIterator<T> or ForwardIterator<T> or BidirectionalIterator<T> or RandomAccessIterator<T> or ContiguousIterator<T>);
+concept Iterator = InputIterator<T> or OutputIterator<T> or ForwardIterator<T> or BidirectionalIterator<T> or RandomAccessIterator<T> or ContiguousIterator<T>;
 
 export template <typename...>
 struct element_type_t;
@@ -131,10 +131,10 @@ struct element_type_t;
 export template <Iterator T>
 struct element_type_t<T>
 {
-	using result = defer<T>;
+	using result = strip <defer<T>>;
 };
 
-export template <typename T>
+export template <typename T> requires requires {typename element_type_t<T>::result;}
 using element_type = typename element_type_t<T>::result;
 
 export template <typename...>
