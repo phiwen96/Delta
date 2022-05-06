@@ -72,6 +72,9 @@ struct strip_t;
 template <typename T>
 using strip = typename strip_t<T>::result;
 
+/* 
+	Strips T and check if same as U
+*/
 template <typename T, typename U>
 concept Strip = Same<strip<T>, U>;
 
@@ -374,13 +377,10 @@ using pointer_const_types = typelist <T *const, T *const&, T const *const>;
 template <typename T>
 using pointer_types = typelist <non_pointer_const_types <T>, pointer_const_types <T>>; 
 
-
 using char_types = typelist<char, signed char, unsigned char, char16_t, char32_t, wchar_t>;
 
 template <typename T>
-concept Char = AnyOf<[]<typename C>
-					 { return Strip<T, C>; },
-					 char_types>;
+concept Char = AnyOf<[]<typename C>{return Strip<T, C>; }, char_types>;
 
 
 
@@ -389,6 +389,13 @@ concept Size = requires(T t, decltype(alignof(char)) u)
 {
 	u = t;
 };
+
+using floating_types = typelist <float, double, long double>;
+
+template <typename T>
+concept Floating = AnyOf<[]<typename C>{return Strip<T, C>;}, floating_types>;
+
+// using number_types = typelist <>
 
 
 template <template <typename...> typename T, typename...>
@@ -401,44 +408,13 @@ struct product_type_t <TypeTransformer , Typelist <Element...>>
 	using result = Typelist <TypeTransformer <Element>...>;
 };
 
+/*
+	product_type takes a transformation function and applies it to all types in a typelist
+*/
+
 template <template <typename...> typename TypeTransformer, typename... Typelists>
 using product_type = typename product_type_t <TypeTransformer, Typelists...>::result;
 
-template <auto predicate, typename T, typename... U>
-// requires requires {predicate.template operator()<T>(); /*typename ball_of_t <predicate, U...>;*/}
-struct ball_of_t : ball_of_t <predicate, U...>
-{
-	constexpr static auto value = ball_of_t <predicate, U...>::value and requires {predicate.template operator()<T>();};
-};
-
-template <auto predicate, typename T>
-// requires requires {predicate.template operator()<T>();}
-struct ball_of_t<predicate, T>
-{
-	constexpr static auto value = requires {predicate.template operator()<T>();};
-	// constexpr static auto value = predicate.template operator()<T>() ? true : false;
-};
-
-// expand nested typelist, but what if vector
-
-template <auto predicate, typename... U>
-struct ball_of_t<predicate, typelist<U...>> : ball_of_t<predicate, U...>
-{
-};
-
-template <auto predicate, typename... U, typename... V>
-struct ball_of_t<predicate, typelist<U...>, V...> : ball_of_t<predicate, U..., V...>
-{
-};
-
-template <auto predicate, typename... T>
-constexpr auto ball_of = ball_of_t<predicate, T...>::value;
-
-template <auto predicate, typename T>
-concept BallOf = requires 
-{
-	requires ball_of_t <predicate, T>::value;
-};
 }
 
 template <typename T>

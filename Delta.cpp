@@ -44,15 +44,17 @@ static_assert (not Char <int>);
 // static_assert (Same <range_type <int[10]>, int>);
 
 static_assert (Array <int[10]>);
-static_assert (Same <fun_param_type<decltype(array_policies_t <int(&)[10]>::begin), 0>, int(&)[10]>);
-static_assert (Same <fun_param_type<decltype(array_policies_t <int const(&)[10]>::begin), 0>, int const(&)[10]>);
-static_assert (Same <fun_param_type<decltype(array_policies_t <int[10]>::begin), 0>, int(&)[10]>);
+// static_assert (Same <fun_param_type<decltype(array_policies_t <int(&)[10]>::begin), 0>, int(&)[10]>);
+// static_assert (Same <fun_param_type<decltype(array_policies_t <int const(&)[10]>::begin), 0>, int const(&)[10]>);
+// static_assert (Same <fun_param_type<decltype(array_policies_t <int[10]>::begin), 0>, int(&)[10]>);
 // static_assert (Same <range_type <int[10]>, int>);
 // static_assert (Range <int[10]>);
+// using test_array_types = product_type <array_types, >                                  
 static_assert (AllOf <[]<typename T>{return Array <T>;}, array_types <int>>);
 static_assert (AllOf <[]<typename T>{return Array <T>;}, array_types <char>>);
 static_assert (AllOf <[]<typename T> {return Array <T>;}, array_types <char_types>>);
 
+static_assert (Range <int[10]>);
 static_assert (Range <int(&)[10]>);
 static_assert (Range <int const(&)[10]>);
 static_assert (not Iterator <int(&)[10]>);
