@@ -170,19 +170,17 @@ struct numbered_typelist<N, T>
 };
 
 template <typename... T>
-struct typelist;
-
-template <typename T, typename... U>
-struct typelist<T, U...> //: indexed_element <0, T>
+struct typelist
 {
-	template <template <typename...> typename V>
-	using transform = V<T, U...>;
+	template <template <typename...> typename U, typename... V>
+	using transform = U <T..., V...>;
 
-	constexpr static auto reversed_index = sizeof...(U);
+	constexpr static auto reversed_index = sizeof...(T);
 
 	template <auto i>
-	using get = typename numbered_typelist<0, T, U...>::template get<i>;
+	using get = typename numbered_typelist<0, T...>::template get<i>;
 };
+
 
 template <auto predicate, typename T, typename... U>
 struct any_of_t
@@ -382,8 +380,6 @@ using char_types = typelist<char, signed char, unsigned char, char16_t, char32_t
 template <typename T>
 concept Char = AnyOf<[]<typename C>{return Strip<T, C>; }, char_types>;
 
-
-
 template <typename T>
 concept Size = requires(T t, decltype(alignof(char)) u)
 {
@@ -395,11 +391,6 @@ using floating_types = typelist <float, double, long double>;
 template <typename T>
 concept Floating = AnyOf<[]<typename C>{return Strip<T, C>;}, floating_types>;
 
-using integer_types = typelist <short, short int, signed short, signed short int, int, signed, signed int, long, long int, signed long, signed long int, long long, long long int, signed long long, signed long long int, unsigned short, unsigned short int, unsigned, unsigned int, unsigned long, unsigned long int, unsigned long long, unsigned long long int>;
-
-template <typename T>
-concept Integer = AnyOf <[]<typename U>{return Strip <T, U>;}, integer_types>;
-
 using signed_types = typelist <short, short int, signed short, signed short int, int, signed, signed int, long, long int, signed long, signed long int, long long, long long int, signed long long, signed long long int>;
 
 template <typename T>
@@ -410,8 +401,14 @@ using unsigned_types = typelist <unsigned short, unsigned short int, unsigned, u
 template <typename T>
 concept Unsigned = AnyOf <[]<typename U>{return Strip <T, U>;}, unsigned_types>;
 
-template <typename T>
-concept Number = Signed <T> or Unsigned <T>;
+// using integer_types = merge <unsigned_types, signed_types>;//typelist <short, short int, signed short, signed short int, int, signed, signed int, long, long int, signed long, signed long int, long long, long long int, signed long long, signed long long int, unsigned short, unsigned short int, unsigned, unsigned int, unsigned long, unsigned long int, unsigned long long, unsigned long long int>;
+
+// template <typename T>
+// concept Integer = AnyOf <[]<typename U>{return Strip <T, U>;}, integer_types>;
+
+// // using number_types = 
+// template <typename T>
+// concept Number = Signed <T> or Unsigned <T>;
 
 // using number_types = typelist <>
 
@@ -434,6 +431,8 @@ template <template <typename...> typename TypeTransformer, typename... Typelists
 using product_type = typename product_type_t <TypeTransformer, Typelists...>::result;
 
 }
+
+// static_assert (AllOf <[]<typename T>{return Number <T>;}, integer_types>);
 
 template <typename T>
 using _p = typelist <T*, T*&>;
@@ -465,3 +464,68 @@ static_assert (AllOf <[]<typename T>{return Pointer <T>;}, _r>);
 // static_assert(AllOf<[]<typename T>
 // 					{ return Char<T>; },
 // 					char_types>);
+
+template <typename T>
+struct is_typelist_t
+{
+	constexpr static auto result = false;
+};
+
+template <typename... T>
+struct is_typelist_t <typelist <T...>>
+{
+	constexpr static auto result = true;
+};
+
+template <typename T>
+concept Typelist = is_typelist_t <T>::value;
+
+template <typename T>
+concept NonTypelist = not Typelist <T>;
+
+template <typename... T>
+struct merge_t;
+
+template <NonTypelist... T>
+struct merge_t <T...> {using result = typelist <T...>;};
+
+template <typename... T, typename... U>
+struct merge_t <typelist <T...>, U...> 
+{
+	// using result = 
+};
+
+// template <NonTypelist... T, Typelist... U>
+// struct merge_t <T..., U...> {};
+
+
+// template <>
+
+// template <NonTypelist T, typename... U, typename... V>
+// struct merge_t <T, typelist <U...>, V...> : merge_t <T, U..., V...>
+// {
+
+// };
+
+// template <typename... T, typename... U>
+// struct merge_t <typelist <T...>, U...> : merge_t <T..., U...>
+// {
+
+// };
+
+// template <NonTypelist... Q, typename... T, typename... U>
+// struct merge_t <Q..., typelist <T...>, U...> : merge_t <Q..., T..., U...>
+// {
+
+// };
+
+template <typename... T>
+using merge = typename merge_t <T...>::result;
+
+// template <NonTypelist... T>
+// struct bajs_t {};
+
+// template <Typelist T>
+// struct bajs_t <T> {};
+
+// static_assert (Same <merge <typelist <int>, typelist <char>>, typelist <int, char>>);

@@ -7,7 +7,7 @@ export import Delta.String;
 // static_assert (AllOf <>);
 
 export template <Sentinel T>
-requires(not Array<T>) 
+requires(not Array<T>)
 struct range_policies_t<T>
 {
 	constexpr static auto begin(T t) noexcept -> Iterator auto
@@ -36,7 +36,6 @@ static_assert (not Char <int>);
 // static_assert (Range <int[10]>);
 // static_assert (AllOf <[]<typename T> {return String <T>;}, string_types>);
 // static_assert (AllOf <[]<typename T>{return Sentinel <T>;}, product_type <non_pointer_const_types, char_types>>);
-
 
 // Char<defer<fun_ret_type<decltype (range_policies_t<T>::begin)>>>
 // static_assert (AllOf <[]<typename T>{return Bounded <T>;}, array_types <int>>);
