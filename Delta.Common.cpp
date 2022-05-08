@@ -531,7 +531,7 @@ using merge = typename merge_t <T...>::result;
 // static_assert (Same <merge <typelist <int>, typelist <char>>, typelist <int, char>>);
 
 
-template <typename...>
+template <template <typename...> typename, typename...>
 struct tp_node;
 
 template <typename...>
@@ -546,52 +546,38 @@ struct tp_push_back_t <T <U...>, V>
 template <typename... T>
 using tp_push_back = typename tp_push_back_t <T...>::result;
 
-template <>
-struct tp_node <>
+template <template <typename...> typename T>
+struct tp_node <T>
 {
 	template <typename V>
-	using flatten = V;
+	using unnested = V;
 };
 
-template <typename T, typename... U>
-struct tp_node <T, U...>
+template <template <typename...> typename A, typename B, typename... C>
+struct tp_node <A, B, C...>
 {
-	using next = tp_node <U...>;
+	// using next = tp_node <U...>;
 	// template <template <typename...> typename U, typename... V>
 	// using type = U <>;
-	template <typename V>
-	using flatten = typename tp_node <U...>::template flatten <tp_push_back <V, T>>;
+	template <typename D>
+	using unnested = typename tp_node <A, C...>::template unnested <tp_push_back <D, B>>;
 };
 
-template <typename... T, typename... U>
-struct tp_node <typelist <T...>, U...>
+template <template <typename...> typename A, typename... B, typename... C>
+struct tp_node <A, A <B...>, C...>
 {
 
-	template <typename V>
-	using flatten = typename tp_node <T..., U...>::template flatten <V>;
-	// template <template <typename...> typename U, typename... V>
-	// using type = U <>;
+	template <typename D>
+	using unnested = typename tp_node <A, B..., C...>::template unnested <D>;
 };
 
-// template <Typelist T>
-// struct tp_node 
 
 template <typename... T>
-struct expand_t
-{
-	// using list = typename tp_node <T>::type...;
-	using result = typename tp_node <T...>::template flatten <typelist <>>;
-};
-
-// static_assert (Same <typename expand_t <int, char>::list, typelist <int, char>>);
-// template <typename
-
-template <typename T>
-using expand = typename expand_t <T>::result;
+using unnested_tp = typename tp_node <typelist, T...>::template unnested <typelist <>>;
 
 using t0 = typelist <int, char>;
 using t1 = typelist <double, int>;
 using t2 = typelist <t0, t1>;
 
 
-static_assert (not Same <expand <t2>, typelist <int, char, double, int>>);
+static_assert (Same <unnested_tp <t2>, typelist <int, char, double, int>>);
