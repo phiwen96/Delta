@@ -576,8 +576,11 @@ template <typename... T>
 using denested_tp = typename tp_node <typelist, T...>::template denest <typelist <>>;
 
 using t0 = typelist <int, char>;
-using t1 = typelist <double, int>;
-using t2 = typelist <t0, t1>;
+using t1 = typelist <double, int, typelist <>>;
+using t2 = typelist <t0, t1, typelist <t0, t1>>;
+
+// using 
 
 
-static_assert (Same <denested_tp <t2>, typelist <int, char, double, int>>);
+static_assert (Same <denested_tp <t2>, typelist <int, char, double, int, int, char, double, int>>);
+static_assert (Same <denested_tp <int, t2, char>, typelist <int, int, char, double, int, int, char, double, int, char>>);
