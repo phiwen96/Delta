@@ -550,7 +550,7 @@ template <template <typename...> typename T>
 struct tp_node <T>
 {
 	template <typename V>
-	using unnested = V;
+	using denest = V;
 };
 
 template <template <typename...> typename A, typename B, typename... C>
@@ -560,7 +560,7 @@ struct tp_node <A, B, C...>
 	// template <template <typename...> typename U, typename... V>
 	// using type = U <>;
 	template <typename D>
-	using unnested = typename tp_node <A, C...>::template unnested <tp_push_back <D, B>>;
+	using denest = typename tp_node <A, C...>::template denest <tp_push_back <D, B>>;
 };
 
 template <template <typename...> typename A, typename... B, typename... C>
@@ -568,16 +568,16 @@ struct tp_node <A, A <B...>, C...>
 {
 
 	template <typename D>
-	using unnested = typename tp_node <A, B..., C...>::template unnested <D>;
+	using denest = typename tp_node <A, B..., C...>::template denest <D>;
 };
 
 
 template <typename... T>
-using unnested_tp = typename tp_node <typelist, T...>::template unnested <typelist <>>;
+using denested_tp = typename tp_node <typelist, T...>::template denest <typelist <>>;
 
 using t0 = typelist <int, char>;
 using t1 = typelist <double, int>;
 using t2 = typelist <t0, t1>;
 
 
-static_assert (Same <unnested_tp <t2>, typelist <int, char, double, int>>);
+static_assert (Same <denested_tp <t2>, typelist <int, char, double, int>>);
