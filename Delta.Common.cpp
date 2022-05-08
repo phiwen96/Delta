@@ -529,3 +529,69 @@ using merge = typename merge_t <T...>::result;
 // struct bajs_t <T> {};
 
 // static_assert (Same <merge <typelist <int>, typelist <char>>, typelist <int, char>>);
+
+
+template <typename...>
+struct tp_node;
+
+template <typename...>
+struct tp_push_back_t;
+
+template <template <typename...> typename T, typename... U, typename V>
+struct tp_push_back_t <T <U...>, V>
+{
+	using result = T <U..., V>;
+};
+
+template <typename... T>
+using tp_push_back = typename tp_push_back_t <T...>::result;
+
+template <>
+struct tp_node <>
+{
+	template <typename V>
+	using flatten = V;
+};
+
+template <typename T, typename... U>
+struct tp_node <T, U...>
+{
+	using next = tp_node <U...>;
+	// template <template <typename...> typename U, typename... V>
+	// using type = U <>;
+	template <typename V>
+	using flatten = typename tp_node <U...>::template flatten <tp_push_back <V, T>>;
+};
+
+template <typename... T, typename... U>
+struct tp_node <typelist <T...>, U...>
+{
+
+	template <typename V>
+	using flatten = typename tp_node <T..., U...>::template flatten <V>;
+	// template <template <typename...> typename U, typename... V>
+	// using type = U <>;
+};
+
+// template <Typelist T>
+// struct tp_node 
+
+template <typename... T>
+struct expand_t
+{
+	// using list = typename tp_node <T>::type...;
+	using result = typename tp_node <T...>::template flatten <typelist <>>;
+};
+
+// static_assert (Same <typename expand_t <int, char>::list, typelist <int, char>>);
+// template <typename
+
+template <typename T>
+using expand = typename expand_t <T>::result;
+
+using t0 = typelist <int, char>;
+using t1 = typelist <double, int>;
+using t2 = typelist <t0, t1>;
+
+
+static_assert (not Same <expand <t2>, typelist <int, char, double, int>>);
