@@ -430,107 +430,6 @@ struct product_type_t <TypeTransformer , Typelist <Element...>>
 template <template <typename...> typename TypeTransformer, typename... Typelists>
 using product_type = typename product_type_t <TypeTransformer, Typelists...>::result;
 
-}
-
-// static_assert (AllOf <[]<typename T>{return Number <T>;}, integer_types>);
-
-template <typename T>
-using _p = typelist <T*, T*&>;
-
-using _c = typelist <char16_t, char32_t>;
-using _r = product_type <_p, _c>;
-static_assert (Same <_r, typelist <typelist <char16_t*, char16_t*&>, typelist <char32_t*, char32_t*&>>>);
-static_assert (AllOf <[]<typename T>{return Pointer <T>;}, _r>);
-// static_assert (Same <_r, typelist <char16_t*, char16_t*&, char32_t*, char32_t*&>>);
-
-
-// using tp_test = typelist <int, char, bool, void>;
-
-// static_assert (BallOf <[]<Same <int>>{}, typelist<int, int>>);
-// static_assert (not BallOf <[]<Same <int>>{}, typelist<int, char>>);
-// static_assert (BallOf <[]<Same <int>>{}, typelist<int, char>>);
-
-
-// static_assert(not Same<char, typelist<char, int>::get<1>>);
-// static_assert(Same<typelist<int, double>, typelist<char, typelist<int, double>>::get<1>>);
-// static_assert(Same<char, typelist<char, int>::get<0>>);
-// static_assert(Same<int, typelist<char, int>::get<1>>);
-// static_assert(Same<int, typelist<char, int, bool>::get<1>>);
-
-// static_assert(Same<strip<char const *>, char>);
-
-// static_assert(AllOf<[]<typename T>{ return Pointer<T>; },pointer_types<int>>);
-// static_assert(AllOf<[]<typename T>{ return Strip<T, int>; },pointer_types<int>>);
-// static_assert(AllOf<[]<typename T>
-// 					{ return Char<T>; },
-// 					char_types>);
-
-template <typename T>
-struct is_typelist_t
-{
-	constexpr static auto result = false;
-};
-
-template <typename... T>
-struct is_typelist_t <typelist <T...>>
-{
-	constexpr static auto result = true;
-};
-
-template <typename T>
-concept Typelist = is_typelist_t <T>::value;
-
-template <typename T>
-concept NonTypelist = not Typelist <T>;
-
-template <typename... T>
-struct merge_t;
-
-template <NonTypelist... T>
-struct merge_t <T...> {using result = typelist <T...>;};
-
-template <typename... T, typename... U>
-struct merge_t <typelist <T...>, U...> 
-{
-	// using result = 
-};
-
-// template <NonTypelist... T, Typelist... U>
-// struct merge_t <T..., U...> {};
-
-
-// template <>
-
-// template <NonTypelist T, typename... U, typename... V>
-// struct merge_t <T, typelist <U...>, V...> : merge_t <T, U..., V...>
-// {
-
-// };
-
-// template <typename... T, typename... U>
-// struct merge_t <typelist <T...>, U...> : merge_t <T..., U...>
-// {
-
-// };
-
-// template <NonTypelist... Q, typename... T, typename... U>
-// struct merge_t <Q..., typelist <T...>, U...> : merge_t <Q..., T..., U...>
-// {
-
-// };
-
-template <typename... T>
-using merge = typename merge_t <T...>::result;
-
-// template <NonTypelist... T>
-// struct bajs_t {};
-
-// template <Typelist T>
-// struct bajs_t <T> {};
-
-// static_assert (Same <merge <typelist <int>, typelist <char>>, typelist <int, char>>);
-
-
 template <template <typename...> typename, typename...>
 struct tp_node;
 
@@ -566,21 +465,45 @@ struct tp_node <A, B, C...>
 template <template <typename...> typename A, typename... B, typename... C>
 struct tp_node <A, A <B...>, C...>
 {
-
 	template <typename D>
 	using denest = typename tp_node <A, B..., C...>::template denest <D>;
-};
 
+	template
+};
 
 template <typename... T>
 using denested_tp = typename tp_node <typelist, T...>::template denest <typelist <>>;
 
+/*
+	product_tp takes a transformation function and applies it to all types in a typelist
+*/
+template <template <typename...> typename typeFunction, typename... args>
+struct product_tp_t
+{
+	using result = tp_node <>
+	// using result = denested_tp <args...>
+};
+
+// template <template <typename...> typename type_transformer, typ  
+
+
+}
+
+// static_assert (AllOf <[]<typename T>{return Number <T>;}, integer_types>);
+
+template <typename T>
+using _p = typelist <T*, T*&>;
+
+using _c = typelist <char16_t, char32_t>;
+using _r = product_type <_p, _c>;
+static_assert (Same <_r, typelist <typelist <char16_t*, char16_t*&>, typelist <char32_t*, char32_t*&>>>);
+static_assert (AllOf <[]<typename T>{return Pointer <T>;}, _r>);
+// static_assert (Same <_r, typelist <char16_t*, char16_t*&, char32_t*, char32_t*&>>);
+
+
 using t0 = typelist <int, char>;
 using t1 = typelist <double, int, typelist <>>;
 using t2 = typelist <t0, t1, typelist <t0, t1>>;
-
-// using 
-
 
 static_assert (Same <denested_tp <t2>, typelist <int, char, double, int, int, char, double, int>>);
 static_assert (Same <denested_tp <int, t2, char>, typelist <int, int, char, double, int, int, char, double, int, char>>);
