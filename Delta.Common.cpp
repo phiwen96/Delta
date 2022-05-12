@@ -117,22 +117,22 @@ concept Convertible = requires(T t, U u)
 };
 
 template <bool, typename T, typename U>
-struct if_else_t;
+struct if_else_type_t;
 
 template <typename T, typename U>
-struct if_else_t<true, T, U>
+struct if_else_type_t<true, T, U>
 {
 	using type = T;
 };
 
 template <typename T, typename U>
-struct if_else_t<false, T, U>
+struct if_else_type_t<false, T, U>
 {
 	using type = U;
 };
 
 template <bool B, typename T, typename U>
-using if_else = typename if_else_t<B, T, U>::type;
+using if_else_type = typename if_else_type_t<B, T, U>::type;
 
 
 	// A type predicate is a lambda that, when called
@@ -156,7 +156,7 @@ struct numbered_typelist<N, T, U...>
 	constexpr static auto index = N;
 
 	template <auto i>
-	requires(i >= N and i <= N + sizeof...(U)) using get = if_else<i == index, type, typename numbered_typelist<N + 1, U...>::type>;
+	requires(i >= N and i <= N + sizeof...(U)) using get = if_else_type<i == index, type, typename numbered_typelist<N + 1, U...>::type>;
 };
 
 template <auto N, typename T>
@@ -430,49 +430,86 @@ struct product_type_t <TypeTransformer , Typelist <Element...>>
 template <template <typename...> typename TypeTransformer, typename... Typelists>
 using product_type = typename product_type_t <TypeTransformer, Typelists...>::result;
 
-template <template <typename...> typename, typename...>
-struct tp_node;
-
 template <typename...>
-struct tp_push_back_t;
+struct type_node;
 
-template <template <typename...> typename T, typename... U, typename V>
-struct tp_push_back_t <T <U...>, V>
+// template <typename...>
+// struct tp_push_back_t;
+
+// template <template <typename...> typename T, typename... U, typename V>
+// struct tp_push_back_t <T <U...>, V>
+// {
+// 	using result = T <U..., V>;
+// };
+
+// template <typename... T>
+// using tp_push_back = typename tp_push_back_t <T...>::result;
+
+template <typename A>
+struct type_node <A>
 {
-	using result = T <U..., V>;
+	constexpr static auto null = true;
+	using type = A;
+	
+	// template <typename typeList>
+	// using denest = push_type_back <typeList, T>;
 };
 
-template <typename... T>
-using tp_push_back = typename tp_push_back_t <T...>::result;
-
-template <template <typename...> typename T>
-struct tp_node <T>
+template <typename A, typename... B>
+struct type_node <A, B...>
 {
-	template <typename V>
-	using denest = V;
-};
+	constexpr static auto null = false;
+	using type = A;
+	using next = type_node <B...>;
+	
 
-template <template <typename...> typename A, typename B, typename... C>
-struct tp_node <A, B, C...>
-{
-	// using next = tp_node <U...>;
+	// using next = type_node <U...>;
 	// template <template <typename...> typename U, typename... V>
 	// using type = U <>;
-	template <typename D>
-	using denest = typename tp_node <A, C...>::template denest <tp_push_back <D, B>>;
+	// template <typename C>
+	// using denest = typename type_node <typeList, B...>::template denest <tp_push_back <C, B>>;
 };
 
-template <template <typename...> typename A, typename... B, typename... C>
-struct tp_node <A, A <B...>, C...>
-{
-	template <typename D>
-	using denest = typename tp_node <A, B..., C...>::template denest <D>;
+template <auto...>
+struct result_t;
 
-	template
-};
+template <auto R>
+struct result_t <R> {constexpr static auto result = R;};
 
-template <typename... T>
-using denested_tp = typename tp_node <typelist, T...>::template denest <typelist <>>;
+template <template <typename...> typename typeList, typename... types>
+struct contains_typelist_t;
+
+template <template <typename...> typename typeList, typename type>
+struct contains_typelist_t <typeList, type> : result_t <false> {};
+
+template <template <typename...> typename typeList, typename... types>
+struct contains_typelist_t <typeList, typelist <types...>> : result_t <true> {};
+
+template <template <typename...> typename typeList, typename... types>
+constexpr auto contains_typelist = contains_typelist_t <typelist, types...>::result;
+/*
+	om nested, type = typename type_node <>
+*/
+
+
+
+
+
+
+// template <template <typename...> typename A, typename... B, typename... C>
+// struct type_node <A, A <B...>, C...>
+// {
+// 	template <typename D>
+// 	using denest = typename type_node <A, B..., C...>::template denest <D>;
+
+// 	// template
+// };
+
+
+
+template <template <typename...> typename typeList, typename... types>
+using denested_typelist = typeList <if_else_type <contains_typelist <typeList, types>, int, types>...>;    //typename type_node <typelist, T...>::template denest <typelist <>>;
+
 
 /*
 	product_tp takes a transformation function and applies it to all types in a typelist
@@ -480,7 +517,7 @@ using denested_tp = typename tp_node <typelist, T...>::template denest <typelist
 template <template <typename...> typename typeFunction, typename... args>
 struct product_tp_t
 {
-	using result = tp_node <>
+	// using result = type_node <>
 	// using result = denested_tp <args...>
 };
 
@@ -489,6 +526,23 @@ struct product_tp_t
 
 }
 
+
+
+/*
+	Testing contains_typelist
+*/
+
+using unnested_testing_types = typelist <char, double>;
+using nested_testing_types = typelist <int, unnested_testing_types>;
+
+static_assert (not contains_typelist <typelist, unnested_testing_types>);
+static_assert (contains_typelist <typelist, nested_testing_types>);
+
+using t3 = typelist <int, char>;
+using t4 = denested_typelist <typelist, t3>;
+
+
+// static_assert (Same <t3, t4>);
 // static_assert (AllOf <[]<typename T>{return Number <T>;}, integer_types>);
 
 template <typename T>
@@ -505,5 +559,5 @@ using t0 = typelist <int, char>;
 using t1 = typelist <double, int, typelist <>>;
 using t2 = typelist <t0, t1, typelist <t0, t1>>;
 
-static_assert (Same <denested_tp <t2>, typelist <int, char, double, int, int, char, double, int>>);
-static_assert (Same <denested_tp <int, t2, char>, typelist <int, int, char, double, int, int, char, double, int, char>>);
+// static_assert (Same <denested_tp <typelist, t2>, typelist <int, char, double, int, int, char, double, int>>);
+// static_assert (Same <denested_tp <typelist, int, t2, char>, typelist <int, int, char, double, int, int, char, double, int, char>>);
