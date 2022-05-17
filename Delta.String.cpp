@@ -3,8 +3,8 @@ export module Delta.String;
 export import Delta.Array;
 
 
-
-static_assert (Char <element_type <char const*>>);
+// uncomment
+// static_assert (Char <element_type <char const*>>);
 
 export template <Char T>
 struct sentinel_value_t <T>
