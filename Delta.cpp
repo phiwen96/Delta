@@ -6,28 +6,28 @@ export import Delta.String;
 // static_assert (Range <char[10]>);
 // static_assert (AllOf <>);
 
-// uncomment
-// export template <Sentinel T>
-// requires(not Array<T>)
-// struct range_policies_t<T>
-// {
-// 	constexpr static auto begin(T t) noexcept -> Iterator auto
-// 	{
-// 		return t;
-// 	}
 
-// 	constexpr static auto end(T t) noexcept -> Iterator auto
-// 	{
-// 		auto i = t;
+export template <Sentinel T>
+requires(not Array<T>)
+struct range_policies_t<T>
+{
+	constexpr static auto begin(T t) noexcept -> Iterator auto
+	{
+		return t;
+	}
 
-// 		while (*i != sentinel_value_t<T>::value)
-// 		{
-// 			++i;
-// 		}
+	constexpr static auto end(T t) noexcept -> Iterator auto
+	{
+		auto i = t;
 
-// 		return i;
-// 	}
-// };
+		while (*i != sentinel_value_t<T>::value)
+		{
+			++i;
+		}
+
+		return i;
+	}
+};
 static_assert (not Char <int>);
 // generates weird bugs
 // static_assert (AllOf <[]<typename T>{return Range <T>;}, array_types <int>>);
@@ -61,8 +61,8 @@ static_assert (Range <int const(&)[10]>);
 static_assert (not Iterator <int(&)[10]>);
 static_assert (not Iterator <int const(&)[10]>);
 // static_assert (not Iterator <int[10]>);
-// uncomment static_assert (Same <element_type <int[10]>, int>);
-// uncomment static_assert (Same <element_type <int(&)[10]>, int>);
+static_assert (Same <element_type <int[10]>, int>);
+static_assert (Same <element_type <int(&)[10]>, int>);
 // export using bajw = element_type <int[10]>;
 // static_assert (Range <int[10]>);
 // static_assert (AllOf <[]<typename T> {return Bounded <T>;}, array_types <char_types>>);

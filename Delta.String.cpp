@@ -4,7 +4,7 @@ export import Delta.Array;
 
 
 // uncomment
-// static_assert (Char <element_type <char const*>>);
+static_assert (Char <element_type <char const*>>);
 
 export template <Char T>
 struct sentinel_value_t <T>
