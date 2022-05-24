@@ -24,11 +24,45 @@ struct bounded_t<T>
 // export template <typename... U>
 // using array_types = typelist<array_types_t <U>...>;
 
-export template <typename T>
-using array_types = typelist<T[1], T (&)[1], T const (&)[1]>;
+
+
+
+template <Typelist T, typename U>
+using push_array_type = int;
+//add_types <T, denest <U, T> [2], denest <U, T> (&)[2], denest <U, T> const(&)[2]>;
+
+
+
+// #define ARRAY_TYPES (type, len)\
+// 	X (type (&) [len])\
+// 	X (type const (&) [len])
+
+// #define X\
+
+template <typename T>
+using m_array_types = int;
+
+export template <
+	auto N = 1, // length
+	template <typename...> typename T = typelist, // type container
+	typename... U> // types
+requires ( 
+	sizeof...(U) > 0 and
+	(Array <U[N]> and ...) and
+	(Array <U(&)[N]> and ...) and
+	(Array <U const(&)[N]> and ...) and 
+	Typelist <T <U[N]..., U(&)[N]..., U const(&)[N]...>>)
+using array_types = T <U [N]..., U (&) [N]..., U const (&) [N]...>;
+
+export template <Typelist T, typename... U>
+using push_array_types = add_types <T, U [1]..., U (&) [1]..., U const (&) [1]...>;  //typename T::template push_back <U [1]..., U (&) [1]..., U const (&) [1]...>;
+
+
+// export template <Typelist T>
+// using make_array_types = 
 
 export template <typename T, auto N>
-struct array_policies_t<T[N]>
+struct array_policies_t <T[N]>
 {
 	constexpr static auto begin(T(&range)[N]) noexcept -> Iterator auto
 	{

@@ -1,5 +1,7 @@
 export module Delta.Common;
 
+#define EAT(...)
+
 export template <auto T>
 struct value_t {constexpr static auto value = T;};
 
@@ -14,6 +16,9 @@ constexpr auto is_template_specialization_of = is_template_specialization_of_t<t
 
 export template <typename T, template <typename...> typename typeList>
 concept TemplateSpecializationOf = is_template_specialization_of <typeList, T>;
+
+// template <typename T>
+// struct get_
 
 export template <typename T>
 concept HasType = requires {typename T::type;};
@@ -84,13 +89,11 @@ export template <typename T, typename U>
 concept Stripped = Same <strip <T>, U>;
 
 static_assert (Stripped <char const, char>);
+static_assert (!Stripped <char, char const>);
 // static_assert (Same <strip <char const>, strip_t<char const>>);
 
 export template <typename T, typename U>
-concept Convertible = requires(T t, U u)
-{
-	u = t;
-};
+concept Convertible = requires (T t, U u) {u = t;};
 
 template <bool, typename T, typename U>
 struct if_else_type_t;
@@ -111,20 +114,33 @@ export template <typename T, typename U>
 concept TypePredicate = requires(T &t) {{t.template operator() <U> ()} -> Same <bool>;};
 
 template <auto, typename...>
-struct numbered_typelist;
+struct type_index_t;
+
+struct null {};
+
+
+template <>
+struct type_index_t <0>
+{
+	constexpr static auto index = 0;
+	using type = null;
+
+	template <auto i>
+	requires(i == 0) using get = type;
+};
 
 template <auto N, typename T, typename... U>
-struct numbered_typelist<N, T, U...>
+struct type_index_t <N, T, U...>
 {
 	using type = T;
 	constexpr static auto index = N;
 
 	template <auto i>
-	requires(i >= N and i <= N + sizeof...(U)) using get = if_else_type<i == index, type, typename numbered_typelist<N + 1, U...>::type>;
+	requires(i >= N and i <= N + sizeof...(U)) using get = if_else_type<i == index, type, typename type_index_t <N + 1, U...>::type>;
 };
 
 template <auto N, typename T>
-struct numbered_typelist<N, T>
+struct type_index_t <N, T>
 {
 	using type = T;
 	constexpr static auto index = N;
@@ -133,17 +149,45 @@ struct numbered_typelist<N, T>
 	requires(i == index) using get = type;
 };
 
+export template <typename T>
+concept Typelist = requires 
+{
+	typename T::template push_back <int>;
+	typename T::template push_back <int, char, double>;
+
+	typename T::template make_new <int>;
+	typename T::template make_new <int, char, double>;
+
+	// typename T::template switch_container <std::tuple>
+	// typename T::template switch_containter <get_template <T>>;
+};
+
 export template <typename... T>
 struct typelist
 {
-	template <template <typename...> typename U, typename... V>
-	using transform = U<T..., V...>;
+	template <typename... U>
+	using push_back = typelist <T..., U...>;
 
-	constexpr static auto reversed_index = sizeof...(T);
+	template <typename... U>
+	using push_front = typelist <U..., T...>;
+
+	template <template <typename...> typename U>
+	using switch_to = U <T...>;
+	
+	template <typename... U>
+	using make_new = typelist <U...>;
+
+	template <template <typename...> typename U, typename... V>
+	using transform = U <T..., V...>;
+
+	constexpr static auto reversed_index = sizeof... (T);
 
 	template <auto i>
-	using get = typename numbered_typelist<0, T...>::template get<i>;
+	using get = typename type_index_t <0, T...>::template get<i>;
 };
+
+export template <Typelist T, typename... U>
+using add_types = typename T::template push_back <U...>;
 
 template <typename...>
 struct get_t;
@@ -261,10 +305,7 @@ export template <typename T>
 struct pointer_type_t {using pointer_type = T;};
 
 template <typename T>
-concept PointerTraits = requires()
-{
-	typename T::pointer_type;
-};
+concept PointerTraits = requires {typename T::pointer_type;};
 
 template <typename... T>
 struct pointer_traits_t;
@@ -297,23 +338,24 @@ template <typename T>
 struct pointer_traits_t<T *&> : pointer_type_t <T *&> {};
 
 export template <typename T>
-concept Pointer = HasDefinedPointerTraits<T>;
+concept Pointer = HasDefinedPointerTraits <T>;
 
-export template <typename T>
-using non_pointer_const_types = typelist<T *, T *&, T *&&, T const *, T const *&>;
+export template <typename T, template <typename...> typename typeList = typelist>
+using pointer_non_const_types = typeList <T *, T *&, T *&&, T const *, T const *&>;
 
 export template <typename T>
 using pointer_const_types = typelist<T *const, T *const &, T const *const>;
 
 export template <typename T>
-using pointer_types = typelist <non_pointer_const_types<T>, pointer_const_types<T>>;
+using pointer_types = typelist <pointer_non_const_types <T>, pointer_const_types<T>>;
 
-export using char_types = typelist<char, signed char, unsigned char, char16_t, char32_t, wchar_t>;
+export template <template <typename...> typename T>
+using char_types = T <char, signed char, unsigned char, char16_t, char32_t, wchar_t>;
 
 export template <typename T>
 concept Char = AnyOf<[]<typename C>
 					 { return Stripped <C, T>; },
-					 char_types>;
+					 char_types <typelist>>;
 
 export template <typename T>
 concept Size = requires(T t, decltype(alignof(char)) u)
@@ -366,10 +408,14 @@ struct denested_type_insert_iterator_t
 	// using insert = push_type_back <typeList, if_else_type <is_template_specialization_of <>, >>
 };
 
-template <template <typename...> typename target = typelist, typename... types>
-struct denest_t
-{
-};
+
+
+
+
+
+
+// template <typename... typeList>
+// using denest = denest_t <>
 
 template <typename... T>
 struct find_suitable_typelist_t;
@@ -406,9 +452,7 @@ template <template <typename...> typename T, typename...>
 struct product_type_t;
 
 template <template <typename...> typename TypeTransformer, template <typename...> typename Typelist, typename... Element>
-struct product_type_t<TypeTransformer, Typelist<Element...>> : type_t<Typelist<TypeTransformer<Element>...>>
-{
-};
+struct product_type_t <TypeTransformer, Typelist<Element...>> : type_t<Typelist<TypeTransformer<Element>...>> {};
 
 /*
 	product_type takes a transformation function and applies it to all types in a typelist
@@ -421,7 +465,7 @@ template <typename...>
 struct type_node;
 
 template <typename A>
-struct type_node<A>
+struct type_node <A>
 {
 	constexpr static auto null = true;
 	using type = A;
@@ -435,7 +479,7 @@ struct type_node<A, B...>
 {
 	constexpr static auto null = false;
 	using type = A;
-	using next = type_node<B...>;
+	using next = type_node <B...>;
 
 	// using next = type_node <U...>;
 	// template <template <typename...> typename U, typename... V>
@@ -463,13 +507,13 @@ struct product_tp_t
 	Testing contains_typelist
 */
 
-using unnested_testing_types = typelist<char, double>;
-using nested_testing_types = typelist<int, unnested_testing_types>;
+using unnested_testing_types = typelist <char, double>;
+using nested_testing_types = typelist <int, unnested_testing_types>;
 
 // static_assert (contains_typelist <typelist, unnested_testing_types, nested_testing_types>);
 // static_assert (contains_typelist <typelist, nested_testing_types>);
 
-using t3 = typelist<int, char>;
+using t3 = typelist <int, char>;
 // using t4 = denest <typelist, t3>;
 
 // static_assert (Same <t3, t4>);

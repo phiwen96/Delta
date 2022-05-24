@@ -10,6 +10,9 @@ struct bajs_t;
 template <>
 struct bajs_t <int> {};
 
+
+
+
 // template <template <
 auto main (int, char**) -> int 
 {
@@ -17,6 +20,7 @@ auto main (int, char**) -> int
 	int i;
 	Stripped <int> auto* i2 = &i;
 	std::cout << "hej" << std::endl;
+
 	// String auto s = "hej";
 	return 0;
 }
