@@ -5,6 +5,12 @@ export module Delta.Common;
 export template <auto T>
 struct value_t {constexpr static auto value = T;};
 
+export template <typename T>
+concept HasValue = requires {T::value;};
+
+export template <HasValue T>
+constexpr auto get_value = T::value;
+
 template <template <typename...> typename typeList, typename type>
 struct is_template_specialization_of_t : value_t <false> {};
 
@@ -24,6 +30,7 @@ export template <typename T>
 concept HasType = requires {typename T::type;};
 
 export template <typename T>
+requires requires {typename T;}
 struct type_t {using type = T;};
 
 export template <HasType T>
@@ -113,54 +120,71 @@ using if_else_type = get_type <if_else_type_t <B, T, U>>;
 export template <typename T, typename U>
 concept TypePredicate = requires(T &t) {{t.template operator() <U> ()} -> Same <bool>;};
 
-template <auto, typename...>
-struct type_index_t;
+// template <typename tl, typename u>
+// struct 
 
-struct null {};
+template <typename>
+struct empty_t;
 
+template <template <typename...> typename T, typename... U>
+struct empty_t <T <U...>> : value_t <false> {};
 
-template <>
-struct type_index_t <0>
-{
-	constexpr static auto index = 0;
-	using type = null;
+template <template <typename...> typename T>
+struct empty_t <T <>> : value_t <false> {};
 
-	template <auto i>
-	requires(i == 0) using get = type;
-};
+export template <typename tl>
+constexpr auto empty = get_value <empty_t <tl>>;
 
-template <auto N, typename T, typename... U>
-struct type_index_t <N, T, U...>
-{
-	using type = T;
-	constexpr static auto index = N;
+template <typename>
+struct front_t;
 
-	template <auto i>
-	requires(i >= N and i <= N + sizeof...(U)) using get = if_else_type<i == index, type, typename type_index_t <N + 1, U...>::type>;
-};
-
-template <auto N, typename T>
-struct type_index_t <N, T>
-{
-	using type = T;
-	constexpr static auto index = N;
-
-	template <auto i>
-	requires(i == index) using get = type;
-};
+template <template <typename...> typename T, typename U, typename... V>
+struct front_t <T <U, V...>> : type_t <U> {};
 
 export template <typename T>
-concept Typelist = requires 
-{
-	typename T::template push_back <int>;
-	typename T::template push_back <int, char, double>;
+using front = get_type <front_t <T>>;
 
-	typename T::template make_new <int>;
-	typename T::template make_new <int, char, double>;
+template <typename>
+struct pop_front_t;
 
-	// typename T::template switch_container <std::tuple>
-	// typename T::template switch_containter <get_template <T>>;
-};
+template <template <typename...> typename T, typename U, typename... V>
+struct pop_front_t <T <U, V...>> : type_t <T <V...>> {};
+
+export template <typename T>
+using pop_front = get_type <pop_front_t <T>>;
+
+template <typename tl, typename T>
+struct push_front_t;
+
+template <template <typename...> typename T, typename U, typename... V>
+struct push_front_t <T <V...>, U> : type_t <T <U, V...>> {};
+
+export template <typename tl, typename T>
+using push_front = get_type <push_front_t <tl, T>>;
+
+template <typename tl, auto i>
+struct type_at_t : type_at_t <pop_front <tl>, i - 1> {};
+
+template <template <typename...> typename T, typename U, typename... V>
+struct type_at_t <T <U, V...>, 0> : type_t <U> {};
+
+export template <typename tl, auto i>
+using type_at = get_type <type_at_t <tl, i>>;
+
+
+
+template <typename tl, typename u>
+struct contains_type_t : if_else_type <empty <pop_front <tl>>, value_t <Same <front <tl>, u>>, contains_type_t <pop_front <tl>, u>> {};
+
+// template <typename tl, typename u>
+// struct contains_type_t;
+
+// template <template <typename...> typename T, typename U, typename V, typename... X>
+// struct contains_type_t <T <U, X...>, V> : if_else_type <(sizeof... (X) > 0), contains_type_t <T <X...>, V>, value_t <Same <U, V>>> {};
+
+
+
+
 
 export template <typename... T>
 struct typelist
@@ -183,20 +207,14 @@ struct typelist
 	constexpr static auto reversed_index = sizeof... (T);
 
 	template <auto i>
-	using get = typename type_index_t <0, T...>::template get<i>;
+	using get = type_at <typelist <T...>, i>;
 };
 
-export template <Typelist T, typename... U>
-using add_types = typename T::template push_back <U...>;
+
 
 template <typename...>
 struct get_t;
 
-// template <typename... T>
-// struct get_t <>
-
-// template <typename... T>
-// using unnested_typelist =
 
 template <auto predicate, typename T, typename... U>
 struct any_type_of_t
@@ -439,14 +457,10 @@ template <typename... T>
 struct for_all_types_t;
 
 template <typename T>
-struct for_all_types_t<T>
-{
-};
+struct for_all_types_t<T>{};
 
 template <typename T, typename... U>
-struct for_all_types_t<T, U...>
-{
-};
+struct for_all_types_t<T, U...>{};
 
 template <template <typename...> typename T, typename...>
 struct product_type_t;
@@ -457,39 +471,8 @@ struct product_type_t <TypeTransformer, Typelist<Element...>> : type_t<Typelist<
 /*
 	product_type takes a transformation function and applies it to all types in a typelist
 */
-
 export template <template <typename...> typename TypeTransformer, typename... Typelists>
 using product_type = typename product_type_t<TypeTransformer, Typelists...>::type;
-
-template <typename...>
-struct type_node;
-
-template <typename A>
-struct type_node <A>
-{
-	constexpr static auto null = true;
-	using type = A;
-
-	// template <typename typeList>
-	// using denest = push_type_back <typeList, T>;
-};
-
-template <typename A, typename... B>
-struct type_node<A, B...>
-{
-	constexpr static auto null = false;
-	using type = A;
-	using next = type_node <B...>;
-
-	// using next = type_node <U...>;
-	// template <template <typename...> typename U, typename... V>
-	// using type = U <>;
-	// template <typename C>
-	// using denest = typename type_node <typeList, B...>::template denest <tp_push_back <C, B>>;
-};
-
-// template <template <typename...> typename typeList, typename... types>
-// using denest = for_all_types_t <types...>:: // typeList <if_else_type <contains_typelist <typeList, types>, int, types>...>;    //typename type_node <typelist, T...>::template denest <typelist <>>;
 
 /*
 	product_tp takes a transformation function and applies it to all types in a typelist

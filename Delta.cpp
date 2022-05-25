@@ -51,8 +51,8 @@ static_assert (Array <int[10]>);
 // static_assert (Range <int[10]>);
 // using test_make_array_types = product_type <make_array_types, > 
 // using array_test_types = unnested_tp <make_array_types >                                 
-static_assert (AllTypesOf <[]<typename T>{return Array <T>;}, push_array_types <typelist <>, int>>);
-static_assert (AllTypesOf <[]<typename T>{return Array <T>;}, push_array_types <typelist <>, char>>);
+// static_assert (AllTypesOf <[]<typename T>{return Array <T>;}, push_array_types <10, int>>);
+// static_assert (AllTypesOf <[]<typename T>{return Array <T>;}, push_array_types <10, char>>);
 // static_assert (AllTypesOf <[]<typename T> {return Array <T>;}, make_array_types <char_types <typelist>>>);
 /*
 	accumulate types with policies as paramters to accumulate all true boolean values both for all or for one
