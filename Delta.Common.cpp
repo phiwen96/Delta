@@ -175,17 +175,30 @@ using pop_front = get_type <pop_front_t <T>>;
 
 static_assert (Same <pop_front <type_container <int, char>>, type_container <char>>);
 
-template <typename tl, typename T>
+template <typename...>
 struct push_front_t;
 
-template <template <typename...> typename T, typename U, typename... V>
-struct push_front_t <T <V...>, U> : type_t <T <U, V...>> {};
+template <template <typename...> typename T, typename... U, typename... V>
+struct push_front_t <T <U...>, V...> : type_t <T <V..., U...>> {};
 
 export template <typename tl, typename T>
 using push_front = get_type <push_front_t <tl, T>>;
 
 static_assert (Same <push_front <type_container <>, double>, type_container <double>>);
 static_assert (Same <push_front <type_container <int, char>, double>, type_container <double, int, char>>);
+
+template <typename...>
+struct push_back_t;
+
+template <template <typename...> typename T, typename... U, typename... V>
+struct push_back_t <T <U...>, V...> : type_t <T <U..., V...>> {};
+
+export template <typename tl, typename T>
+using push_back = get_type <push_back_t <tl, T>>;
+
+static_assert (Same <push_back <type_container <>, double>, type_container <double>>);
+static_assert (Same <push_back <type_container <int, char>, double>, type_container <int, char, double>>);
+
 
 template <typename tl, auto i>
 struct type_at_t : type_at_t <pop_front <tl>, i - 1> {};
