@@ -2,8 +2,10 @@ export module Delta.Common;
 
 #define EAT(...)
 
+// export template <
+// struct if_else_inhe
 export template <auto T>
-struct value_t {constexpr static auto value = T;};
+struct value_t {constexpr static decltype (auto) value = T;};
 
 export template <typename T>
 concept HasValue = requires {T::value;};
@@ -114,6 +116,15 @@ struct if_else_type_t <false, T, U> : type_t <U> {};
 export template <bool B, typename T, typename U>
 using if_else_type = get_type <if_else_type_t <B, T, U>>;
 
+export template <bool b, auto t, auto u>
+struct if_else_value_t : if_else_type <b, value_t <t>, value_t <u>> {};
+
+export template <bool b, auto t, auto u>
+constexpr auto if_else_value = get_value <if_else_value_t <b, t, u>>;
+
+static_assert (Same <if_else_type <true, int, double>, int>);
+static_assert (Same <if_else_type <false, int, double>, double>);
+
 // A type predicate is a lambda that, when called
 // with a type, should return a boolean value.
 
@@ -123,6 +134,9 @@ concept TypePredicate = requires(T &t) {{t.template operator() <U> ()} -> Same <
 // template <typename tl, typename u>
 // struct 
 
+template <typename...>
+struct type_container {};
+
 template <typename>
 struct empty_t;
 
@@ -130,12 +144,15 @@ template <template <typename...> typename T, typename... U>
 struct empty_t <T <U...>> : value_t <false> {};
 
 template <template <typename...> typename T>
-struct empty_t <T <>> : value_t <false> {};
+struct empty_t <T <>> : value_t <true> {};
 
 export template <typename tl>
 constexpr auto empty = get_value <empty_t <tl>>;
 
-template <typename>
+static_assert (not empty <type_container <int, char>>);
+static_assert (empty <type_container <>>);
+
+template <typename tl>
 struct front_t;
 
 template <template <typename...> typename T, typename U, typename... V>
@@ -143,6 +160,9 @@ struct front_t <T <U, V...>> : type_t <U> {};
 
 export template <typename T>
 using front = get_type <front_t <T>>;
+
+static_assert (Same  <front <type_container <int, char>>, int>);
+static_assert (Same  <front <type_container <int>>, int>);
 
 template <typename>
 struct pop_front_t;
@@ -153,6 +173,8 @@ struct pop_front_t <T <U, V...>> : type_t <T <V...>> {};
 export template <typename T>
 using pop_front = get_type <pop_front_t <T>>;
 
+static_assert (Same <pop_front <type_container <int, char>>, type_container <char>>);
+
 template <typename tl, typename T>
 struct push_front_t;
 
@@ -161,6 +183,9 @@ struct push_front_t <T <V...>, U> : type_t <T <U, V...>> {};
 
 export template <typename tl, typename T>
 using push_front = get_type <push_front_t <tl, T>>;
+
+static_assert (Same <push_front <type_container <>, double>, type_container <double>>);
+static_assert (Same <push_front <type_container <int, char>, double>, type_container <double, int, char>>);
 
 template <typename tl, auto i>
 struct type_at_t : type_at_t <pop_front <tl>, i - 1> {};
@@ -171,10 +196,51 @@ struct type_at_t <T <U, V...>, 0> : type_t <U> {};
 export template <typename tl, auto i>
 using type_at = get_type <type_at_t <tl, i>>;
 
+static_assert (Same <type_at <type_container <int, char, double>, 0>, int>);
+static_assert (Same <type_at <type_container <int, char, double>, 1>, char>);
+static_assert (Same <type_at <type_container <int, char, double>, 2>, double>);
 
+// template <typename tl>
+// struct get_len_t : if_else_type <empty <tl>, value_t <0>, >
+
+
+
+// template <typename tl, typename u>
+// // requires (not empty <tl>)
+// struct contains_t : 
+
+
+// template <typename tl, typename u>
+// requires (empty <tl>)
+// struct contains_t <tl, u> : value_t <false> {};
+
+
+
+// export template <typename tl, typename u>
+// constexpr auto contains = get_value <contains_t <tl, u>>; 
+
+
+// if_else_type <>
 
 template <typename tl, typename u>
-struct contains_type_t : if_else_type <empty <pop_front <tl>>, value_t <Same <front <tl>, u>>, contains_type_t <pop_front <tl>, u>> {};
+struct contains_type_t;
+
+template <typename T, template <typename...> typename U, typename V, typename... X>
+struct contains_type_t <U <V, X...>, T> : if_else_type <Same <V, T>, value_t <true>, contains_type_t <U <X...>, T>> {};
+
+template <template <typename...> typename T, typename U>
+struct contains_type_t <T <>, U> : value_t <false> {};
+
+template <typename tl, typename U>
+constexpr auto contains_type = get_value <contains_type_t <tl, U>>;
+
+static_assert (contains_type <type_container <int, char>, int>);
+static_assert (contains_type <type_container <char, int>, int>);
+static_assert (not contains_type <type_container <char, int>, char*>);
+
+export template <typename tl, typename u>
+concept ContainsType = contains_type <tl, u>;
+
 
 // template <typename tl, typename u>
 // struct contains_type_t;
@@ -209,6 +275,8 @@ struct typelist
 	template <auto i>
 	using get = type_at <typelist <T...>, i>;
 };
+
+
 
 
 
