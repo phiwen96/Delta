@@ -4,7 +4,7 @@ CXX_FLAGS = -std=c++2b
 CXX_MODULES = -fmodules-ts -fmodules -fbuiltin-module-map -fimplicit-modules -fimplicit-module-maps -fprebuilt-module-path=.
 APP=main
 apps:= #App.Server App.Client
-tests:= Test.Yolo
+tests:= Test.Yolo Test.Array
 all: $(apps) $(tests)
 
 # std_headers:

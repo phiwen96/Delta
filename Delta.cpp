@@ -84,3 +84,4 @@ static_assert (Same <element_type <int(&)[10]>, int>);
 // static_assert (Sentinel <char const * const>);
 // static_assert (AllOf <[]<typename T>{return Sentinel <T>;}, product_type <pointer_types, char_types>>);
 // static_assert (not Array <char*>);
+

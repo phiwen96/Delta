@@ -2,8 +2,6 @@ export module Delta.Common;
 
 #define EAT(...)
 
-// export template <
-// struct if_else_inhe
 export template <auto T>
 struct value_t {constexpr static decltype (auto) value = T;};
 
@@ -193,12 +191,11 @@ struct push_back_t;
 template <template <typename...> typename T, typename... U, typename... V>
 struct push_back_t <T <U...>, V...> : type_t <T <U..., V...>> {};
 
-export template <typename tl, typename T>
-using push_back = get_type <push_back_t <tl, T>>;
+export template <typename tl, typename... T>
+using push_back = get_type <push_back_t <tl, T...>>;
 
 static_assert (Same <push_back <type_container <>, double>, type_container <double>>);
 static_assert (Same <push_back <type_container <int, char>, double>, type_container <int, char, double>>);
-
 
 template <typename tl, auto i>
 struct type_at_t : type_at_t <pop_front <tl>, i - 1> {};
@@ -212,28 +209,6 @@ using type_at = get_type <type_at_t <tl, i>>;
 static_assert (Same <type_at <type_container <int, char, double>, 0>, int>);
 static_assert (Same <type_at <type_container <int, char, double>, 1>, char>);
 static_assert (Same <type_at <type_container <int, char, double>, 2>, double>);
-
-// template <typename tl>
-// struct get_len_t : if_else_type <empty <tl>, value_t <0>, >
-
-
-
-// template <typename tl, typename u>
-// // requires (not empty <tl>)
-// struct contains_t : 
-
-
-// template <typename tl, typename u>
-// requires (empty <tl>)
-// struct contains_t <tl, u> : value_t <false> {};
-
-
-
-// export template <typename tl, typename u>
-// constexpr auto contains = get_value <contains_t <tl, u>>; 
-
-
-// if_else_type <>
 
 template <typename tl, typename u>
 struct contains_type_t;
@@ -253,17 +228,6 @@ static_assert (not contains_type <type_container <char, int>, char*>);
 
 export template <typename tl, typename u>
 concept ContainsType = contains_type <tl, u>;
-
-
-// template <typename tl, typename u>
-// struct contains_type_t;
-
-// template <template <typename...> typename T, typename U, typename V, typename... X>
-// struct contains_type_t <T <U, X...>, V> : if_else_type <(sizeof... (X) > 0), contains_type_t <T <X...>, V>, value_t <Same <U, V>>> {};
-
-
-
-
 
 export template <typename... T>
 struct typelist
@@ -289,13 +253,8 @@ struct typelist
 	using get = type_at <typelist <T...>, i>;
 };
 
-
-
-
-
 template <typename...>
 struct get_t;
-
 
 template <auto predicate, typename T, typename... U>
 struct any_type_of_t
@@ -308,8 +267,6 @@ struct any_type_of_t<predicate, T>
 {
 	constexpr static auto value = predicate.template operator()<T>() ? true : false;
 };
-
-// typelist
 
 template <auto predicate, typename... U>
 struct any_type_of_t<predicate, typelist<U...>> : any_type_of_t <predicate, U...> {};
@@ -340,17 +297,6 @@ constexpr auto all_types_of = all_types_of_t <predicate, T...>::value;
 
 export template <auto predicate, typename... T>
 concept AllTypesOf = all_types_of_t<predicate, T...>::value; //(TypePredicate<decltype(predicate), T> and ...) and all_types_of<predicate, T...>;
-
-// constexpr auto is_function (auto&&...) noexcept -> bool
-// {
-// 	return false;
-// }
-
-// template <typename T, typename... U>
-// constexpr auto is_function (T (*) (U...)) noexcept -> bool
-// {
-// 	return true;
-// }
 
 template <typename T>
 concept FunctionTraits = requires
@@ -482,57 +428,6 @@ export template <typename T>
 concept Unsigned = AnyOf<[]<typename U>
 						 { return Stripped <U, T>; },
 						 unsigned_types>;
-
-template <typename T, typename... U>
-struct type_iterator_t
-{
-	using type = T;
-	constexpr static auto last = false;
-	using next = type_iterator_t<U...>;
-};
-
-template <typename T>
-struct type_iterator_t<T>
-{
-	using type = T;
-	constexpr static auto last = true;
-};
-
-template <typename... types>
-struct denested_type_insert_iterator_t
-{
-	// template <template <typename...> typename target, >
-	// using type = push_type_back<typeList, if_else_type<is_template_specialization_of<target, T>, >>;
-	// template <typename typeList>
-	// using insert = push_type_back <typeList, if_else_type <is_template_specialization_of <>, >>
-};
-
-
-
-
-
-
-
-// template <typename... typeList>
-// using denest = denest_t <>
-
-template <typename... T>
-struct find_suitable_typelist_t;
-
-// template <typename... T>
-// using denest = denest_t <>
-
-// using integer_types = denest <signed_types, unsigned_types>;
-// using integer_types = merge <unsigned_types, signed_types>;//typelist <short, short int, signed short, signed short int, int, signed, signed int, long, long int, signed long, signed long int, long long, long long int, signed long long, signed long long int, unsigned short, unsigned short int, unsigned, unsigned int, unsigned long, unsigned long int, unsigned long long, unsigned long long int>;
-
-// template <typename T>
-// concept Integer = AnyOf <[]<typename U>{return Strip <T, U>;}, integer_types>;
-
-// // using number_types =
-// template <typename T>
-// concept Number = Signed <T> or Unsigned <T>;
-
-// using number_types = typelist <>
 
 template <typename... T>
 struct for_all_types_t;

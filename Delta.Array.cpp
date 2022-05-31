@@ -20,6 +20,12 @@ struct bounded_t<T> {
 template <typename T>
 using m_array_types = int;
 
+export template <typename, auto...>
+concept Kuk = true;
+
+// template <Kuk...>
+// using kuki = int;
+
 export template <
 	auto N = 1, // length
 	template <typename...> typename T = typelist, // type container
@@ -30,8 +36,24 @@ requires (
 	(Array <U(&)[N]> and ...) and
 	(Array <U const(&)[N]> and ...) and 
 	requires {typename T <U[N]..., U(&)[N]..., U const(&)[N]...>;}
-) 
+)
 using make_array_types = T <U[N]..., U(&)[N]..., U const(&)[N]...>;
+
+export template <
+	typename T,
+	auto N = 1,
+	typename tp = typelist <>>
+requires (Array <T[N]> and Array <T(&)[N]> and Array <T const(&)[N]>)
+using push_array_types = push_back <tp, T[N], T(&)[N], T const(&)[N]>;
+
+
+
+template <typename...>
+using bbb = int;
+
+// using t0 = push_array_types <int>;
+// using t1 = push_array_types <int, typelist <>, 3, bbb>;
+// using t1 = push_array_types <int>;
 
 // export template <typename U, auto N, Typelist T = typelist <>>
 // using push_array_type = add_types <T, U[N], U(&)[N], U const(&)[N]>; 

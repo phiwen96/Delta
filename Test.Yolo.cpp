@@ -2,6 +2,7 @@
 #include <iostream>
 import Delta;
 
+
 // EAT(bajsf)
 
 template <typename...>
@@ -10,6 +11,11 @@ struct bajs_t;
 template <>
 struct bajs_t <int> {};
 
+template <typename...>
+struct kuk_t;
+
+template <>
+struct kuk_t <int> {};
 
 
 
@@ -21,7 +27,7 @@ auto main (int, char**) -> int
 	Stripped <int> auto* i2 = &i;
 	ContainsType <int> auto i3 = typelist <char, int> {};
 	std::cout << "hej" << std::endl;
-
+	
 	// auto ii = contains_type_
 
 	// String auto s = "hej";
