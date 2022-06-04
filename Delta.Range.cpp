@@ -21,12 +21,13 @@ concept RangePolicies = requires(fun_param_type<decltype(T::begin), 0> &range)
 {
 	{
 		T::begin(range)
-	}
+    } 
 	noexcept->Iterator;
+
 	// true;
 
 		{
-			T::end(range)
+			T::end (range)
 		}
 		noexcept->Iterator;
 
@@ -34,6 +35,20 @@ concept RangePolicies = requires(fun_param_type<decltype(T::begin), 0> &range)
 
 export template <typename... T>
 struct range_policies_t;
+
+export template <typename T>
+requires requires (T t) {
+	{t.begin ()} noexcept -> Iterator;
+	{t.end ()} noexcept -> Iterator;
+}
+struct range_policies_t <T>  {
+	constexpr static auto begin (T& t) noexcept -> Iterator auto {
+		return t.begin();
+	}
+	constexpr static auto end (T& t) noexcept -> Iterator auto {
+		return t.end();
+	}
+};
 
 export template <typename T>
 concept Range = RangePolicies <range_policies_t <T>>;

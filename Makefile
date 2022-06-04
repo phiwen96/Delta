@@ -1,10 +1,10 @@
 # GCC=g++-12 -std=gnu++2a -fcoroutines -fmodules-ts -fconcepts-diagnostics-depth=1
-CXX = clang++
+CXX = clang++-13
 CXX_FLAGS = -std=c++2b
 CXX_MODULES = -fmodules-ts -fmodules -fbuiltin-module-map -fimplicit-modules -fimplicit-module-maps -fprebuilt-module-path=.
 APP=main
 apps:= #App.Server App.Client
-tests:= Test.Yolo Test.Array
+tests:= Test.Yolo Test.Array Test.Range
 all: $(apps) $(tests)
 
 # std_headers:

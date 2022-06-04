@@ -4,13 +4,13 @@ export import Delta.Range;
 
 
 export template <typename T>
-concept ArrayPolicies = RangePolicies<T>;// and Bounded <range_type <T>>;
+concept ArrayPolicies = RangePolicies <T>;// and Bounded <range_type <T>>;
 
 export template <typename...>
 struct array_policies_t;
 
 export template <typename T>
-concept Array = ArrayPolicies<array_policies_t<T>>;
+concept Array = ArrayPolicies <array_policies_t<T>>;
 
 export template <Array T>
 struct bounded_t<T> {
