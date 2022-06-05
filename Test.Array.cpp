@@ -1,5 +1,6 @@
 #include <iostream>
 #include <utility>
+#include <type_traits>
 import Delta;
 
 /*
@@ -37,7 +38,7 @@ struct super_array2 {
 static_assert (Range <super_array2 <int, 10>>);
 // static_assert (Array <super_array2 <int, 10>>);
 
-constexpr bool bis_constant_evaluated() noexcept
+constexpr bool is_constant_evaluated() noexcept
 {
     if consteval {
         return true;
@@ -47,13 +48,81 @@ constexpr bool bis_constant_evaluated() noexcept
     }
 }
 
+constexpr auto bajs (auto&& b) noexcept -> auto 
+requires (is_constant_evaluated ())
+{
 
+}
+
+template <typename T>
+concept Bajs = requires (T t) {
+	{t.begin ()};
+};
+
+auto bb1 (auto) {
+	auto* i = new int;
+	return i;
+}
+
+constexpr auto bb2 (auto g) {
+	return g;
+}
+
+consteval auto bb3 (auto g) {
+	return g;
+}
+
+#define CONSTEXPR_EVAL(...) \
+  std::integral_constant< \
+    std::decay_t<decltype(__VA_ARGS__)>, \
+    __VA_ARGS__ \
+  >::value
+
+#define KKU(...) requires (std::integral_constant< \
+    std::decay_t<decltype(__VA_ARGS__)>, \
+    __VA_ARGS__ \
+  >){true;}
+
+
+
+// static_assert (not CONSTEXPR_EVAL (bb1 (4)));
+static_assert (CONSTEXPR_EVAL (bb2 (4)));
+static_assert (CONSTEXPR_EVAL (bb3 (4)));
+
+
+// static_assert ( KKU(bb1 (4)));
+static_assert (KKU(bb2 (4)));
+static_assert (KKU (bb3 (4)));
+
+#define IS_CONSTEXPR(expr) \
+  __builtin_types_compatible_p(__typeof__((1 ? (void*) ((__INTPTR_TYPE__) ((expr) * 0)) : (int*) 0)), int*)
+
+// static_assert ( not IS_CONSTEXPR(bb1 (4)));
+// static_assert (IS_CONSTEXPR(bb2 (4)));
+static_assert (__builtin_constant_p (bb2 (4)));
+static_assert (__builtin_constant_p (bb3 (4)));
+static_assert (not __builtin_constant_p (bb1 (4)));
+
+// static_assert (__builtin_constant_p (njfn ()));
+
+
+#define ICE_P(x) ( \
+  sizeof(void) != \
+  sizeof(*( \
+    1 ? \
+      ((void*) ((x) * 0L) ) : \
+      ((struct { char v[sizeof(void) * 2]; } *) 1) \
+    ) \
+  ) \
+)
+
+// static_assert (not __builtin_constant_p (KKU(bb1 (4))));
 
 
 // static_assert (IS_CONSTEXPR (foo (10.0, true)));
 
 auto main (int, char**) -> int 
-{
+{	
 	// B0 auto b0 = super_array2 <int, 10> {};
 	return 0;
 } 
