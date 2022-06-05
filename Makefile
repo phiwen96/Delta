@@ -3,7 +3,7 @@ CXX = clang++-14
 CXX_FLAGS = -std=c++2b
 CXX_MODULES = -fmodules-ts -fmodules -fbuiltin-module-map -fimplicit-modules -fimplicit-module-maps -fprebuilt-module-path=.
 APP=main
-apps:= #App.Server App.Client
+apps:= App.Server #App.Client
 tests:= Test.Yolo Test.Array Test.Range
 all: $(apps) $(tests)
 
@@ -121,6 +121,12 @@ Test.%: Test.%.o
 	$(CXX) $(CXX_FLAGS) $< -o $@ $(CXX_APP_FLAGS)
 
 Test.%.o: Test.%.cpp Delta.pcm
+	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -o $@
+
+App.%: App.%.o 
+	$(CXX) $(CXX_FLAGS) $< -o $@ $(CXX_APP_FLAGS)
+
+App.%.o: App.%.cpp Delta.pcm
 	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -o $@
 
 # Test.%: Test.%.cpp delta

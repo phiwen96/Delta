@@ -103,23 +103,18 @@ static_assert (__builtin_constant_p (bb2 (4)));
 static_assert (__builtin_constant_p (bb3 (4)));
 static_assert (not __builtin_constant_p (bb1 (4)));
 
-// static_assert (__builtin_constant_p (njfn ()));
+template <typename T>
+concept dslmd = requires (T& t){(bool) __builtin_constant_p (t.begin());};
+static_assert (dslmd <super_array2 <int, 10>>);
 
-
-#define ICE_P(x) ( \
-  sizeof(void) != \
-  sizeof(*( \
-    1 ? \
-      ((void*) ((x) * 0L) ) : \
-      ((struct { char v[sizeof(void) * 2]; } *) 1) \
-    ) \
-  ) \
-)
-
-// static_assert (not __builtin_constant_p (KKU(bb1 (4))));
-
-
-// static_assert (IS_CONSTEXPR (foo (10.0, true)));
+struct notArray {
+	auto* begin () noexcept {
+		return new int;
+	}
+	auto* end () noexcept {
+		return new int;
+	}
+};
 
 auto main (int, char**) -> int 
 {	
