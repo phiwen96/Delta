@@ -24,7 +24,7 @@ auto main(int argc, char **argv) -> int
 
 		// ask for a path
 		cout << "path >> ";
-		// cin >> input;
+		cin >> input;
 		auto path = "/home/ph/Documents/hej.txt";
 		auto inotify_fd = inotify_init1(IN_NONBLOCK);
 		if (inotify_fd == -1)
@@ -48,17 +48,25 @@ auto main(int argc, char **argv) -> int
 			return 1;
 		}
 
-		auto event = epoll_event {};
+		auto event1 = epoll_event {};
+		event1.events = EPOLLIN;
+		// STDIN_FILENO
 
-		event.events = EPOLLIN;
-		// event.data.fd = 0;
-
-		if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, inotify_fd, &event))
+		if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, STDIN_FILENO, &event1))
+		{
+			fprintf(stderr, "Failed to add file descriptor to epoll\n");
+			close(epoll_fd);
+			return 1;
+		} 
+		auto event2 = epoll_event {};
+		event2.events = EPOLLIN;
+		if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, inotify_fd, &event2))
 		{
 			fprintf(stderr, "Failed to add file descriptor to epoll\n");
 			close(epoll_fd);
 			return 1;
 		}
+
 
 		constexpr auto max_events = 20;
 		epoll_event events [max_events];
