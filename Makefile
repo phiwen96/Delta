@@ -3,7 +3,7 @@ CXX = clang++-14
 CXX_FLAGS = -std=c++2b
 CXX_MODULES = -fmodules-ts -fmodules -fbuiltin-module-map -fimplicit-modules -fimplicit-module-maps -fprebuilt-module-path=.
 APP=main
-apps:= App.Server #App.Client
+apps:= App.Server App.FileNotifier#App.Client
 tests:= Test.Yolo Test.Array Test.Range
 all: $(apps) $(tests)
 
