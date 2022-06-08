@@ -31,15 +31,15 @@ int main(int, char **)
 {
 	// async::out << "-1\n";
 	// cout << "0\n";
-	printf ("1\n");
-	while (true)
-	{
-		/* code */
-	}
+	// printf ("1\n");
+	// while (true)
+	// {
+	// 	/* code */
+	// }
 	
-	return 0;
+	// return 0;
 
-    auto as_server = [port = "443"]
+    auto as_server = [port = "80"]
     {
         int sockfd;
         int epollfd;
@@ -129,16 +129,19 @@ int main(int, char **)
         
         auto keep_running = true;
 
+		char buf [1024];
+
         while (keep_running)
         {
+			cout << "waiting..." << endl;
             auto nfds = epoll_wait (epollfd, events, 32, -1);
-
+			// cout << "yay" << endl;
             for (auto i = 0; i < nfds; ++i)
             {
                 if (events[i].data.fd == sockfd) 
                 {
 					// async::out << "new connection\n";
-
+					cout << "new connection" << endl;
                     /* handle new connection */
                     struct sockaddr_in cli_addr;
                     socklen_t socklen = sizeof (cli_addr);
@@ -166,14 +169,21 @@ int main(int, char **)
                     
                 } else if (events[i].events & EPOLLIN)
                 {
-                    
+                    cout << "we have something to read" << endl;
+					auto nBytes = read (events[i].data.fd, buf, sizeof (buf));
+					if (nBytes <= 0) break;
+					buf [nBytes] = '\0';
+					cout << buf << endl;
+				
                 } else if (events[i].events & (EPOLLRDHUP | EPOLLHUP))
                 {
-                    
+                    cout << "hehe" << endl;
                 }
             }
         }
     };
+
+	as_server ();
 
 	// auto test_range = [] (Range auto const&)
 	// {
