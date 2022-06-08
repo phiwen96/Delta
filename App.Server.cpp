@@ -16,6 +16,7 @@
 #include <sys/epoll.h>
 #include <fcntl.h>
 #include <thread>
+#include <string>
 
 // import Delta;
 // import Async;
@@ -25,21 +26,62 @@ using std::thread, std::cout, std::endl;
 
 // #define E
 
-
+// static thread_local auto tt = std::string {};
 
 int main(int, char **)
 {
-	// async::out << "-1\n";
-	// cout << "0\n";
-	// printf ("1\n");
-	// while (true)
-	// {
-	// 	/* code */
-	// }
-	
-	// return 0;
+	auto new_data = [] (auto sockfd) noexcept -> auto {
+		auto txt = std::string {};
+		txt.resize (1021);
+		// cout << txt.capacity () << endl;
+		auto nbytes = read (sockfd, txt.data(), txt.capacity ());
+		txt [nbytes] = '\0';
+		// cout << txt << endl;
+		return txt;
+		// auto nBytes = read (sockfd, )
+	};
 
-    auto as_server = [port = "80"]
+	auto handle_data = [] (auto sockfd, std::string&& txt) noexcept -> auto {
+
+		auto i = txt.find (' ');
+
+		if (i == std::string::npos) {
+			cout << "error" << endl;
+			return;
+		}
+
+		auto method = std::string {txt.begin(), txt.begin() + i};
+
+		cout << std::string {txt.begin() + i + 1, txt.end()} << endl;
+		
+		decltype (i) j;
+
+		if (j = std::string {txt.begin() + i + 1, txt.end()}.find(' '); j == std::string::npos) {
+			cout << "error" << endl;
+			return;
+		}
+
+		j += i + 1;
+
+		auto path = std::string {txt.begin() + i + 1, txt.begin() + j};
+
+		i = j;
+
+		if (j = std::string {txt.begin() + i + 1, txt.end()}.find ('\r'); j == std::string::npos){
+			cout << "error" << endl;
+			return;
+		}
+
+		j += i + 1;
+
+		auto version = std::string {txt.begin() + i + 1, txt.begin() + j};
+
+		
+		cout << "method:" << method << endl << "path:" << path << endl << "version:" << version << endl;;
+	};
+
+
+    auto as_server = [port = "80"] (auto newData, auto handleData)
     {
         int sockfd;
         int epollfd;
@@ -167,14 +209,11 @@ int main(int, char **)
                         exit (1);
                     }
                     
-                } else if (events[i].events & EPOLLIN)
+                } else if (events[i].events & EPOLLIN) // we have incoming message from a socket
                 {
-                    cout << "we have something to read" << endl;
-					auto nBytes = read (events[i].data.fd, buf, sizeof (buf));
-					if (nBytes <= 0) break;
-					buf [nBytes] = '\0';
-					cout << buf << endl;
-				
+					auto sock = events[i].data.fd;
+					handleData (sock, newData (sock));
+
                 } else if (events[i].events & (EPOLLRDHUP | EPOLLHUP))
                 {
                     cout << "hehe" << endl;
@@ -183,7 +222,7 @@ int main(int, char **)
         }
     };
 
-	as_server ();
+	as_server (new_data, handle_data);
 
 	// auto test_range = [] (Range auto const&)
 	// {
