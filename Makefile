@@ -24,7 +24,8 @@ ifeq ($(detected_OS),Darwin)
 	# CXX_GRAPHICS_LIBS += -lglfw
 	# CXX_INCLUDES += -I/opt/homebrew/Cellar/glfw/3.3.7/include
 	# CXX_LIBS = -L/opt/homebrew/Cellar/glfw/3.3.7/lib -lglfw3
-	CXX_LIBS = -lglfw3
+	# CXX_LIBS = -lglfw3
+	CXX_LIBS = -L/opt/homebrew/Cellar/glfw/3.3.7/lib -lglfw
 
 endif
 ifeq ($(detected_OS),Linux)
@@ -142,7 +143,7 @@ Test.%.o: Test.%.cpp Delta.pcm
 	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -o $@
 
 App.%: App.%.o 
-	$(CXX) $(CXX_FLAGS) $< -o $@ -L/opt/homebrew/Cellar/glfw/3.3.7/lib -lglfw
+	$(CXX) $(CXX_FLAGS) $< -o $@ $(CXX_INCLUDES) $(CXX_LIBS)
 
 App.%.o: App.%.cpp Delta.pcm
 	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -o $@
