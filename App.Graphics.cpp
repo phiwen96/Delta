@@ -1,6 +1,9 @@
 #include <iostream>
-#define GLFW_INCLUDE_VULKAN
+// #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
+#include <vulkan/vulkan.h>
+#include <stdexcept>
+#include <cstdlib>
 
 import Delta;
 
@@ -33,6 +36,30 @@ auto main(int argc, char **argv) -> int
 		.apiVersion = VK_API_VERSION_1_0
 	};
 
+	VkInstanceCreateInfo createInfo {
+		.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
+		.pApplicationInfo = &appInfo
+	};
+
+	uint32_t glfwExtensionCount = 0;
+	const char** glfwExtensions;
+
+	glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+
+	createInfo.enabledExtensionCount = glfwExtensionCount;
+	createInfo.ppEnabledExtensionNames = glfwExtensions;
+	createInfo.enabledLayerCount = 0;
+	VkInstance instance;
+
+	// vkCreateInstance(&createInfo, nullptr, &instance);
+
+	if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS) {
+		throw std::runtime_error("failed to create instance!");
+	}
+	
+	// uint32_t extensionCount = 0;
+	// vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
+	
 	/* Make the window's context current */
 	// glfwMakeContextCurrent(window);
 

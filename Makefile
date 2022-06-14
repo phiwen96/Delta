@@ -25,14 +25,14 @@ ifeq ($(detected_OS),Darwin)
 	# CXX_INCLUDES += -I/opt/homebrew/Cellar/glfw/3.3.7/include
 	# CXX_LIBS = -L/opt/homebrew/Cellar/glfw/3.3.7/lib -lglfw3
 	# CXX_LIBS = -lglfw3
-	CXX_LIBS = -L/opt/homebrew/Cellar/glfw/3.3.7/lib -lglfw
+	CXX_LIBS = -L/opt/homebrew/Cellar/glfw/3.3.7/lib -lglfw -lvulkan
 
 endif
 ifeq ($(detected_OS),Linux)
 	CXX_FLAGS += -D LINUX
 	# CXX_LIBS += -lglfw
     CXX_APP_FLAGS += -lrt
-	CXX_LIBS = -lrt -lglfw
+	CXX_LIBS = -lrt -lglfw -lvulkan
 endif
 
 
