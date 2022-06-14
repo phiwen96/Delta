@@ -142,7 +142,7 @@ Test.%.o: Test.%.cpp Delta.pcm
 	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -o $@
 
 App.%: App.%.o 
-	$(CXX) $(CXX_FLAGS) $< -o $@ -I/usr/local/include -I/opt/homebrew/Cellar/glfw/3.3.7/include -L/opt/homebrew/Cellar/glfw/3.3.7/lib -lglfw
+	$(CXX) $(CXX_FLAGS) $< -o $@ -L/opt/homebrew/Cellar/glfw/3.3.7/lib -lglfw
 
 App.%.o: App.%.cpp Delta.pcm
 	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -o $@
