@@ -3,38 +3,52 @@
 #include <GLFW/glfw3.h>
 import Delta;
 
-auto main (int argc, char** argv) -> int {
-	GLFWwindow* window;
+auto main(int argc, char **argv) -> int
+{
+	GLFWwindow *window;
 
-    /* Initialize the library */
-    if (!glfwInit())
-        return -1;
+	/* Initialize the library */
+	if (!glfwInit())
+		return -1;
 
-    /* Create a windowed mode window and its OpenGL context */
-    window = glfwCreateWindow (640, 480, "Hello World", NULL, NULL);
-    if (!window)
-    {
-        glfwTerminate();
-        return -1;
-    }
+	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
-    /* Make the window's context current */
-    glfwMakeContextCurrent(window);
+	glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
-    /* Loop until the user closes the window */
-    while (!glfwWindowShouldClose(window))
-    {
-        /* Render here */
-        glClear(GL_COLOR_BUFFER_BIT);
+	/* Create a windowed mode window and its OpenGL context */
+	window = glfwCreateWindow(640, 480, "Hello World", NULL, NULL);
+	if (!window)
+	{
+		glfwTerminate();
+		return -1;
+	}
 
-        /* Swap front and back buffers */
-        glfwSwapBuffers(window);
+	VkApplicationInfo appInfo{
+		.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
+		.pApplicationName = "Hello Triangle",
+		.applicationVersion = VK_MAKE_VERSION(1, 0, 0),
+		.pEngineName = "No Engine",
+		.engineVersion = VK_MAKE_VERSION(1, 0, 0),
+		.apiVersion = VK_API_VERSION_1_0
+	};
 
-        /* Poll for and process events */
-        glfwPollEvents();
-    }
+	/* Make the window's context current */
+	// glfwMakeContextCurrent(window);
 
-    glfwTerminate();
+	/* Loop until the user closes the window */
+	while (!glfwWindowShouldClose(window))
+	{
+		/* Render here */
+		// glClear(GL_COLOR_BUFFER_BIT);
+
+		/* Swap front and back buffers */
+		// glfwSwapBuffers(window);
+
+		/* Poll for and process events */
+		glfwPollEvents();
+	}
+
+	glfwTerminate();
 	std::cout << "hi" << std::endl;
 	return 0;
 }
