@@ -38,21 +38,21 @@ struct super_array2 {
 static_assert (Range <super_array2 <int, 10>>);
 // static_assert (Array <super_array2 <int, 10>>);
 
-constexpr bool is_constant_evaluated() noexcept
-{
-    if consteval {
-        return true;
-    }
-    else {
-        return false;
-    }
-}
+// constexpr bool is_constant_evaluated() noexcept
+// {
+//     if consteval {
+//         return true;
+//     }
+//     else {
+//         return false;
+//     }
+// }
 
-constexpr auto bajs (auto&& b) noexcept -> auto 
-requires (is_constant_evaluated ())
-{
+// constexpr auto bajs (auto&& b) noexcept -> auto 
+// requires (is_constant_evaluated ())
+// {
 
-}
+// }
 
 template <typename T>
 concept Bajs = requires (T t) {

@@ -13,10 +13,13 @@
 #include <arpa/inet.h>
 #include <cstring>
 #include <iostream>
-#include <sys/epoll.h>
 #include <fcntl.h>
 #include <thread>
 #include <string>
+
+#ifdef LINUX
+#include <sys/epoll.h> 
+#endif
 
 // import Delta;
 // import Async;
@@ -84,7 +87,6 @@ int main(int, char **)
     auto as_server = [port = "80"] (auto newData, auto handleData)
     {
         int sockfd;
-        int epollfd;
 
         addrinfo *servinfo{nullptr};
         auto hints = addrinfo{};
@@ -150,6 +152,9 @@ int main(int, char **)
             perror("listen");
             exit(1);
         }
+
+#ifdef LINUX
+		int epollfd;
 
         if ((epollfd = epoll_create1(0)) == -1)
         {
@@ -220,6 +225,7 @@ int main(int, char **)
                 }
             }
         }
+#endif
     };
 
 	as_server (new_data, handle_data);

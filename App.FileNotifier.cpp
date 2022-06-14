@@ -1,11 +1,13 @@
 
 #include <stdio.h>	   // for fprintf()
 #include <unistd.h>	   // for close(), read()
+#ifdef LINUX
 #include <sys/epoll.h> // for epoll_create1(), epoll_ctl(), struct epoll_event
+#include <sys/inotify.h>
+#endif
 #include <string.h>	   // for strncmp
 #include <errno.h>
 #include <stdlib.h>
-#include <sys/inotify.h>
 #include <iostream>
 
 import Delta;
@@ -26,6 +28,7 @@ auto main(int argc, char **argv) -> int
 		cout << "path >> ";
 		cin >> input;
 		auto path = "/home/ph/Documents/hej.txt";
+#ifdef LINUX
 		auto inotify_fd = inotify_init1(IN_NONBLOCK);
 		if (inotify_fd == -1)
 		{
@@ -97,6 +100,7 @@ auto main(int argc, char **argv) -> int
 			fprintf(stderr, "Failed to close epoll file descriptor\n");
 			return 1;
 		}
+#endif
 	}
 
 	// with input

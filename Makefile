@@ -1,9 +1,40 @@
+
+
 # GCC=g++-12 -std=gnu++2a -fcoroutines -fmodules-ts -fconcepts-diagnostics-depth=1
-CXX = clang++-14
+CXX = clang++
 CXX_FLAGS = -std=c++2b
 CXX_MODULES = -fmodules-ts -fmodules -fbuiltin-module-map -fimplicit-modules -fimplicit-module-maps -fprebuilt-module-path=.
-CXX_GRAPHICS_LIBS = -lglfw -lGL -lXrandr -lX11 -lrt -ldl 
-CXX_APP_FLAGS = -lpthread $(CXX_GRAPHICS_LIBS)
+
+CXX_INCLUDES = -I/usr/local/include
+CXX_APP_FLAGS = -lpthread 
+
+ifeq ($(OS),Windows_NT) 
+    detected_OS := Windows
+else
+    detected_OS := $(shell sh -c 'uname 2>/dev/null || echo Unknown')
+endif
+
+ifeq ($(detected_OS),Windows)
+	CXX_FLAGS += -D WINDOWS
+	# exit
+endif
+ifeq ($(detected_OS),Darwin)
+	CXX_FLAGS += -D MACOS
+	#CXX_GRAPHICS_LIBS += -l/opt/homebrew/Cellar/glfw/3.3.7/lib/libglfw.3.3.dylib -I/opt/homebrew/Cellar/glfw/3.3.7/include
+	# CXX_GRAPHICS_LIBS += -lglfw
+	# CXX_INCLUDES += -I/opt/homebrew/Cellar/glfw/3.3.7/include
+	# CXX_LIBS = -L/opt/homebrew/Cellar/glfw/3.3.7/lib -lglfw3
+	CXX_LIBS = -lglfw3
+
+endif
+ifeq ($(detected_OS),Linux)
+	CXX_FLAGS += -D LINUX
+	# CXX_LIBS += -lglfw
+    CXX_APP_FLAGS += -lrt
+	CXX_LIBS = -lrt -lglfw
+endif
+
+
 APP=main
 apps:= App.Server App.FileNotifier App.Graphics#App.Client
 tests:= Test.Yolo Test.Array Test.Range
@@ -101,22 +132,7 @@ Delta.Common.pcm: Delta.Common.cpp
 
 
 
-ifeq ($(OS),Windows_NT) 
-    detected_OS := Windows
-else
-    detected_OS := $(shell sh -c 'uname 2>/dev/null || echo Unknown')
-endif
 
-ifeq ($(detected_OS),Windows)
-	CXX_FLAGS += -D Windows
-endif
-ifeq ($(detected_OS),Darwin)
-	CXX_FLAGS += -D Darwin
-endif
-ifeq ($(detected_OS),Linux)
-	CXX_FLAGS += -D Linux
-    CXX_APP_FLAGS += -lrt
-endif
 
 
 Test.%: Test.%.o 
@@ -126,7 +142,7 @@ Test.%.o: Test.%.cpp Delta.pcm
 	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -o $@
 
 App.%: App.%.o 
-	$(CXX) $(CXX_FLAGS) $< -o $@ $(CXX_APP_FLAGS)
+	$(CXX) $(CXX_FLAGS) $< -o $@ -I/usr/local/include -I/opt/homebrew/Cellar/glfw/3.3.7/include -L/opt/homebrew/Cellar/glfw/3.3.7/lib -lglfw
 
 App.%.o: App.%.cpp Delta.pcm
 	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -o $@
