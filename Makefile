@@ -2,6 +2,8 @@
 CXX = clang++-14
 CXX_FLAGS = -std=c++2b
 CXX_MODULES = -fmodules-ts -fmodules -fbuiltin-module-map -fimplicit-modules -fimplicit-module-maps -fprebuilt-module-path=.
+CXX_GRAPHICS_LIBS = -lglfw -lGL -lXrandr -lX11 -lrt -ldl 
+CXX_APP_FLAGS = -lpthread $(CXX_GRAPHICS_LIBS)
 APP=main
 apps:= App.Server App.FileNotifier App.Graphics#App.Client
 tests:= Test.Yolo Test.Array Test.Range
@@ -97,7 +99,7 @@ Delta.Common.pcm: Delta.Common.cpp
 # App.%: App.%.cpp Delta.pcm
 # 	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $^ -o $@ -lrt -lpthread
 
-CXX_APP_FLAGS = -lpthread
+
 
 ifeq ($(OS),Windows_NT) 
     detected_OS := Windows
