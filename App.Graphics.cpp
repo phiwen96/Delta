@@ -4,6 +4,7 @@
 #include <vulkan/vulkan.h>
 #include <stdexcept>
 #include <cstdlib>
+#include <vector>
 
 import Delta;
 
@@ -21,6 +22,7 @@ auto main(int argc, char **argv) -> int
 
 	/* Create a windowed mode window and its OpenGL context */
 	window = glfwCreateWindow(640, 480, "Hello World", NULL, NULL);
+
 	if (!window)
 	{
 		glfwTerminate();
@@ -53,12 +55,45 @@ auto main(int argc, char **argv) -> int
 
 	// vkCreateInstance(&createInfo, nullptr, &instance);
 
-	if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS) {
-		throw std::runtime_error("failed to create instance!");
-	}
+	auto res = vkCreateInstance(&createInfo, nullptr, &instance);
+	switch (res)
+	{
+	case VK_SUCCESS:
+		/* code */
+		break;
+
+	case VK_ERROR_EXTENSION_NOT_PRESENT:
+		std::cout << "error >> extensions not present" << std::endl;
+		return -1;
+
+	case VK_ERROR_LAYER_NOT_PRESENT:
+		std::cout << "error >> layers not present" << std::endl;
+		return -1;
+
+
+	case VK_ERROR_INCOMPATIBLE_DRIVER:
+		std::cout << "error >> incompatible driver" << std::endl;
+		return -1;
 	
-	// uint32_t extensionCount = 0;
-	// vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
+	default:
+		std::cout << "error" << std::endl;
+		return -1;
+	}
+	// if () throw std::runtime_error("failed to create instance!");
+	
+	// retrieve a list of supported extensions before creating an instance
+	uint32_t extensionCount = 0;
+	vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
+
+	std::vector<VkExtensionProperties> extensions(extensionCount);
+
+	vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensions.data());
+
+	std::cout << "available extensions:\n";
+
+	for (const auto& extension : extensions) {
+		std::cout << '\t' << extension.extensionName << '\n';
+	}
 	
 	/* Make the window's context current */
 	// glfwMakeContextCurrent(window);
@@ -75,6 +110,10 @@ auto main(int argc, char **argv) -> int
 		/* Poll for and process events */
 		glfwPollEvents();
 	}
+
+	vkDestroyInstance(instance, nullptr);
+
+	glfwDestroyWindow(window);
 
 	glfwTerminate();
 	std::cout << "hi" << std::endl;
