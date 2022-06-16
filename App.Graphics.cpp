@@ -1,12 +1,11 @@
 #include <iostream>
-// #define GLFW_INCLUDE_VULKAN
+#define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
-#include <vulkan/vulkan.h>
+// #include <vulkan/vulkan.h>
 #include <stdexcept>
 #include <cstdlib>
 #include <vector>
 #include <optional>
-
 import Delta;
 
 #ifdef DEBUG
@@ -57,10 +56,11 @@ auto main(int argc, char **argv) -> int
 
 	uint32_t glfwExtensionCount = 0;
 	const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-
+	auto extensions = std::vector<const char*> {glfwExtensions, glfwExtensions + glfwExtensionCount};
 	
-
 #ifdef DEBUG
+	extensions.push_back (VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+
 	const std::vector<const char*> validationLayers = {
 		"VK_LAYER_KHRONOS_validation"
 	};
@@ -102,10 +102,6 @@ auto main(int argc, char **argv) -> int
 	// for (const auto& extension : extensions) {
 	// 	std::cout << '\t' << extension.extensionName << '\n';
 	// }
-
-	auto extensions = std::vector<const char*> {glfwExtensions, glfwExtensions + glfwExtensionCount};
-
-	extensions.push_back (VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 
 	createInfo.enabledExtensionCount = static_cast<uint32_t> (extensions.size());
 	createInfo.ppEnabledExtensionNames = extensions.data();
@@ -159,6 +155,13 @@ auto main(int argc, char **argv) -> int
         // return VK_ERROR_EXTENSION_NOT_PRESENT;
     }
 #endif
+
+	VkSurfaceKHR surface;
+	
+	if (glfwCreateWindowSurface(instance, window, nullptr, &surface) != VK_SUCCESS) {
+        std::cout << "error >> failed to create window surface" << std::endl;
+		return -1;
+    }
 
 	uint32_t deviceCount = 0;
 	vkEnumeratePhysicalDevices (instance, &deviceCount, nullptr);
@@ -259,15 +262,12 @@ auto main(int argc, char **argv) -> int
 		return -1;
 	}
 
+	// a handle to the graphics queue
+	VkQueue graphicsQueue;
 
-	// if () throw std::runtime_error("failed to create instance!");
-	
-	// retrieve a list of supported extensions before creating an instance
-	
-	
-	/* Make the window's context current */
-	// glfwMakeContextCurrent(window);
+	vkGetDeviceQueue (device, graphicsFamily.value(), 0, &graphicsQueue);
 
+	
 	/* Loop until the user closes the window */
 	while (!glfwWindowShouldClose(window))
 	{
@@ -289,6 +289,8 @@ auto main(int argc, char **argv) -> int
         func2(instance, debugMessenger, nullptr/*pAllocator*/);
     }
 #endif
+
+	vkDestroySurfaceKHR (instance, surface, nullptr);
 
 	vkDestroyInstance(instance, nullptr);
 
