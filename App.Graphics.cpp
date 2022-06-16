@@ -5,13 +5,16 @@
 #include <stdexcept>
 #include <cstdlib>
 #include <vector>
+#include <optional>
 
 import Delta;
 
 #ifdef DEBUG
 VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData) {
-
-    std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
+	if (messageSeverity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
+		// Message is important enough to show
+		std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
+	}
 
     return VK_FALSE;
 }
@@ -44,7 +47,7 @@ auto main(int argc, char **argv) -> int
 		.applicationVersion = VK_MAKE_VERSION(1, 0, 0),
 		.pEngineName = "No Engine",
 		.engineVersion = VK_MAKE_VERSION(1, 0, 0),
-		.apiVersion = VK_API_VERSION_1_0
+		.apiVersion = VK_API_VERSION_1_2
 	};
 
 	VkInstanceCreateInfo createInfo {
@@ -147,15 +150,115 @@ auto main(int argc, char **argv) -> int
 		.pUserData = nullptr // Optional
 	};
 
-	auto func = (PFN_vkCreateDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
+	auto func = (PFN_vkCreateDebugUtilsMessengerEXT) vkGetInstanceProcAddr (instance, "vkCreateDebugUtilsMessengerEXT");
 
     if (func != nullptr) {
-        func(instance, &debugCreateInfo, nullptr /*pAllocayot*/, &debugMessenger);
+        func (instance, &debugCreateInfo, nullptr /*pAllocayot*/, &debugMessenger);
     } else {
 		std::cout << "error >> failed to set up debug messenger" << std::endl;
         // return VK_ERROR_EXTENSION_NOT_PRESENT;
     }
 #endif
+
+	uint32_t deviceCount = 0;
+	vkEnumeratePhysicalDevices (instance, &deviceCount, nullptr);
+	
+	if (deviceCount == 0) {
+    	std::cout << "error >> failed to find GPUs with Vulkan support" << std::endl;
+		return -1;
+	}
+
+	auto devices = std::vector <VkPhysicalDevice> {deviceCount};
+	vkEnumeratePhysicalDevices (instance, &deviceCount, devices.data());
+
+	auto& physicalDevice = devices.front();
+
+	VkPhysicalDeviceProperties deviceProperties;
+    VkPhysicalDeviceFeatures deviceFeatures;
+    vkGetPhysicalDeviceProperties(physicalDevice, &deviceProperties);
+    vkGetPhysicalDeviceFeatures(physicalDevice, &deviceFeatures);
+
+	switch (deviceProperties.deviceType) {
+
+		case VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU:
+			break;
+
+		case VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU:
+			break;
+		
+		default:
+			std::cout << "error >> suitable gpu device not found" << std::endl;
+			return -1;
+	}
+
+	uint32_t queueFamilyCount = 0;
+	vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, nullptr);
+
+	auto queueFamilies = std::vector<VkQueueFamilyProperties> {queueFamilyCount};
+	vkGetPhysicalDeviceQueueFamilyProperties (physicalDevice, &queueFamilyCount, queueFamilies.data());
+
+	std::optional<uint32_t> graphicsFamily;
+	int i = 0;
+	for (const auto& queueFamily : queueFamilies) {
+		if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+			graphicsFamily = i;
+		}
+
+		i++;
+	}
+
+	if (! graphicsFamily.has_value()) {
+		std::cout << "error >> could not find any graphics queue family" << std::endl;
+		return -1;
+	}
+
+	float queuePriority = 1.0f;
+
+	VkDeviceQueueCreateInfo queueCreateInfo {
+		.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
+		.queueFamilyIndex = graphicsFamily.value(),
+		.queueCount = 1,
+		.pQueuePriorities = &queuePriority
+	};
+
+	uint32_t extensionCount;
+    vkEnumerateDeviceExtensionProperties (physicalDevice, nullptr, &extensionCount, nullptr);
+	auto availableExtensions = std::vector <VkExtensionProperties> {extensionCount};
+	vkEnumerateDeviceExtensionProperties (physicalDevice, nullptr, &extensionCount, availableExtensions.data());
+
+	// for (auto const& i : availableExtensions) {
+	// 	if (strcmp(i.extensionName, layerProperties.layerName) == 0) {
+
+	// 	}
+	// }
+	std::vector<const char*> deviceExtensions = {
+		"VK_KHR_swapchain",
+		"VK_KHR_portability_subset"
+	};
+
+	// for (auto const& i : availableExtensions)
+	// 	std::cout << i.extensionName << std::endl;
+	
+
+
+
+	VkDeviceCreateInfo logicalDeviceCreateInfo {
+		.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
+		.pQueueCreateInfos = &queueCreateInfo,
+		.queueCreateInfoCount = 1,
+		// .pEnabledFeatures = &deviceFeatures,
+		.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size()),
+		.ppEnabledExtensionNames = deviceExtensions.data(),
+		.enabledLayerCount = 0
+	};
+
+	VkDevice device;
+
+	if (vkCreateDevice (physicalDevice, &logicalDeviceCreateInfo, nullptr, &device) != VK_SUCCESS) {
+		std::cout << "error >> failed to create logical device" << std::endl;
+		return -1;
+	}
+
 
 	// if () throw std::runtime_error("failed to create instance!");
 	
@@ -177,6 +280,8 @@ auto main(int argc, char **argv) -> int
 		/* Poll for and process events */
 		glfwPollEvents();
 	}
+
+	vkDestroyDevice(device, nullptr);
 
 #ifdef DEBUG
 	auto func2 = (PFN_vkDestroyDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
