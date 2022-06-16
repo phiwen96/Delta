@@ -2,7 +2,7 @@
 
 # GCC=g++-12 -std=gnu++2a -fcoroutines -fmodules-ts -fconcepts-diagnostics-depth=1
 CXX = clang++
-CXX_FLAGS = -std=c++2b
+CXX_FLAGS = -D DEBUG -std=c++2b
 CXX_MODULES = -fmodules-ts -fmodules -fbuiltin-module-map -fimplicit-modules -fimplicit-module-maps -fprebuilt-module-path=.
 
 CXX_INCLUDES = -I/usr/local/include
