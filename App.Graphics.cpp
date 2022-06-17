@@ -6,6 +6,8 @@
 #include <cstdlib>
 #include <vector>
 #include <optional>
+#include <set>
+
 import Delta;
 
 #ifdef DEBUG
@@ -192,47 +194,7 @@ auto main(int argc, char **argv) -> int
 			return EXIT_FAILURE;
 	}
 
-	uint32_t queueFamilyCount = 0;
-	vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, nullptr);
-
-	auto queueFamilies = std::vector<VkQueueFamilyProperties> {queueFamilyCount};
-	vkGetPhysicalDeviceQueueFamilyProperties (physicalDevice, &queueFamilyCount, queueFamilies.data());
-
-	std::optional<uint32_t> graphicsFamily;
-	std::optional<uint32_t> presentFamily;
-	int i = 0;
-	for (const auto& queueFamily : queueFamilies) {
-		if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) graphicsFamily = i;
-		
-
-		VkBool32 presentSupport = false;
-        vkGetPhysicalDeviceSurfaceSupportKHR (physicalDevice, i, surface, &presentSupport);
-
-		if (presentSupport) presentFamily = i;
-        
-		if (presentSupport and graphicsFamily.has_value()) break;
-
-		i++;
-	}
-
-	if (! graphicsFamily.has_value()) {
-		std::cout << "error >> could not find any graphics queue family" << std::endl;
-		return EXIT_FAILURE;
-	} else if (! presentFamily.has_value()) {
-		std::cout << "error >> could not find any present queue family" << std::endl;
-		return EXIT_FAILURE;
-	}
-
-	float queuePriority = 1.0f;
-
-	VkDeviceQueueCreateInfo queueCreateInfo {
-		.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
-		.queueFamilyIndex = graphicsFamily.value(),
-		.queueCount = 1,
-		.pQueuePriorities = &queuePriority
-	};
-
-	uint32_t extensionCount;
+		uint32_t extensionCount;
     vkEnumerateDeviceExtensionProperties (physicalDevice, nullptr, &extensionCount, nullptr);
 	auto availableExtensions = std::vector <VkExtensionProperties> {extensionCount};
 	vkEnumerateDeviceExtensionProperties (physicalDevice, nullptr, &extensionCount, availableExtensions.data());
@@ -256,6 +218,55 @@ auto main(int argc, char **argv) -> int
 
 	VkPhysicalDeviceMemoryProperties memProperties;
     vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProperties);
+
+	uint32_t queueFamilyCount = 0;
+	vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, nullptr);
+
+	if (queueFamilyCount == 0) {
+		std::cout << "error >> queue families not found" << std::endl;
+		return EXIT_FAILURE;
+	}
+
+	auto queueFamilies = std::vector<VkQueueFamilyProperties> {queueFamilyCount};
+	vkGetPhysicalDeviceQueueFamilyProperties (physicalDevice, &queueFamilyCount, queueFamilies.data());
+
+	std::optional<uint32_t> graphicsFamily;
+	std::optional<uint32_t> presentFamily;
+	int i = 0;
+	for (const auto& queueFamily : queueFamilies) {
+		if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) graphicsFamily = i;
+		
+		VkBool32 presentSupport = false;
+        vkGetPhysicalDeviceSurfaceSupportKHR (physicalDevice, i, surface, &presentSupport);
+
+		if (presentSupport) presentFamily = i;
+        
+		if (presentSupport and graphicsFamily.has_value()) break;
+
+		i++;
+	}
+
+	if (! graphicsFamily.has_value()) {
+		std::cout << "error >> could not find any graphics queue family" << std::endl;
+		return EXIT_FAILURE;
+	} else if (! presentFamily.has_value()) {
+		std::cout << "error >> could not find any present queue family" << std::endl;
+		return EXIT_FAILURE;
+	}
+
+	
+	auto uniqueQueueFamilies = std::set <uint32_t> {graphicsFamily.value(), presentFamily.value()};
+	auto queueCreateInfos = std::vector<VkDeviceQueueCreateInfo> {};
+	auto queuePriority = float {1.0};
+
+	for (auto const& queueFamily : uniqueQueueFamilies) {
+		queueCreateInfos.push_back (VkDeviceQueueCreateInfo {
+			.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
+			.queueFamilyIndex = queueFamily,
+			.queueCount = 1,
+			.pQueuePriorities = &queuePriority
+		});
+	}
 	// std::cout << memProperties.memoryHeaps[0].size  << " bytes" << std::endl;
 
 	std::vector<const char*> deviceExtensions = {
@@ -265,8 +276,8 @@ auto main(int argc, char **argv) -> int
 
 	VkDeviceCreateInfo logicalDeviceCreateInfo {
 		.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
-		.pQueueCreateInfos = &queueCreateInfo,
-		.queueCreateInfoCount = 1,
+		.pQueueCreateInfos = queueCreateInfos.data(),
+		.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size()),
 		.pEnabledFeatures = &deviceFeatures,
 		.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size()),
 		.ppEnabledExtensionNames = deviceExtensions.data(),
@@ -286,6 +297,8 @@ auto main(int argc, char **argv) -> int
 	VkQueue graphicsQueue;
 
 	vkGetDeviceQueue (device, graphicsFamily.value(), 0, &graphicsQueue);
+
+	VkQueue presentQueue;
 
 	
 	/* Loop until the user closes the window */
