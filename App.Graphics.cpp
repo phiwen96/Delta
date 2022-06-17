@@ -25,7 +25,7 @@ auto main(int argc, char **argv) -> int
 
 	/* Initialize the library */
 	if (!glfwInit())
-		return -1;
+		return EXIT_FAILURE;
 
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
@@ -37,7 +37,7 @@ auto main(int argc, char **argv) -> int
 	if (!window)
 	{
 		glfwTerminate();
-		return -1;
+		return EXIT_FAILURE;
 	}
 
 	VkApplicationInfo appInfo{
@@ -83,7 +83,7 @@ auto main(int argc, char **argv) -> int
 
 		if (!layerFound) {
 			std::cout << "error >> required layers not found" << std::endl;
-			return -1;
+			return EXIT_FAILURE;
 		}
 	}
 
@@ -102,14 +102,12 @@ auto main(int argc, char **argv) -> int
 	// for (const auto& extension : extensions) {
 	// 	std::cout << '\t' << extension.extensionName << '\n';
 	// }
+#else
+	createInfo.enabledLayerCount = 0;
+#endif
 
 	createInfo.enabledExtensionCount = static_cast<uint32_t> (extensions.size());
 	createInfo.ppEnabledExtensionNames = extensions.data();
-#else
-	createInfo.enabledExtensionCount = glfwExtensionCount;
-	createInfo.ppEnabledExtensionNames = glfwExtensions;
-	createInfo.enabledLayerCount = 0;
-#endif
 	
 	VkInstance instance;
 
@@ -119,20 +117,20 @@ auto main(int argc, char **argv) -> int
 
 		case VK_ERROR_EXTENSION_NOT_PRESENT:
 			std::cout << "error >> extensions not present" << std::endl;
-			return -1;
+			return EXIT_FAILURE;
 
 		case VK_ERROR_LAYER_NOT_PRESENT:
 			std::cout << "error >> layers not present" << std::endl;
-			return -1;
+			return EXIT_FAILURE;
 
 
 		case VK_ERROR_INCOMPATIBLE_DRIVER:
 			std::cout << "error >> incompatible driver" << std::endl;
-			return -1;
+			return EXIT_FAILURE;
 		
 		default:
 			std::cout << "error >> could not create vulkan instance" << std::endl;
-			return -1;
+			return EXIT_FAILURE;
 	}
 
 #ifdef DEBUG
@@ -160,7 +158,7 @@ auto main(int argc, char **argv) -> int
 	
 	if (glfwCreateWindowSurface(instance, window, nullptr, &surface) != VK_SUCCESS) {
         std::cout << "error >> failed to create window surface" << std::endl;
-		return -1;
+		return EXIT_FAILURE;
     }
 
 	uint32_t deviceCount = 0;
@@ -168,7 +166,7 @@ auto main(int argc, char **argv) -> int
 	
 	if (deviceCount == 0) {
     	std::cout << "error >> failed to find GPUs with Vulkan support" << std::endl;
-		return -1;
+		return EXIT_FAILURE;
 	}
 
 	auto devices = std::vector <VkPhysicalDevice> {deviceCount};
@@ -191,7 +189,7 @@ auto main(int argc, char **argv) -> int
 		
 		default:
 			std::cout << "error >> suitable gpu device not found" << std::endl;
-			return -1;
+			return EXIT_FAILURE;
 	}
 
 	uint32_t queueFamilyCount = 0;
@@ -201,18 +199,28 @@ auto main(int argc, char **argv) -> int
 	vkGetPhysicalDeviceQueueFamilyProperties (physicalDevice, &queueFamilyCount, queueFamilies.data());
 
 	std::optional<uint32_t> graphicsFamily;
+	std::optional<uint32_t> presentFamily;
 	int i = 0;
 	for (const auto& queueFamily : queueFamilies) {
-		if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
-			graphicsFamily = i;
-		}
+		if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) graphicsFamily = i;
+		
+
+		VkBool32 presentSupport = false;
+        vkGetPhysicalDeviceSurfaceSupportKHR (physicalDevice, i, surface, &presentSupport);
+
+		if (presentSupport) presentFamily = i;
+        
+		if (presentSupport and graphicsFamily.has_value()) break;
 
 		i++;
 	}
 
 	if (! graphicsFamily.has_value()) {
 		std::cout << "error >> could not find any graphics queue family" << std::endl;
-		return -1;
+		return EXIT_FAILURE;
+	} else if (! presentFamily.has_value()) {
+		std::cout << "error >> could not find any present queue family" << std::endl;
+		return EXIT_FAILURE;
 	}
 
 	float queuePriority = 1.0f;
@@ -229,27 +237,37 @@ auto main(int argc, char **argv) -> int
 	auto availableExtensions = std::vector <VkExtensionProperties> {extensionCount};
 	vkEnumerateDeviceExtensionProperties (physicalDevice, nullptr, &extensionCount, availableExtensions.data());
 
+	uint32_t formatCount;
+	vkGetPhysicalDeviceSurfaceFormatsKHR (physicalDevice, surface, &formatCount, nullptr);
+	if (formatCount == 0) {
+		std::cout << "error" << std::endl;
+		return EXIT_FAILURE;
+	}
+	auto formats = std::vector<VkSurfaceFormatKHR> {formatCount};
+	vkGetPhysicalDeviceSurfaceFormatsKHR (physicalDevice, surface, &formatCount, formats.data());
+
+	// VkSurfaceCapabilitiesKHR capabilities;
+	// vkGetPhysicalDeviceSurfaceFormatsKHR (physicalDevice, surface, &formatCount, &capabilities);
 	// for (auto const& i : availableExtensions) {
 	// 	if (strcmp(i.extensionName, layerProperties.layerName) == 0) {
 
 	// 	}
 	// }
+
+	VkPhysicalDeviceMemoryProperties memProperties;
+    vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProperties);
+	// std::cout << memProperties.memoryHeaps[0].size  << " bytes" << std::endl;
+
 	std::vector<const char*> deviceExtensions = {
 		"VK_KHR_swapchain",
 		"VK_KHR_portability_subset"
 	};
 
-	// for (auto const& i : availableExtensions)
-	// 	std::cout << i.extensionName << std::endl;
-	
-
-
-
 	VkDeviceCreateInfo logicalDeviceCreateInfo {
 		.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
 		.pQueueCreateInfos = &queueCreateInfo,
 		.queueCreateInfoCount = 1,
-		// .pEnabledFeatures = &deviceFeatures,
+		.pEnabledFeatures = &deviceFeatures,
 		.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size()),
 		.ppEnabledExtensionNames = deviceExtensions.data(),
 		.enabledLayerCount = 0
@@ -259,8 +277,10 @@ auto main(int argc, char **argv) -> int
 
 	if (vkCreateDevice (physicalDevice, &logicalDeviceCreateInfo, nullptr, &device) != VK_SUCCESS) {
 		std::cout << "error >> failed to create logical device" << std::endl;
-		return -1;
+		return EXIT_FAILURE;
 	}
+
+	// specify which queue families you would like to use
 
 	// a handle to the graphics queue
 	VkQueue graphicsQueue;
@@ -297,6 +317,6 @@ auto main(int argc, char **argv) -> int
 	glfwDestroyWindow(window);
 
 	glfwTerminate();
-	std::cout << "hi" << std::endl;
-	return 0;
+
+	return EXIT_SUCCESS;
 }
