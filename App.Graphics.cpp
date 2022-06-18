@@ -7,6 +7,9 @@
 #include <vector>
 #include <optional>
 #include <set>
+#include <cstdint> // Necessary for uint32_t
+#include <limits> // Necessary for std::numeric_limits
+#include <algorithm> // Necessary for std::clamp
 
 import Delta;
 
@@ -194,10 +197,37 @@ auto main(int argc, char **argv) -> int
 			return EXIT_FAILURE;
 	}
 
-		uint32_t extensionCount;
+	uint32_t extensionCount;
     vkEnumerateDeviceExtensionProperties (physicalDevice, nullptr, &extensionCount, nullptr);
 	auto availableExtensions = std::vector <VkExtensionProperties> {extensionCount};
 	vkEnumerateDeviceExtensionProperties (physicalDevice, nullptr, &extensionCount, availableExtensions.data());
+
+	VkSurfaceCapabilitiesKHR surfaceCapabilities;
+	vkGetPhysicalDeviceSurfaceCapabilitiesKHR (physicalDevice, surface, &surfaceCapabilities);
+
+	VkExtent2D surfaceExtent;
+	// choose swap extent
+	if (surfaceCapabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) {
+		surfaceExtent = surfaceCapabilities.currentExtent;
+	}
+
+	auto imageCount = uint32_t {surfaceCapabilities.minImageCount + 1};
+
+	if (surfaceCapabilities.maxImageCount > 0 && imageCount > surfaceCapabilities.maxImageCount) {
+		imageCount = surfaceCapabilities.maxImageCount;
+		surfaceExtent = surfaceCapabilities.currentExtent;
+	} else {
+		int width, height;
+		glfwGetFramebufferSize(window, &width, &height);
+
+		surfaceExtent = VkExtent2D {
+			static_cast<uint32_t>(width),
+			static_cast<uint32_t>(height)
+		};
+
+		surfaceExtent.width = std::clamp(surfaceExtent.width, surfaceCapabilities.minImageExtent.width, surfaceCapabilities.maxImageExtent.width);		
+		surfaceExtent.height = std::clamp(surfaceExtent.height, surfaceCapabilities.minImageExtent.height, surfaceCapabilities.maxImageExtent.height);
+	}
 
 	uint32_t formatCount;
 	vkGetPhysicalDeviceSurfaceFormatsKHR (physicalDevice, surface, &formatCount, nullptr);
@@ -205,16 +235,72 @@ auto main(int argc, char **argv) -> int
 		std::cout << "error" << std::endl;
 		return EXIT_FAILURE;
 	}
-	auto formats = std::vector<VkSurfaceFormatKHR> {formatCount};
-	vkGetPhysicalDeviceSurfaceFormatsKHR (physicalDevice, surface, &formatCount, formats.data());
+	auto availableSurfaceFormats = std::vector<VkSurfaceFormatKHR> {formatCount};
+	vkGetPhysicalDeviceSurfaceFormatsKHR (physicalDevice, surface, &formatCount, availableSurfaceFormats.data());
 
-	// VkSurfaceCapabilitiesKHR capabilities;
-	// vkGetPhysicalDeviceSurfaceFormatsKHR (physicalDevice, surface, &formatCount, &capabilities);
-	// for (auto const& i : availableExtensions) {
-	// 	if (strcmp(i.extensionName, layerProperties.layerName) == 0) {
+	VkSurfaceFormatKHR const* surfaceFormat = nullptr;
 
-	// 	}
-	// }
+	for (auto const& availableSurfaceFormat : availableSurfaceFormats) {
+		if (availableSurfaceFormat.format == VK_FORMAT_B8G8R8A8_SRGB and availableSurfaceFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR){
+			surfaceFormat = &availableSurfaceFormat;
+			break;
+		}
+	}
+
+	if (surfaceFormat == nullptr) {
+		std::cout << "error >> could not find suitable surface format" << std::endl;
+		return EXIT_FAILURE;
+	}
+
+	auto swapchainCreateInfo = VkSwapchainCreateInfoKHR {
+		.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
+		.surface = surface,
+		.minImageCount = imageCount,
+		.imageFormat = surfaceFormat -> format,
+		.imageColorSpace = surfaceFormat -> colorSpace,
+		.imageExtent = surfaceExtent,
+		.imageArrayLayers = 1,
+		.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT
+	};
+	
+	uint32_t presentModeCount;
+	vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModeCount, nullptr);
+	if (presentModeCount == 0) {
+		std::cout << "error" << std::endl;
+		return EXIT_FAILURE;
+	}
+
+	auto availablePresentModes = std::vector <VkPresentModeKHR> {presentModeCount};
+
+	vkGetPhysicalDeviceSurfacePresentModesKHR (physicalDevice, surface, &presentModeCount, availablePresentModes.data());
+
+	VkPresentModeKHR const* presentMode = nullptr;
+
+	// auto*  
+	for (auto const& availablePresentMode : availablePresentModes) {
+		switch (availablePresentMode) {
+			case VK_PRESENT_MODE_IMMEDIATE_KHR:
+				break;
+			case VK_PRESENT_MODE_FIFO_KHR:
+				presentMode = &availablePresentMode;
+				break;
+			case VK_PRESENT_MODE_FIFO_RELAXED_KHR:
+				break;
+			case VK_PRESENT_MODE_MAILBOX_KHR:
+				presentMode = &availablePresentMode;
+				goto EXIT_LOOP;
+			default:
+				break;
+		}
+		if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR) {
+			presentMode = &availablePresentMode;
+		}
+	}
+	EXIT_LOOP:
+
+	if (presentMode == nullptr) {
+		std::cout << "warning >> performance present mode not available, defaulting to energy present mode" << std::endl; 
+	}
 
 	VkPhysicalDeviceMemoryProperties memProperties;
     vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProperties);
@@ -300,6 +386,7 @@ auto main(int argc, char **argv) -> int
 
 	VkQueue presentQueue;
 
+	vkGetDeviceQueue (device, presentFamily.value(), 0, &presentQueue);
 	
 	/* Loop until the user closes the window */
 	while (!glfwWindowShouldClose(window))
