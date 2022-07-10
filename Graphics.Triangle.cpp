@@ -495,13 +495,25 @@ auto main(int argc, char **argv) -> int
 		.pColorAttachments = &colorAttachmentRef
 	};	
 
+	auto dependency = VkSubpassDependency
+	{
+		.srcSubpass = VK_SUBPASS_EXTERNAL,
+		.dstSubpass = 0,
+		.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+		.srcAccessMask = 0,
+		.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+		.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT
+	};
+
 	auto renderPassCreateInfo = VkRenderPassCreateInfo
 	{
 		.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
 		.attachmentCount = 1,
 		.pAttachments = &colorAttachment,
 		.subpassCount = 1,
-		.pSubpasses = &subpass
+		.pSubpasses = &subpass,
+		.dependencyCount = 1,
+		.pDependencies = &dependency
 	};
 
 	auto renderPass = VkRenderPass {};
@@ -723,6 +735,7 @@ auto main(int argc, char **argv) -> int
 			.renderPass = renderPass,
 			.attachmentCount = 1,
 			.pAttachments = attachments,
+			// .pAttachments = &swapchainImageViews [i],
 			.width = surfaceExtent.width,
 			.height = surfaceExtent.height,
 			.layers = 1
@@ -823,7 +836,11 @@ auto main(int argc, char **argv) -> int
 		return EXIT_FAILURE;
 	}
 
-	auto fenceCreateInfo = VkFenceCreateInfo {.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO};
+	auto fenceCreateInfo = VkFenceCreateInfo 
+	{
+		.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
+		.flags = VK_FENCE_CREATE_SIGNALED_BIT
+	};
 	
 	 if (vkCreateFence (device, &fenceCreateInfo, nullptr, &inFlightFence) != VK_SUCCESS)
 	{
@@ -839,7 +856,89 @@ auto main(int argc, char **argv) -> int
 	{
 		glfwPollEvents ();
 		vkWaitForFences (device, 1, &inFlightFence, VK_TRUE, UINT64_MAX);
+		vkResetFences (device, 1, &inFlightFence);
+		auto imageIndex = uint32_t {};
+		vkAcquireNextImageKHR (device, swapchain, UINT64_MAX, imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
+		vkResetCommandBuffer (graphicsCommandBuffer, 0);
+		
+		auto graphicsCommandBufferBeginInfo = VkCommandBufferBeginInfo
+		{
+			.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+			.flags = 0,
+			.pInheritanceInfo = nullptr
+		};
+
+		if (vkBeginCommandBuffer (graphicsCommandBuffer, &graphicsCommandBufferBeginInfo) != VK_SUCCESS)
+		{
+			std::cout << "error >> failed to begin recording graphics command buffer" << std::endl;
+			return EXIT_FAILURE;
+		}
+
+		auto clearColor = VkClearValue {{{0.0f, 0.0f, 0.0f, 1.0f}}};
+
+		auto renderPassBeginInfo = VkRenderPassBeginInfo
+		{
+			.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
+			.renderPass = renderPass,
+			.framebuffer = swapchainFramebuffers [imageIndex],
+			.renderArea.offset = {0, 0},
+			.renderArea.extent = surfaceExtent,
+			.clearValueCount = 1,
+			.pClearValues = &clearColor
+		};
+
+		vkCmdBeginRenderPass (graphicsCommandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+		vkCmdBindPipeline (graphicsCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
+		vkCmdDraw (graphicsCommandBuffer, 3 /*vertexCount*/, 1 /*instanceCount*/, 0 /*firstVertex*/, 0 /*firstInstance*/);
+		vkCmdEndRenderPass (graphicsCommandBuffer);
+
+		if (vkEndCommandBuffer (graphicsCommandBuffer) != VK_SUCCESS)
+		{
+			std::cout << "error >> failed to record command buffer" << std::endl;
+			return EXIT_FAILURE;
+		}
+
+
+
+		VkSemaphore waitSemaphores [] = {imageAvailableSemaphore};
+		VkPipelineStageFlags waitStages [] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+		VkSemaphore signalSemaphores [] = {renderFinishedSemaphore};
+		
+		auto submitInfo = VkSubmitInfo
+		{
+			.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+			.waitSemaphoreCount = 1,
+			.pWaitSemaphores = waitSemaphores,
+			.pWaitDstStageMask = waitStages,
+			.signalSemaphoreCount = 1,
+			.pSignalSemaphores = signalSemaphores,
+			.commandBufferCount = 1,
+			.pCommandBuffers = &graphicsCommandBuffer
+		};
+
+		if (vkQueueSubmit (graphicsQueue, 1, &submitInfo, inFlightFence) != VK_SUCCESS)
+		{
+			std::cout << "error >> failed to submit draw command buffers" << std::endl;
+			return EXIT_FAILURE;
+		}
+
+		VkSwapchainKHR swapchains [] = {swapchain};
+
+		auto presentInfo = VkPresentInfoKHR
+		{
+			.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
+			.waitSemaphoreCount = 1,
+			.pWaitSemaphores = signalSemaphores,
+			.swapchainCount = 1,
+			.pSwapchains = swapchains,
+			.pImageIndices = &imageIndex,
+			.pResults = nullptr
+		};
+
+		vkQueuePresentKHR (presentQueue, &presentInfo);
 	}
+
+	vkDeviceWaitIdle (device);
 
 	vkDestroySemaphore (device, imageAvailableSemaphore, nullptr);
 	vkDestroySemaphore (device, renderFinishedSemaphore, nullptr);
@@ -847,7 +946,7 @@ auto main(int argc, char **argv) -> int
 
 	vkDestroyCommandPool (device, graphicsCommandPool, nullptr);
 
-	for (auto& framebuffer : swapchainFramebuffers)
+	for (auto framebuffer : swapchainFramebuffers)
 	{
 		vkDestroyFramebuffer (device, framebuffer, nullptr);
 	}
