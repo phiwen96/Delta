@@ -37,32 +37,36 @@ endif
 
 
 APP=main
-apps:= App.Server App.FileNotifier App.Graphics#App.Client
+apps:= App.Server App.FileNotifier Graphics.Triangle#App.Client
 tests:= Test.Yolo Test.Array Test.Range
-all: $(apps) $(tests)
+# all: $(apps) $(tests)
+all: Graphics.Triangle
 
 # std_headers:
 # 	$(GCC) -xc++-system-header iostream
 
 # Delta.Concepts: 
 
-Delta.pcm: Delta.cpp Delta.String.pcm
+# Delta.pcm: Delta.cpp Delta.String.pcm
+# 	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@
+
+Delta.Graphics.pcm: Delta.Graphics.cpp
 	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@
 
-Delta.String.pcm: Delta.String.cpp Delta.Array.pcm
-	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@
+# Delta.String.pcm: Delta.String.cpp Delta.Array.pcm
+# 	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@
 
-Delta.Array.pcm: Delta.Array.cpp Delta.Range.pcm
-	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@
+# Delta.Array.pcm: Delta.Array.cpp Delta.Range.pcm
+# 	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@
 
-Delta.Range.pcm: Delta.Range.cpp Delta.Iterator.pcm
-	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@
+# Delta.Range.pcm: Delta.Range.cpp Delta.Iterator.pcm
+# 	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@
 
-Delta.Iterator.pcm: Delta.Iterator.cpp Delta.Common.pcm
-	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@
+# Delta.Iterator.pcm: Delta.Iterator.cpp Delta.Common.pcm
+# 	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@
 
-Delta.Common.pcm: Delta.Common.cpp
-	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@
+# Delta.Common.pcm: Delta.Common.cpp
+# 	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@
 
 # Delta.String.pcm: Delta.String.cpp Delta.Char.pcm Delta.Array.pcm 
 # 	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@
@@ -145,8 +149,30 @@ Test.%.o: Test.%.cpp Delta.pcm
 App.%: App.%.o 
 	$(CXX) $(CXX_FLAGS) $< -o $@ $(CXX_INCLUDES) $(CXX_LIBS)
 
-App.%.o: App.%.cpp Delta.pcm
+App.%.o: App.%.cpp Delta.pcm 
 	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -o $@
+
+
+Graphics.Triangle: Graphics.Triangle.o 
+	$(CXX) $(CXX_FLAGS) $< -o $@ $(CXX_INCLUDES) $(CXX_LIBS)
+
+Graphics.Triangle.o: Graphics.Triangle.cpp Graphics.Triangle.vert.spv Graphics.Triangle.frag.spv
+	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) -c $< -o $@
+
+GLSLC_COMPILER = /Users/philipwenkel/VulkanSDK/1.2.182.0/macOS/bin/glslc
+
+%.vert.spv: %.vert 
+	$(GLSLC_COMPILER) $< -o $@
+
+%.frag.spv: %.frag 
+	$(GLSLC_COMPILER) $< -o $@
+
+
+# %.spv: %.vert 
+# 	$(GLSLC_COMPILER) $< -o $@
+
+# %.spv: %.frag 
+# 	$(GLSLC_COMPILER) $< -o $@
 
 # Test.%: Test.%.cpp delta
 # 	$(GCC) $< *.o -o $@ -lrt -lpthread
@@ -155,6 +181,7 @@ App.%.o: App.%.cpp Delta.pcm
 clean:
 	@rm -rf gcm.cache/
 	@rm -f *.o
-	@rm -f *.pcm
+	@rm -f *.pcm 
+	@rm -f *.spv
 	@rm -f $(apps)
 	@rm -f $(tests)
