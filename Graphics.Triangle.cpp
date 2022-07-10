@@ -781,26 +781,69 @@ auto main(int argc, char **argv) -> int
 			std::terminate();
 		}
 
+		auto clearColor = VkClearValue {{{0.0f, 0.0f, 0.0f, 1.0f}}};
+
 		auto renderPassBeginInfo = VkRenderPassBeginInfo
 		{
 			.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
 			.renderPass = renderPass,
-			.framebuffer = swapchainFramebuffers [imageIndex]
+			.framebuffer = swapchainFramebuffers [imageIndex],
+			.renderArea.offset = {0, 0},
+			.renderArea.extent = surfaceExtent,
+			.clearValueCount = 1,
+			.pClearValues = &clearColor
 		};
+
+		vkCmdBeginRenderPass (graphicsCommandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+		vkCmdBindPipeline (graphicsCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
+		vkCmdDraw (graphicsCommandBuffer, 3 /*vertexCount*/, 1 /*instanceCount*/, 0 /*firstVertex*/, 0 /*firstInstance*/);
+		vkCmdEndRenderPass (graphicsCommandBuffer);
+		if (vkEndCommandBuffer (graphicsCommandBuffer) != VK_SUCCESS)
+		{
+			std::cout << "error >> failed to record command buffer" << std::endl;
+			std::terminate();
+		}
 	};
 
-	/* Loop until the user closes the window */
-	while (!glfwWindowShouldClose(window))
+	auto imageAvailableSemaphore = VkSemaphore {};
+	auto renderFinishedSemaphore = VkSemaphore {};
+	auto inFlightFence = VkFence {};
+
+	auto semaphoreCreateInfo = VkSemaphoreCreateInfo {.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO};
+
+	if (vkCreateSemaphore (device, &semaphoreCreateInfo, nullptr, &imageAvailableSemaphore) != VK_SUCCESS)
 	{
-		/* Render here */
-		// glClear(GL_COLOR_BUFFER_BIT);
-
-		/* Swap front and back buffers */
-		// glfwSwapBuffers(window);
-
-		/* Poll for and process events */
-		glfwPollEvents();
+		std::cout << "error >> failed to create image available semaphore" << std::endl;
+		return EXIT_FAILURE;
+	} 
+	
+ 	if (vkCreateSemaphore (device, &semaphoreCreateInfo, nullptr, &renderFinishedSemaphore) != VK_SUCCESS)
+	{
+		std::cout << "error >> failed to create render finished semaphore" << std::endl;
+		return EXIT_FAILURE;
 	}
+
+	auto fenceCreateInfo = VkFenceCreateInfo {.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO};
+	
+	 if (vkCreateFence (device, &fenceCreateInfo, nullptr, &inFlightFence) != VK_SUCCESS)
+	{
+		std::cout << "error >> failed to create render finished semaphore" << std::endl;
+		return EXIT_FAILURE;
+	}
+
+	
+
+
+	/* Loop until the user closes the window */
+	while (!glfwWindowShouldClose (window))
+	{
+		glfwPollEvents ();
+		vkWaitForFences (device, 1, &inFlightFence, VK_TRUE, UINT64_MAX);
+	}
+
+	vkDestroySemaphore (device, imageAvailableSemaphore, nullptr);
+	vkDestroySemaphore (device, renderFinishedSemaphore, nullptr);
+	vkDestroyFence (device, inFlightFence, nullptr);
 
 	vkDestroyCommandPool (device, graphicsCommandPool, nullptr);
 
