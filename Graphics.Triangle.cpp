@@ -56,12 +56,7 @@ struct vertex
 	glm::vec3 color;
 };
 
-auto vertices = std::vector <vertex>
-{
-	{{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-	{{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
-	{{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}
-};
+
 
 auto main(int argc, char **argv) -> int
 {
@@ -351,23 +346,28 @@ auto main(int argc, char **argv) -> int
 	vkGetPhysicalDeviceQueueFamilyProperties (physicalDevice, &queueFamilyCount, availableQueueFamilies.data());
 
 	std::optional<uint32_t> graphicsFamily;
+	std::optional<uint32_t> transferFamily;
 	std::optional<uint32_t> presentFamily;
 	int i = 0;
 	for (const auto& queueFamily : availableQueueFamilies) {
 		if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) graphicsFamily = i;
+		if (queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT) transferFamily = i;
 		
 		VkBool32 presentSupport = false;
         vkGetPhysicalDeviceSurfaceSupportKHR (physicalDevice, i, surface, &presentSupport);
 
 		if (presentSupport) presentFamily = i;
         
-		if (presentSupport and graphicsFamily.has_value()) break;
+		if (presentSupport and graphicsFamily.has_value() and transferFamily.has_value()) break;
 
 		i++;
 	}
 
 	if (! graphicsFamily.has_value()) {
 		std::cout << "error >> could not find any graphics queue family" << std::endl;
+		return EXIT_FAILURE;
+	} else if (! transferFamily.has_value()) {
+		std::cout << "error >> could not find any transfer queue family" << std::endl;
 		return EXIT_FAILURE;
 	} else if (! presentFamily.has_value()) {
 		std::cout << "error >> could not find any present queue family" << std::endl;
@@ -422,11 +422,18 @@ auto main(int argc, char **argv) -> int
 
 	vkGetDeviceQueue (device, graphicsFamily.value(), 0, &graphicsQueue);
 
+
+	auto transferQueue = VkQueue {};
+
+	vkGetDeviceQueue (device, transferFamily.value(), 0, &transferQueue);
+
+
 	auto presentQueue = VkQueue {};
 
 	vkGetDeviceQueue (device, presentFamily.value(), 0, &presentQueue);
 
-	uint32_t queueFamilyIndices[] = {graphicsFamily.value(), presentFamily.value()};
+
+	uint32_t queueFamilyIndices[] = {graphicsFamily.value(), transferFamily.value(), presentFamily.value()};
 
 	auto swapchainCreateInfo = VkSwapchainCreateInfoKHR 
 	{
@@ -678,7 +685,7 @@ auto main(int argc, char **argv) -> int
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
 		.depthClampEnable = VK_FALSE,
 		// .polygonMode = VK_POLYGON_MODE_FILL, // LINE or POINT
-		.polygonMode = VK_POLYGON_MODE_LINE,
+		.polygonMode = VK_POLYGON_MODE_FILL,
 		.lineWidth = 1.0f,
 		.cullMode = VK_CULL_MODE_BACK_BIT,
 		.frontFace = VK_FRONT_FACE_CLOCKWISE,
@@ -813,6 +820,350 @@ auto main(int argc, char **argv) -> int
 		}
 	}
 
+
+
+
+	auto transferCommandPoolCreateInfo = VkCommandPoolCreateInfo 
+	{
+		.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
+		.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
+		.queueFamilyIndex = transferFamily.value()
+	};
+
+	auto transferCommandPool = VkCommandPool {};
+
+	if (vkCreateCommandPool(device, &transferCommandPoolCreateInfo, nullptr, &transferCommandPool) != VK_SUCCESS)
+	{
+		std::cout << "error >> failed to create transfer command pool" << std::endl;
+		return EXIT_FAILURE;
+	}
+
+
+
+	auto vertices = std::vector <vertex>
+	{
+		{{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+		{{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
+		{{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
+		{{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}
+	};
+
+	//////////////////////////////////////////////////////////////
+	///	Create staging buffer for vertices
+	//////////////////////////////////////////////////////////////
+
+	auto verticesStagingBufferCreateInfo = VkBufferCreateInfo
+	{
+		.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+		.size = sizeof (vertices[0]) * vertices.size(),
+		.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+		.sharingMode = VK_SHARING_MODE_EXCLUSIVE
+	};
+
+	auto verticesStagingBuffer = VkBuffer {};
+
+	if (vkCreateBuffer (device, &verticesStagingBufferCreateInfo, nullptr, &verticesStagingBuffer) != VK_SUCCESS)
+	{
+		std::cout << "error >> failed to create staging buffer for vertices" << std::endl;
+		return EXIT_FAILURE;
+	}
+
+	auto verticesStagingBufferMemoryRequirements = VkMemoryRequirements {};
+
+	vkGetBufferMemoryRequirements (device, verticesStagingBuffer, &verticesStagingBufferMemoryRequirements);
+
+	auto verticesStagingBufferMemoryAllocateInfo = VkMemoryAllocateInfo
+	{
+		.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+		.allocationSize = verticesStagingBufferMemoryRequirements.size,
+	};
+
+	auto verticesStagingBufferMemoryTypeFound = false;
+
+
+
+
+	auto verticesBufferCreateInfo = VkBufferCreateInfo
+	{
+		.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+		.size = sizeof (vertices[0]) * vertices.size(),
+		.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+		.sharingMode = VK_SHARING_MODE_EXCLUSIVE
+	};
+
+	auto verticesBuffer = VkBuffer {};
+
+	if (vkCreateBuffer (device, &verticesBufferCreateInfo, nullptr, &verticesBuffer) != VK_SUCCESS)
+	{
+		std::cout << "error >> failed to create buffer for vertices" << std::endl;
+		return EXIT_FAILURE;
+	}
+
+	auto verticesBufferMemoryRequirements = VkMemoryRequirements {};
+
+	vkGetBufferMemoryRequirements (device, verticesBuffer, &verticesBufferMemoryRequirements);
+
+	auto verticesBufferMemoryAllocateInfo = VkMemoryAllocateInfo
+	{
+		.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+		.allocationSize = verticesStagingBufferMemoryRequirements.size,
+	};
+
+	auto verticesBufferMemoryTypeFound = false;
+
+
+
+	auto indices = std::vector <uint16_t> 
+	{
+		0, 1, 2, 2, 3, 0
+	};
+
+	auto indicesStagingBufferCreateInfo = VkBufferCreateInfo
+	{
+		.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+		.size = sizeof (indices[0]) * indices.size(),
+		.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+		.sharingMode = VK_SHARING_MODE_EXCLUSIVE
+	};
+
+	auto indicesStagingBuffer = VkBuffer {};
+
+	if (vkCreateBuffer (device, &indicesStagingBufferCreateInfo, nullptr, &indicesStagingBuffer) != VK_SUCCESS)
+	{
+		std::cout << "error >> failed to create staging buffer for indices" << std::endl;
+		return EXIT_FAILURE;
+	}
+
+	auto indicesStagingBufferMemoryRequirements = VkMemoryRequirements {};
+
+	vkGetBufferMemoryRequirements (device, indicesStagingBuffer, &indicesStagingBufferMemoryRequirements);
+
+	auto indicesStagingBufferMemoryAllocateInfo = VkMemoryAllocateInfo
+	{
+		.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+		.allocationSize = indicesStagingBufferMemoryRequirements.size,
+	};
+
+	auto indicesStagingBufferMemoryTypeFound = false;
+
+
+
+	auto indicesBufferCreateInfo = VkBufferCreateInfo 
+	{
+		.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+		.size = sizeof (indices [0]) * indices.size (),
+		.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+		.sharingMode = VK_SHARING_MODE_EXCLUSIVE
+	};
+
+	auto indicesBuffer = VkBuffer {};
+
+	if (vkCreateBuffer (device, &indicesBufferCreateInfo, nullptr, &indicesBuffer) != VK_SUCCESS)
+	{
+		std::cout << "error >> failed to create buffer for indices" << std::endl;
+		return EXIT_FAILURE;
+	}
+
+	auto indicesBufferMemoryRequirements = VkMemoryRequirements {};
+
+	vkGetBufferMemoryRequirements (device, indicesBuffer, &indicesBufferMemoryRequirements);
+
+	auto indicesBufferMemoryAllocateInfo = VkMemoryAllocateInfo
+	{
+		.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+		.allocationSize = indicesStagingBufferMemoryRequirements.size,
+	};
+
+	auto indicesBufferMemoryTypeFound = false;
+
+
+
+	auto physicalDeviceMemoryProperties = VkPhysicalDeviceMemoryProperties {};
+
+	vkGetPhysicalDeviceMemoryProperties (physicalDevice, &physicalDeviceMemoryProperties);
+
+
+	for (uint32_t i = 0; i < physicalDeviceMemoryProperties.memoryTypeCount; ++i)
+	{
+		if ((verticesStagingBufferMemoryRequirements.memoryTypeBits & (1 << i)) && (physicalDeviceMemoryProperties.memoryTypes[i].propertyFlags & (VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)) == (VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT))
+		{
+			verticesStagingBufferMemoryTypeFound = true;
+			verticesStagingBufferMemoryAllocateInfo.memoryTypeIndex = i;
+		}
+
+		if ((verticesBufferMemoryRequirements.memoryTypeBits & (1 << i)) && (physicalDeviceMemoryProperties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) == VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)
+		{
+			verticesBufferMemoryTypeFound = true;
+			verticesBufferMemoryAllocateInfo.memoryTypeIndex = i;
+		}
+
+		if ((indicesStagingBufferMemoryRequirements.memoryTypeBits & (1 << i)) && (physicalDeviceMemoryProperties.memoryTypes[i].propertyFlags & (VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)) == (VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT))
+		{
+			indicesStagingBufferMemoryTypeFound = true;
+			indicesStagingBufferMemoryAllocateInfo.memoryTypeIndex = i;
+		}
+
+		if ((indicesBufferMemoryRequirements.memoryTypeBits & (1 << i)) && (physicalDeviceMemoryProperties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) == VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)
+		{
+			indicesBufferMemoryTypeFound = true;
+			indicesBufferMemoryAllocateInfo.memoryTypeIndex = i;
+		}
+	}
+
+	if (not verticesStagingBufferMemoryTypeFound)
+	{
+		std::cout << "error >> could not find the right type of memory for vertices staging buffer" << std::endl;
+		return EXIT_FAILURE;
+
+	} else if (not verticesBufferMemoryTypeFound)
+	{
+		std::cout << "error >> could not find the right type of memory for vertices buffer" << std::endl;
+		return EXIT_FAILURE;
+
+	} else if (not indicesStagingBufferMemoryTypeFound)
+	{
+		std::cout << "error >> could not find the right type of memory for indices staging buffer" << std::endl;
+		return EXIT_FAILURE;
+
+	} else if (not indicesBufferMemoryTypeFound)
+	{
+		std::cout << "error >> could not find the right type of memory for indices buffer" << std::endl;
+		return EXIT_FAILURE;
+		
+	}
+
+	auto verticesStagingBufferMemory = VkDeviceMemory {};
+
+	if (vkAllocateMemory (device, &verticesStagingBufferMemoryAllocateInfo, nullptr, &verticesStagingBufferMemory) != VK_SUCCESS)
+	{
+		std::cout << "error >> failed to allocate memory for the vertices buffer" << std::endl;
+		return EXIT_FAILURE;
+	}
+
+	vkBindBufferMemory (device, verticesStagingBuffer, verticesStagingBufferMemory, 0);
+
+
+
+	auto verticesBufferMemory = VkDeviceMemory {};
+
+	if (vkAllocateMemory (device, &verticesBufferMemoryAllocateInfo, nullptr, &verticesBufferMemory) != VK_SUCCESS)
+	{
+		std::cout << "error >> failed to allocate memory for the vertices buffer" << std::endl;
+		return EXIT_FAILURE;
+	}
+
+	vkBindBufferMemory (device, verticesBuffer, verticesBufferMemory, 0);
+
+	
+
+	auto indicesStagingBufferMemory = VkDeviceMemory {};
+
+	if (vkAllocateMemory (device, &indicesStagingBufferMemoryAllocateInfo, nullptr, &indicesStagingBufferMemory) != VK_SUCCESS)
+	{
+		std::cout << "error >> failed to allocate memory for the indices buffer" << std::endl;
+		return EXIT_FAILURE;
+	}
+
+	vkBindBufferMemory (device, indicesStagingBuffer, indicesStagingBufferMemory, 0);
+
+
+
+
+	auto indicesBufferMemory = VkDeviceMemory {};
+
+	if (vkAllocateMemory (device, &indicesBufferMemoryAllocateInfo, nullptr, &indicesBufferMemory) != VK_SUCCESS)
+	{
+		std::cout << "error >> failed to allocate memory for the indices buffer" << std::endl;
+		return EXIT_FAILURE;
+	}
+
+	vkBindBufferMemory (device, indicesBuffer, indicesBufferMemory, 0);
+
+	
+
+	// copy vertices data to the staging buffer
+	void * verticesData;
+	vkMapMemory (device, verticesStagingBufferMemory, 0, verticesStagingBufferCreateInfo.size, 0, &verticesData);
+	memcpy (verticesData, vertices.data(), (size_t) verticesStagingBufferCreateInfo.size);
+	vkUnmapMemory (device, verticesStagingBufferMemory);
+
+	// copy indices data to the staging buffer
+	void * indicesData;
+	vkMapMemory (device, indicesStagingBufferMemory, 0, indicesStagingBufferCreateInfo.size, 0, &indicesData);
+	memcpy (indicesData, indices.data(), (size_t) indicesStagingBufferCreateInfo.size);
+	vkUnmapMemory (device, indicesStagingBufferMemory);
+
+	// copy data from staging buffer to device buffer
+
+	// create a command buffer to execute memory transfer operations
+	auto copyCommandBufferAllocateInfo = VkCommandBufferAllocateInfo
+	{
+		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+		.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+		.commandPool = transferCommandPool,
+		.commandBufferCount = 1
+	};
+
+	auto copyCommandBuffer = VkCommandBuffer {};
+
+	vkAllocateCommandBuffers (device, &copyCommandBufferAllocateInfo, &copyCommandBuffer);
+
+	auto copyCommandBufferBeginInfo = VkCommandBufferBeginInfo 
+	{
+		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+		.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT
+	};
+
+	if (vkBeginCommandBuffer (copyCommandBuffer, &copyCommandBufferBeginInfo) != VK_SUCCESS)
+	{
+		std::cout << "error >> failed to begin recording graphics command buffer" << std::endl;
+		return EXIT_FAILURE;
+	}
+
+	auto verticesCopyRegion = VkBufferCopy 
+	{
+		.srcOffset = 0,
+		.dstOffset = 0,
+		.size = verticesStagingBufferCreateInfo.size
+	};
+
+	vkCmdCopyBuffer (copyCommandBuffer, verticesStagingBuffer, verticesBuffer, 1, &verticesCopyRegion);
+
+	auto indicesCopyRegion = VkBufferCopy 
+	{
+		.srcOffset = 0,
+		.dstOffset = 0,
+		.size = indicesStagingBufferCreateInfo.size
+	};
+
+	vkCmdCopyBuffer (copyCommandBuffer, indicesStagingBuffer, indicesBuffer, 1, &indicesCopyRegion);
+
+	if (vkEndCommandBuffer(copyCommandBuffer) != VK_SUCCESS)
+	{
+		std::cout << "error >> failed to end recording copy command buffer" << std::endl;
+		return EXIT_FAILURE;
+	}
+
+	auto copyBufferSubmitInfo = VkSubmitInfo
+	{
+		.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+		.commandBufferCount = 1,
+		.pCommandBuffers = &copyCommandBuffer
+	};
+
+	vkQueueSubmit (transferQueue, 1, &copyBufferSubmitInfo, VK_NULL_HANDLE);
+	vkQueueWaitIdle (transferQueue);
+
+	vkFreeCommandBuffers (device, transferCommandPool, 1, &copyCommandBuffer);
+
+	vkDestroyBuffer (device, verticesStagingBuffer, nullptr);
+	vkFreeMemory (device, verticesStagingBufferMemory, nullptr);
+
+	vkDestroyBuffer (device, indicesStagingBuffer, nullptr);
+	vkFreeMemory (device, indicesStagingBufferMemory, nullptr);
+
+
+
 	auto graphicsCommandPoolCreateInfo = VkCommandPoolCreateInfo 
 	{
 		.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
@@ -828,72 +1179,7 @@ auto main(int argc, char **argv) -> int
 		return EXIT_FAILURE;
 	}
 
-	auto verticesBufferCreateInfo = VkBufferCreateInfo
-	{
-		.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
-		.size = sizeof (vertices[0]) * vertices.size(),
-		.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-		.sharingMode = VK_SHARING_MODE_EXCLUSIVE,
-	};
-
-	auto verticesBuffer = VkBuffer {};
-
-	if (vkCreateBuffer (device, &verticesBufferCreateInfo, nullptr, &verticesBuffer) != VK_SUCCESS)
-	{
-		std::cout << "error >> failed to create buffer for vertices" << std::endl;
-		return EXIT_FAILURE;
-	}
-
-	auto verticesBufferMemoryRequirements = VkMemoryRequirements {};
-
-	vkGetBufferMemoryRequirements (device, verticesBuffer, &verticesBufferMemoryRequirements);
-
-	auto physicalDeviceMemoryProperties = VkPhysicalDeviceMemoryProperties {};
-	vkGetPhysicalDeviceMemoryProperties (physicalDevice, &physicalDeviceMemoryProperties);
-
-	auto verticesBufferMemoryAllocateInfo = VkMemoryAllocateInfo
-	{
-		.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
-		.allocationSize = verticesBufferMemoryRequirements.size,
-	};
-
-	auto verticesBuffermemoryTypeFound = false;
-	auto prop = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-	auto typeFilt = verticesBufferMemoryRequirements.memoryTypeBits;
-
-	for (uint32_t i = 0; i < physicalDeviceMemoryProperties.memoryTypeCount; ++i)
-	{
-		if ((typeFilt & (1 << i)) && (physicalDeviceMemoryProperties.memoryTypes[i].propertyFlags & prop) == prop)
-		{
-			verticesBuffermemoryTypeFound = true;
-			verticesBufferMemoryAllocateInfo.memoryTypeIndex = i;
-			break;
-		}
-	}
-
-	if (not verticesBuffermemoryTypeFound)
-	{
-		std::cout << "error >> could not find the right type of memory for vertices buffer" << std::endl;
-		return EXIT_FAILURE;
-	}
-
-	auto verticesBufferMemory = VkDeviceMemory {};
-
-	if (vkAllocateMemory (device, &verticesBufferMemoryAllocateInfo, nullptr, &verticesBufferMemory) != VK_SUCCESS)
-	{
-		std::cout << "error >> failed to allocate memory for the vertices buffer" << std::endl;
-		return EXIT_FAILURE;
-	}
-
-	vkBindBufferMemory (device, verticesBuffer, verticesBufferMemory, 0);
-
-	// copy the vertices data to the buffer
-	void * verticesData;
-	vkMapMemory (device, verticesBufferMemory, 0, verticesBufferCreateInfo.size, 0, &verticesData);
-	memcpy (verticesData, vertices.data(), (size_t) verticesBufferCreateInfo.size);
-	vkUnmapMemory (device, verticesBufferMemory);
-
-	auto graphicsCommandBufferAllocInfo = VkCommandBufferAllocateInfo
+	auto graphicsCommandBufferAllocateInfo = VkCommandBufferAllocateInfo
 	{
 		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
 		.commandPool = graphicsCommandPool,
@@ -903,7 +1189,7 @@ auto main(int argc, char **argv) -> int
 
 	auto graphicsCommandBuffer = VkCommandBuffer {};
 
-	if (vkAllocateCommandBuffers (device, &graphicsCommandBufferAllocInfo, &graphicsCommandBuffer) != VK_SUCCESS) 
+	if (vkAllocateCommandBuffers (device, &graphicsCommandBufferAllocateInfo, &graphicsCommandBuffer) != VK_SUCCESS) 
 	{
 		std::cout << "error >> failed to allocate graphics command buffer" << std::endl;
 		return EXIT_FAILURE;
@@ -951,8 +1237,6 @@ auto main(int argc, char **argv) -> int
 		vkAcquireNextImageKHR (device, swapchain, UINT64_MAX, imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
 		vkResetCommandBuffer (graphicsCommandBuffer, 0);
 		
-
-
 		// record command buffer
 		auto graphicsCommandBufferBeginInfo = VkCommandBufferBeginInfo
 		{
@@ -1001,7 +1285,8 @@ auto main(int argc, char **argv) -> int
 		VkBuffer verticesBuffers [] = {verticesBuffer};
 		VkDeviceSize offsets [] = {0};
 		vkCmdBindVertexBuffers (graphicsCommandBuffer, 0, 1, verticesBuffers, offsets);
-		vkCmdDraw (graphicsCommandBuffer, static_cast <uint32_t> (vertices.size()) /*vertexCount*/, 1 /*instanceCount*/, 0 /*firstVertex*/, 0 /*firstInstance*/);
+		vkCmdBindIndexBuffer (graphicsCommandBuffer, indicesBuffer, 0, VK_INDEX_TYPE_UINT16);
+		vkCmdDrawIndexed (graphicsCommandBuffer, static_cast <uint32_t> (indices.size()), 1, 0, 0, 0);
 		vkCmdEndRenderPass (graphicsCommandBuffer);
 
 		if (vkEndCommandBuffer (graphicsCommandBuffer) != VK_SUCCESS)
@@ -1059,6 +1344,7 @@ auto main(int argc, char **argv) -> int
 	vkDestroyFence (device, inFlightFence, nullptr);
 
 	vkDestroyCommandPool (device, graphicsCommandPool, nullptr);
+	vkDestroyCommandPool (device, transferCommandPool, nullptr);
 
 	for (auto framebuffer : swapchainFramebuffers)
 	{
@@ -1076,8 +1362,10 @@ auto main(int argc, char **argv) -> int
 
 	vkDestroySwapchainKHR (device, swapchain, nullptr);
 
-	vkDestroyBuffer (device, verticesBuffer, nullptr);
+	vkDestroyBuffer (device, indicesBuffer, nullptr);
+	vkFreeMemory (device, indicesBufferMemory, nullptr);
 
+	vkDestroyBuffer (device, verticesBuffer, nullptr);
 	vkFreeMemory (device, verticesBufferMemory, nullptr);
 
 	vkDestroyDevice(device, nullptr);
