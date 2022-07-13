@@ -12,8 +12,11 @@
 #include <algorithm> // Necessary for std::clamp
 #include <fstream>
 #include <array>
+#define GLM_FORCE_RADIANS
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <chrono>
 
 // import Delta;
 // import Delta.Graphics;
@@ -745,13 +748,52 @@ auto main(int argc, char **argv) -> int
 		.pDynamicStates = dynamicStates.data()
 	};
 
+	auto descriptorSetLayoutBinding = VkDescriptorSetLayoutBinding
+	{
+		.binding = 0,
+		.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+		.descriptorCount = 1,
+		.stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+		.pImmutableSamplers = nullptr,
+
+	};
+
+	auto descriptorSetLayoutCreateInfo = VkDescriptorSetLayoutCreateInfo
+	{
+		.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+		.bindingCount = 1,
+		.pBindings = &descriptorSetLayoutBinding
+	};
+
+	auto descriptorSetLayout = VkDescriptorSetLayout {};
+
+	if (vkCreateDescriptorSetLayout (device, &descriptorSetLayoutCreateInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS)
+	{
+		std::cout << "error >> failed to create descriptor set layout" << std::endl;
+		return EXIT_FAILURE;
+	}
+
+	struct push_constants 
+	{
+		glm::mat4 model;
+		glm::mat4 view;
+		glm::mat4 proj;
+	};
+
+	auto pushConstantRange = VkPushConstantRange
+	{
+		.offset = 0,
+		.size = sizeof (push_constants),
+		.stageFlags = VK_SHADER_STAGE_VERTEX_BIT
+	};
+
 	auto layoutCreateInfo = VkPipelineLayoutCreateInfo
 	{
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
 		.setLayoutCount = 0,
-		.pSetLayouts = nullptr,
-		.pushConstantRangeCount = 0,
-		.pPushConstantRanges = nullptr
+		.pSetLayouts = nullptr,//&descriptorSetLayout,
+		.pushConstantRangeCount = 1,
+		.pPushConstantRanges = &pushConstantRange
 	};
 
 	auto layout = VkPipelineLayout {};
@@ -978,6 +1020,43 @@ auto main(int argc, char **argv) -> int
 
 
 
+	struct UniformBufferObject 
+	{
+		glm::mat4 model;
+		glm::mat4 view;
+		glm::mat4 proj;
+	};
+
+	auto uniformBufferCreateInfo = VkBufferCreateInfo 
+	{
+		.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+		.size = sizeof (UniformBufferObject) ,
+		.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+		.sharingMode = VK_SHARING_MODE_EXCLUSIVE
+	};
+
+	auto uniformBuffer = VkBuffer {};
+
+	if (vkCreateBuffer (device, &uniformBufferCreateInfo, nullptr, &uniformBuffer) != VK_SUCCESS)
+	{
+		std::cout << "error >> failed to create buffer for uniform" << std::endl;
+		return EXIT_FAILURE;
+	}
+
+	auto uniformBufferMemoryRequirements = VkMemoryRequirements {};
+
+	vkGetBufferMemoryRequirements (device, uniformBuffer, &uniformBufferMemoryRequirements);
+
+	auto uniformBufferMemoryAllocateInfo = VkMemoryAllocateInfo
+	{
+		.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+		.allocationSize = uniformBufferMemoryRequirements.size,
+	};
+
+	auto uniformBufferMemoryTypeFound = false;
+
+
+
 	auto physicalDeviceMemoryProperties = VkPhysicalDeviceMemoryProperties {};
 
 	vkGetPhysicalDeviceMemoryProperties (physicalDevice, &physicalDeviceMemoryProperties);
@@ -1008,6 +1087,12 @@ auto main(int argc, char **argv) -> int
 			indicesBufferMemoryTypeFound = true;
 			indicesBufferMemoryAllocateInfo.memoryTypeIndex = i;
 		}
+
+		if ((uniformBufferMemoryRequirements.memoryTypeBits & (1 << i)) && (physicalDeviceMemoryProperties.memoryTypes[i].propertyFlags & (VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)) == (VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT))
+		{
+			uniformBufferMemoryTypeFound = true;
+			uniformBufferMemoryAllocateInfo.memoryTypeIndex = i;
+		}
 	}
 
 	if (not verticesStagingBufferMemoryTypeFound)
@@ -1028,6 +1113,11 @@ auto main(int argc, char **argv) -> int
 	} else if (not indicesBufferMemoryTypeFound)
 	{
 		std::cout << "error >> could not find the right type of memory for indices buffer" << std::endl;
+		return EXIT_FAILURE;
+		
+	} else if (not uniformBufferMemoryTypeFound)
+	{
+		std::cout << "error >> could not find the right type of memory for uniform buffer" << std::endl;
 		return EXIT_FAILURE;
 		
 	}
@@ -1078,6 +1168,18 @@ auto main(int argc, char **argv) -> int
 	}
 
 	vkBindBufferMemory (device, indicesBuffer, indicesBufferMemory, 0);
+
+
+
+	auto uniformBufferMemory = VkDeviceMemory {};
+
+	if (vkAllocateMemory (device, &uniformBufferMemoryAllocateInfo, nullptr, &uniformBufferMemory) != VK_SUCCESS)
+	{
+		std::cout << "error >> failed to allocate memory for the uniform buffer" << std::endl;
+		return EXIT_FAILURE;
+	}
+
+	vkBindBufferMemory (device, uniformBuffer, uniformBufferMemory, 0);
 
 	
 
@@ -1235,6 +1337,9 @@ auto main(int argc, char **argv) -> int
 
 		//async
 		vkAcquireNextImageKHR (device, swapchain, UINT64_MAX, imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
+
+
+
 		vkResetCommandBuffer (graphicsCommandBuffer, 0);
 		
 		// record command buffer
@@ -1285,6 +1390,16 @@ auto main(int argc, char **argv) -> int
 		VkBuffer verticesBuffers [] = {verticesBuffer};
 		VkDeviceSize offsets [] = {0};
 		vkCmdBindVertexBuffers (graphicsCommandBuffer, 0, 1, verticesBuffers, offsets);
+		static auto startTime = std::chrono::high_resolution_clock::now();
+		auto currentTime = std::chrono::high_resolution_clock::now();
+		float time = std::chrono::duration <float,std::chrono::seconds::period> (currentTime - startTime).count ();
+		auto pushConstants = push_constants
+		{
+			.model = glm::rotate (glm::mat4 (1.0f), time * glm::radians (90.0f), glm::vec3 (0.0f, 0.0f, 1.0f)),
+			.view = glm::lookAt (glm::vec3 (2.0f, 2.0f, 2.0f), glm::vec3 (0.0f,0.0f, 0.0f), glm::vec3 (0.0f, 0.0f, 1.0f)),
+			.proj = glm::perspective (glm::radians (45.0f), surfaceExtent.width / (float) surfaceExtent.height, 0.1f, 10.0f)
+		};
+		vkCmdPushConstants (graphicsCommandBuffer, layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof (push_constants), &pushConstants);
 		vkCmdBindIndexBuffer (graphicsCommandBuffer, indicesBuffer, 0, VK_INDEX_TYPE_UINT16);
 		vkCmdDrawIndexed (graphicsCommandBuffer, static_cast <uint32_t> (indices.size()), 1, 0, 0, 0);
 		vkCmdEndRenderPass (graphicsCommandBuffer);
@@ -1360,7 +1475,12 @@ auto main(int argc, char **argv) -> int
 		vkDestroyImageView (device, imageView, nullptr);
 	}
 
+	vkDestroyBuffer (device, uniformBuffer, nullptr);
+	vkFreeMemory (device, uniformBufferMemory, nullptr);
+
 	vkDestroySwapchainKHR (device, swapchain, nullptr);
+
+	vkDestroyDescriptorSetLayout (device, descriptorSetLayout, nullptr);
 
 	vkDestroyBuffer (device, indicesBuffer, nullptr);
 	vkFreeMemory (device, indicesBufferMemory, nullptr);
