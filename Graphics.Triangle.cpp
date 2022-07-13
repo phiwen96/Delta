@@ -11,6 +11,9 @@
 #include <limits> // Necessary for std::numeric_limits
 #include <algorithm> // Necessary for std::clamp
 #include <fstream>
+#include <array>
+#include <glm/vec2.hpp>
+#include <glm/vec3.hpp>
 
 // import Delta;
 // import Delta.Graphics;
@@ -47,15 +50,28 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBits
 }
 #endif
 
+struct vertex
+{
+	glm::vec2 pos;
+	glm::vec3 color;
+};
+
+auto vertices = std::vector <vertex>
+{
+	{{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+	{{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
+	{{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}
+};
+
 auto main(int argc, char **argv) -> int
 {
 	/* Initialize the library */
 	if (!glfwInit())
 		return EXIT_FAILURE;
 
-	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+	glfwWindowHint (GLFW_CLIENT_API, GLFW_NO_API);
 
-	glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+	glfwWindowHint (GLFW_RESIZABLE, GLFW_FALSE);
 
 	/* Create a windowed mode window and its OpenGL context */
 	auto* window = glfwCreateWindow(640, 480, "Hello World", NULL, NULL);
@@ -66,7 +82,8 @@ auto main(int argc, char **argv) -> int
 		return EXIT_FAILURE;
 	}
 
-	auto appInfo = VkApplicationInfo {
+	auto appInfo = VkApplicationInfo 
+	{
 		.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
 		.pApplicationName = "Hello Triangle",
 		.applicationVersion = VK_MAKE_VERSION(1, 0, 0),
@@ -75,13 +92,14 @@ auto main(int argc, char **argv) -> int
 		.apiVersion = VK_API_VERSION_1_2
 	};
 
-	auto instanceCreateInfo = VkInstanceCreateInfo {
+	auto instanceCreateInfo = VkInstanceCreateInfo 
+	{
 		.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
 		.pApplicationInfo = &appInfo
 	};
 
-	uint32_t glfwExtensionCount = 0;
-	const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+	auto glfwExtensionCount = uint32_t {0};
+	auto const ** glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
 	auto extensions = std::vector<const char*> {glfwExtensions, glfwExtensions + glfwExtensionCount};
 	
 #ifdef DEBUG
@@ -135,7 +153,7 @@ auto main(int argc, char **argv) -> int
 	instanceCreateInfo.enabledExtensionCount = static_cast<uint32_t> (extensions.size());
 	instanceCreateInfo.ppEnabledExtensionNames = extensions.data();
 	
-	VkInstance instance;
+	auto instance = VkInstance {};
 
 	switch (vkCreateInstance(&instanceCreateInfo, nullptr, &instance)) {
 		case VK_SUCCESS:
@@ -180,14 +198,14 @@ auto main(int argc, char **argv) -> int
     }
 #endif
 
-	VkSurfaceKHR surface;
+	auto surface = VkSurfaceKHR {};
 	
 	if (glfwCreateWindowSurface(instance, window, nullptr, &surface) != VK_SUCCESS) {
         std::cout << "error >> failed to create window surface" << std::endl;
 		return EXIT_FAILURE;
     }
 
-	uint32_t deviceCount = 0;
+	auto deviceCount = uint32_t {0};
 	vkEnumeratePhysicalDevices (instance, &deviceCount, nullptr);
 	
 	if (deviceCount == 0) {
@@ -218,25 +236,29 @@ auto main(int argc, char **argv) -> int
 			return EXIT_FAILURE;
 	}
 
-	uint32_t extensionCount;
+	auto extensionCount = uint32_t {};
     vkEnumerateDeviceExtensionProperties (physicalDevice, nullptr, &extensionCount, nullptr);
 	auto availableExtensions = std::vector <VkExtensionProperties> {extensionCount};
 	vkEnumerateDeviceExtensionProperties (physicalDevice, nullptr, &extensionCount, availableExtensions.data());
 
-	VkSurfaceCapabilitiesKHR surfaceCapabilities;
+	auto surfaceCapabilities = VkSurfaceCapabilitiesKHR {};
 	vkGetPhysicalDeviceSurfaceCapabilitiesKHR (physicalDevice, surface, &surfaceCapabilities);
 
-	VkExtent2D surfaceExtent;
+	auto surfaceExtent = VkExtent2D {};
 	// choose swap extent
-	if (surfaceCapabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) {
+	if (surfaceCapabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) 
+	{
 		surfaceExtent = surfaceCapabilities.currentExtent;
-	} else {
+
+	}  else 
+	{
 		int width, height;
 		glfwGetFramebufferSize(window, &width, &height);
 
-		surfaceExtent = VkExtent2D {
-			static_cast<uint32_t>(width),
-			static_cast<uint32_t>(height)
+		surfaceExtent = VkExtent2D 
+		{
+			static_cast <uint32_t> (width),
+			static_cast <uint32_t> (height)
 		};
 
 		surfaceExtent.width = std::clamp(surfaceExtent.width, surfaceCapabilities.minImageExtent.width, surfaceCapabilities.maxImageExtent.width);		
@@ -256,7 +278,7 @@ auto main(int argc, char **argv) -> int
 		std::cout << "error" << std::endl;
 		return EXIT_FAILURE;
 	}
-	auto availableSurfaceFormats = std::vector<VkSurfaceFormatKHR> {formatCount};
+	auto availableSurfaceFormats = std::vector <VkSurfaceFormatKHR> {formatCount};
 	vkGetPhysicalDeviceSurfaceFormatsKHR (physicalDevice, surface, &formatCount, availableSurfaceFormats.data());
 
 	VkSurfaceFormatKHR const* surfaceFormat = nullptr;
@@ -309,7 +331,9 @@ auto main(int argc, char **argv) -> int
 	EXIT_LOOP:
 
 	if (presentMode == nullptr) {
-		std::cout << "warning >> performance present mode not available, defaulting to energy present mode" << std::endl; 
+		std::cout << "error >> no available present mode" << std::endl;
+		return EXIT_FAILURE;
+		// std::cout << "warning >> performance present mode not available, defaulting to energy present mode" << std::endl; 
 	}
 
 	VkPhysicalDeviceMemoryProperties memProperties;
@@ -323,13 +347,13 @@ auto main(int argc, char **argv) -> int
 		return EXIT_FAILURE;
 	}
 
-	auto queueFamilies = std::vector<VkQueueFamilyProperties> {queueFamilyCount};
-	vkGetPhysicalDeviceQueueFamilyProperties (physicalDevice, &queueFamilyCount, queueFamilies.data());
+	auto availableQueueFamilies = std::vector<VkQueueFamilyProperties> {queueFamilyCount};
+	vkGetPhysicalDeviceQueueFamilyProperties (physicalDevice, &queueFamilyCount, availableQueueFamilies.data());
 
 	std::optional<uint32_t> graphicsFamily;
 	std::optional<uint32_t> presentFamily;
 	int i = 0;
-	for (const auto& queueFamily : queueFamilies) {
+	for (const auto& queueFamily : availableQueueFamilies) {
 		if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) graphicsFamily = i;
 		
 		VkBool32 presentSupport = false;
@@ -367,12 +391,14 @@ auto main(int argc, char **argv) -> int
 	}
 	// std::cout << memProperties.memoryHeaps[0].size  << " bytes" << std::endl;
 
-	std::vector<const char*> deviceExtensions = {
+	auto deviceExtensions = std::vector <const char*>
+	{
 		"VK_KHR_swapchain",
 		"VK_KHR_portability_subset"
 	};
 
-	VkDeviceCreateInfo logicalDeviceCreateInfo {
+	auto logicalDeviceCreateInfo = VkDeviceCreateInfo 
+	{
 		.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
 		.pQueueCreateInfos = queueCreateInfos.data(),
 		.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size()),
@@ -382,7 +408,7 @@ auto main(int argc, char **argv) -> int
 		.enabledLayerCount = 0
 	};
 
-	VkDevice device;
+	auto device = VkDevice {};
 
 	if (vkCreateDevice (physicalDevice, &logicalDeviceCreateInfo, nullptr, &device) != VK_SUCCESS) {
 		std::cout << "error >> failed to create logical device" << std::endl;
@@ -392,17 +418,18 @@ auto main(int argc, char **argv) -> int
 	// specify which queue families you would like to use
 
 	// a handle to the graphics queue
-	VkQueue graphicsQueue;
+	auto graphicsQueue = VkQueue {};
 
 	vkGetDeviceQueue (device, graphicsFamily.value(), 0, &graphicsQueue);
 
-	VkQueue presentQueue;
+	auto presentQueue = VkQueue {};
 
 	vkGetDeviceQueue (device, presentFamily.value(), 0, &presentQueue);
 
 	uint32_t queueFamilyIndices[] = {graphicsFamily.value(), presentFamily.value()};
 
-	auto swapchainCreateInfo = VkSwapchainCreateInfoKHR {
+	auto swapchainCreateInfo = VkSwapchainCreateInfoKHR 
+	{
 		.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
 		.surface = surface,
 		.minImageCount = imageCount,
@@ -437,9 +464,9 @@ auto main(int argc, char **argv) -> int
 		return EXIT_FAILURE;
 	}
 
-	auto swapchainImages = std::vector <VkImage> {};
+	
 	vkGetSwapchainImagesKHR (device, swapchain, &imageCount, nullptr);
-	swapchainImages.resize (imageCount);
+	auto swapchainImages = std::vector <VkImage> {imageCount};
 	vkGetSwapchainImagesKHR (device, swapchain, &imageCount, swapchainImages.data());
 
 	auto swapchainImageViews = std::vector <VkImageView> {swapchainImages.size ()};
@@ -581,13 +608,37 @@ auto main(int argc, char **argv) -> int
 
 	VkPipelineShaderStageCreateInfo shaderStageCreateInfos[] = {vertShaderStageCreateInfo, fragShaderStageCreateInfo};
 	
+	auto vertexBindingDescription = VkVertexInputBindingDescription
+	{
+		.binding = 0,
+		.stride = sizeof (vertex),
+		.inputRate = VK_VERTEX_INPUT_RATE_VERTEX
+	};
+
+	auto vertexAttributeDescriptions = std::array <VkVertexInputAttributeDescription, 2>
+	{
+		VkVertexInputAttributeDescription{
+			.binding = 0,
+			.location = 0,
+			.format = VK_FORMAT_R32G32_SFLOAT,
+			.offset = offsetof (vertex, pos)
+		},
+
+		VkVertexInputAttributeDescription{
+			.binding = 0,
+			.location = 1,
+			.format = VK_FORMAT_R32G32B32_SFLOAT,
+			.offset = offsetof (vertex, color)
+		}
+	};
+
 	auto vertexInputCreateInfo = VkPipelineVertexInputStateCreateInfo
 	{
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
-		.vertexBindingDescriptionCount = 0,
-		.pVertexBindingDescriptions = nullptr, // Optional
-		.vertexAttributeDescriptionCount = 0,
-		.pVertexAttributeDescriptions = nullptr // Optional
+		.vertexBindingDescriptionCount = 1,
+		.pVertexBindingDescriptions = &vertexBindingDescription, // Optional
+		.vertexAttributeDescriptionCount = static_cast <uint32_t> (vertexAttributeDescriptions.size()),
+		.pVertexAttributeDescriptions = vertexAttributeDescriptions.data() // Optional
 	};
 
 	auto inputAssemblyCreateInfo = VkPipelineInputAssemblyStateCreateInfo
@@ -626,7 +677,8 @@ auto main(int argc, char **argv) -> int
 	{
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
 		.depthClampEnable = VK_FALSE,
-		.polygonMode = VK_POLYGON_MODE_FILL, // LINE or POINT
+		// .polygonMode = VK_POLYGON_MODE_FILL, // LINE or POINT
+		.polygonMode = VK_POLYGON_MODE_LINE,
 		.lineWidth = 1.0f,
 		.cullMode = VK_CULL_MODE_BACK_BIT,
 		.frontFace = VK_FRONT_FACE_CLOCKWISE,
@@ -672,6 +724,20 @@ auto main(int argc, char **argv) -> int
 		.blendConstants[3] = 0.0f
 	};
 
+	auto dynamicStates = std::array 
+	{
+		VK_DYNAMIC_STATE_VIEWPORT,
+		// VK_DYNAMIC_STATE_LINE_WIDTH,
+		VK_DYNAMIC_STATE_SCISSOR
+	};
+
+	auto dynamicStateCreateInfo = VkPipelineDynamicStateCreateInfo
+	{
+		.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO,
+		.dynamicStateCount = static_cast <uint32_t> (dynamicStates.size()),
+		.pDynamicStates = dynamicStates.data()
+	};
+
 	auto layoutCreateInfo = VkPipelineLayoutCreateInfo
 	{
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
@@ -701,12 +767,11 @@ auto main(int argc, char **argv) -> int
 		.pMultisampleState = &multisampleCreateInfo,
 		.pDepthStencilState = nullptr, // Optional
 		.pColorBlendState = &colorBlendCreateInfo,
-		.pDynamicState = nullptr, // Optional
+		.pDynamicState = &dynamicStateCreateInfo, // Optional
 		.layout = layout,
 		.renderPass = renderPass,
 		.subpass = 0,
 		.basePipelineHandle = VK_NULL_HANDLE, // Optional
-		.basePipelineIndex = -1
 	};
 
 	auto graphicsPipeline = VkPipeline {};
@@ -763,6 +828,71 @@ auto main(int argc, char **argv) -> int
 		return EXIT_FAILURE;
 	}
 
+	auto verticesBufferCreateInfo = VkBufferCreateInfo
+	{
+		.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+		.size = sizeof (vertices[0]) * vertices.size(),
+		.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+		.sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+	};
+
+	auto verticesBuffer = VkBuffer {};
+
+	if (vkCreateBuffer (device, &verticesBufferCreateInfo, nullptr, &verticesBuffer) != VK_SUCCESS)
+	{
+		std::cout << "error >> failed to create buffer for vertices" << std::endl;
+		return EXIT_FAILURE;
+	}
+
+	auto verticesBufferMemoryRequirements = VkMemoryRequirements {};
+
+	vkGetBufferMemoryRequirements (device, verticesBuffer, &verticesBufferMemoryRequirements);
+
+	auto physicalDeviceMemoryProperties = VkPhysicalDeviceMemoryProperties {};
+	vkGetPhysicalDeviceMemoryProperties (physicalDevice, &physicalDeviceMemoryProperties);
+
+	auto verticesBufferMemoryAllocateInfo = VkMemoryAllocateInfo
+	{
+		.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+		.allocationSize = verticesBufferMemoryRequirements.size,
+	};
+
+	auto verticesBuffermemoryTypeFound = false;
+	auto prop = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+	auto typeFilt = verticesBufferMemoryRequirements.memoryTypeBits;
+
+	for (uint32_t i = 0; i < physicalDeviceMemoryProperties.memoryTypeCount; ++i)
+	{
+		if ((typeFilt & (1 << i)) && (physicalDeviceMemoryProperties.memoryTypes[i].propertyFlags & prop) == prop)
+		{
+			verticesBuffermemoryTypeFound = true;
+			verticesBufferMemoryAllocateInfo.memoryTypeIndex = i;
+			break;
+		}
+	}
+
+	if (not verticesBuffermemoryTypeFound)
+	{
+		std::cout << "error >> could not find the right type of memory for vertices buffer" << std::endl;
+		return EXIT_FAILURE;
+	}
+
+	auto verticesBufferMemory = VkDeviceMemory {};
+
+	if (vkAllocateMemory (device, &verticesBufferMemoryAllocateInfo, nullptr, &verticesBufferMemory) != VK_SUCCESS)
+	{
+		std::cout << "error >> failed to allocate memory for the vertices buffer" << std::endl;
+		return EXIT_FAILURE;
+	}
+
+	vkBindBufferMemory (device, verticesBuffer, verticesBufferMemory, 0);
+
+	// copy the vertices data to the buffer
+	void * verticesData;
+	vkMapMemory (device, verticesBufferMemory, 0, verticesBufferCreateInfo.size, 0, &verticesData);
+	memcpy (verticesData, vertices.data(), (size_t) verticesBufferCreateInfo.size);
+	vkUnmapMemory (device, verticesBufferMemory);
+
 	auto graphicsCommandBufferAllocInfo = VkCommandBufferAllocateInfo
 	{
 		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
@@ -778,45 +908,6 @@ auto main(int argc, char **argv) -> int
 		std::cout << "error >> failed to allocate graphics command buffer" << std::endl;
 		return EXIT_FAILURE;
 	}
-
-	const auto recordGraphicsCommandBuffer = [&] (uint32_t imageIndex) noexcept -> void
-	{
-		auto graphicsCommandBufferBeginInfo = VkCommandBufferBeginInfo
-		{
-			.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
-			.flags = 0,
-			.pInheritanceInfo = nullptr
-		};
-
-		if (vkBeginCommandBuffer (graphicsCommandBuffer, &graphicsCommandBufferBeginInfo) != VK_SUCCESS)
-		{
-			std::cout << "error >> failed to begin recording graphics command buffer" << std::endl;
-			std::terminate();
-		}
-
-		auto clearColor = VkClearValue {{{0.0f, 0.0f, 0.0f, 1.0f}}};
-
-		auto renderPassBeginInfo = VkRenderPassBeginInfo
-		{
-			.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
-			.renderPass = renderPass,
-			.framebuffer = swapchainFramebuffers [imageIndex],
-			.renderArea.offset = {0, 0},
-			.renderArea.extent = surfaceExtent,
-			.clearValueCount = 1,
-			.pClearValues = &clearColor
-		};
-
-		vkCmdBeginRenderPass (graphicsCommandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
-		vkCmdBindPipeline (graphicsCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
-		vkCmdDraw (graphicsCommandBuffer, 3 /*vertexCount*/, 1 /*instanceCount*/, 0 /*firstVertex*/, 0 /*firstInstance*/);
-		vkCmdEndRenderPass (graphicsCommandBuffer);
-		if (vkEndCommandBuffer (graphicsCommandBuffer) != VK_SUCCESS)
-		{
-			std::cout << "error >> failed to record command buffer" << std::endl;
-			std::terminate();
-		}
-	};
 
 	auto imageAvailableSemaphore = VkSemaphore {};
 	auto renderFinishedSemaphore = VkSemaphore {};
@@ -848,9 +939,6 @@ auto main(int argc, char **argv) -> int
 		return EXIT_FAILURE;
 	}
 
-	
-
-
 	/* Loop until the user closes the window */
 	while (!glfwWindowShouldClose (window))
 	{
@@ -858,9 +946,14 @@ auto main(int argc, char **argv) -> int
 		vkWaitForFences (device, 1, &inFlightFence, VK_TRUE, UINT64_MAX);
 		vkResetFences (device, 1, &inFlightFence);
 		auto imageIndex = uint32_t {};
+
+		//async
 		vkAcquireNextImageKHR (device, swapchain, UINT64_MAX, imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
 		vkResetCommandBuffer (graphicsCommandBuffer, 0);
 		
+
+
+		// record command buffer
 		auto graphicsCommandBufferBeginInfo = VkCommandBufferBeginInfo
 		{
 			.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
@@ -889,7 +982,26 @@ auto main(int argc, char **argv) -> int
 
 		vkCmdBeginRenderPass (graphicsCommandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 		vkCmdBindPipeline (graphicsCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
-		vkCmdDraw (graphicsCommandBuffer, 3 /*vertexCount*/, 1 /*instanceCount*/, 0 /*firstVertex*/, 0 /*firstInstance*/);
+		auto viewport = VkViewport 
+		{
+			.x = 0.0f,
+			.y = 0.0f,
+			.width = (float) surfaceExtent.width,
+			.height = (float) surfaceExtent.height,
+			.minDepth = 0.0f,
+			.maxDepth = 1.0f,
+		};
+		vkCmdSetViewport (graphicsCommandBuffer, 0, 1, &viewport);
+		auto scissor = VkRect2D 
+		{
+			.offset = {0,0},
+			.extent = surfaceExtent
+		};
+		vkCmdSetScissor (graphicsCommandBuffer, 0, 1, &scissor);
+		VkBuffer verticesBuffers [] = {verticesBuffer};
+		VkDeviceSize offsets [] = {0};
+		vkCmdBindVertexBuffers (graphicsCommandBuffer, 0, 1, verticesBuffers, offsets);
+		vkCmdDraw (graphicsCommandBuffer, static_cast <uint32_t> (vertices.size()) /*vertexCount*/, 1 /*instanceCount*/, 0 /*firstVertex*/, 0 /*firstInstance*/);
 		vkCmdEndRenderPass (graphicsCommandBuffer);
 
 		if (vkEndCommandBuffer (graphicsCommandBuffer) != VK_SUCCESS)
@@ -897,8 +1009,6 @@ auto main(int argc, char **argv) -> int
 			std::cout << "error >> failed to record command buffer" << std::endl;
 			return EXIT_FAILURE;
 		}
-
-
 
 		VkSemaphore waitSemaphores [] = {imageAvailableSemaphore};
 		VkPipelineStageFlags waitStages [] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
@@ -935,8 +1045,12 @@ auto main(int argc, char **argv) -> int
 			.pResults = nullptr
 		};
 
+		// async
 		vkQueuePresentKHR (presentQueue, &presentInfo);
+		// goto BAJS;
 	}
+
+	BAJS:
 
 	vkDeviceWaitIdle (device);
 
@@ -961,6 +1075,10 @@ auto main(int argc, char **argv) -> int
 	}
 
 	vkDestroySwapchainKHR (device, swapchain, nullptr);
+
+	vkDestroyBuffer (device, verticesBuffer, nullptr);
+
+	vkFreeMemory (device, verticesBufferMemory, nullptr);
 
 	vkDestroyDevice(device, nullptr);
 
@@ -989,6 +1107,8 @@ auto main(int argc, char **argv) -> int
 	window was resized ->  In that case the swap chain actually needs to be recreated from scratch and a reference to the old one must be specified 
 
 	graphics AND compute shaders
+
+	we need to record a command buffer for each possible image and select the right one at draw time. The alternative would be to record the command buffer again every frame, which is not as efficient.
 
 
 */

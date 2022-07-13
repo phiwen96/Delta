@@ -5,7 +5,7 @@ CXX = clang++
 CXX_FLAGS = -D DEBUG -std=c++2b
 CXX_MODULES = -fmodules-ts -fmodules -fbuiltin-module-map -fimplicit-modules -fimplicit-module-maps -fprebuilt-module-path=.
 
-CXX_INCLUDES = -I/usr/local/include
+CXX_INCLUDES = -I/usr/local/include -I/opt/homebrew/Cellar/glm/0.9.9.8/include
 CXX_APP_FLAGS = -lpthread 
 
 ifeq ($(OS),Windows_NT) 
@@ -154,10 +154,10 @@ App.%.o: App.%.cpp Delta.pcm
 
 
 Graphics.Triangle: Graphics.Triangle.o 
-	$(CXX) $(CXX_FLAGS) $< -o $@ $(CXX_INCLUDES) $(CXX_LIBS)
+	$(CXX) $(CXX_FLAGS) $< -o $@ $(CXX_LIBS)
 
 Graphics.Triangle.o: Graphics.Triangle.cpp Graphics.Triangle.vert.spv Graphics.Triangle.frag.spv
-	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) -c $< -o $@
+	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) -c $< -o $@ $(CXX_INCLUDES)
 
 GLSLC_COMPILER = /Users/philipwenkel/VulkanSDK/1.2.182.0/macOS/bin/glslc
 
