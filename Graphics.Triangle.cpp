@@ -17,6 +17,8 @@
 #include <glm/vec3.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <chrono>
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
 
 // import Delta;
 // import Delta.Graphics;
@@ -775,9 +777,9 @@ auto main(int argc, char **argv) -> int
 
 	struct push_constants 
 	{
-		glm::mat4 model;
-		glm::mat4 view;
-		glm::mat4 proj;
+		alignas (16) glm::mat4 model;
+		alignas (16) glm::mat4 view;
+		alignas (16) glm::mat4 proj;
 	};
 
 	auto pushConstantRange = VkPushConstantRange
@@ -1020,6 +1022,87 @@ auto main(int argc, char **argv) -> int
 
 
 
+
+	int texWidth, texHeight, texChannels;
+
+	stbi_uc* pixels = stbi_load ("Graphics.Triangle.Texture.Lion.jpeg", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+
+ 	if (!pixels) 
+	{
+		std::cout << "error >> failed to load texture image" << std::endl;
+		return EXIT_FAILURE;
+	}
+
+	auto textureImageStagingBufferCreateInfo = VkBufferCreateInfo 
+	{
+		.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+		.size = (VkDeviceSize) texWidth * texHeight * 4,
+		.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+		.sharingMode = VK_SHARING_MODE_EXCLUSIVE
+	};
+
+	auto textureImageStagingBuffer = VkBuffer {};
+
+	if (vkCreateBuffer (device, &textureImageStagingBufferCreateInfo, nullptr, &textureImageStagingBuffer) != VK_SUCCESS)
+	{
+		std::cout << "error >> failed to create buffer for textureImageStaging" << std::endl;
+		return EXIT_FAILURE;
+	}
+
+	auto textureImageStagingBufferMemoryRequirements = VkMemoryRequirements {};
+
+	vkGetBufferMemoryRequirements (device, textureImageStagingBuffer, &textureImageStagingBufferMemoryRequirements);
+
+	auto textureImageStagingBufferMemoryAllocateInfo = VkMemoryAllocateInfo
+	{
+		.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+		.allocationSize = textureImageStagingBufferMemoryRequirements.size,
+	};
+
+	auto textureImageStagingBufferMemoryTypeFound = false;
+
+
+
+
+
+	auto textureImageCreateInfo = VkImageCreateInfo
+	{
+		.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+		.imageType = VK_IMAGE_TYPE_2D,
+		.extent.width = static_cast <uint32_t> (texWidth),
+		.extent.height = static_cast <uint32_t> (texHeight),
+		.extent.depth = 1,
+		.mipLevels = 1,
+		.arrayLayers = 1,
+		.format = VK_FORMAT_R8G8B8A8_SRGB,
+		.tiling = VK_IMAGE_TILING_OPTIMAL,
+		.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+		.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+		.samples = VK_SAMPLE_COUNT_1_BIT,
+		.sharingMode = VK_SHARING_MODE_EXCLUSIVE
+	};
+
+	auto textureImage = VkImage {};
+
+	if (vkCreateImage (device, &textureImageCreateInfo, nullptr, &textureImage) != VK_SUCCESS) 
+	{
+		std::cout << "error >> failed to create image" << std::endl;
+	}
+
+	auto textureImageMemoryRequirements = VkMemoryRequirements {};
+
+	vkGetImageMemoryRequirements (device, textureImage, &textureImageMemoryRequirements);
+
+	auto textureImageMemoryAllocateInfo = VkMemoryAllocateInfo
+	{
+		.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+		.allocationSize = textureImageMemoryRequirements.size,
+	};
+
+	auto textureImageMemoryTypeFound = false;
+
+
+
 	struct UniformBufferObject 
 	{
 		glm::mat4 model;
@@ -1093,6 +1176,18 @@ auto main(int argc, char **argv) -> int
 			uniformBufferMemoryTypeFound = true;
 			uniformBufferMemoryAllocateInfo.memoryTypeIndex = i;
 		}
+
+		if ((textureImageStagingBufferMemoryRequirements.memoryTypeBits & (1 << i)) && (physicalDeviceMemoryProperties.memoryTypes[i].propertyFlags & (VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)) == (VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT))
+		{
+			textureImageStagingBufferMemoryTypeFound = true;
+			textureImageStagingBufferMemoryAllocateInfo.memoryTypeIndex = i;
+		}
+
+		if ((textureImageMemoryRequirements.memoryTypeBits & (1 << i)) && (physicalDeviceMemoryProperties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) == VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)
+		{
+			textureImageMemoryTypeFound = true;
+			textureImageMemoryAllocateInfo.memoryTypeIndex = i;
+		}
 	}
 
 	if (not verticesStagingBufferMemoryTypeFound)
@@ -1118,6 +1213,16 @@ auto main(int argc, char **argv) -> int
 	} else if (not uniformBufferMemoryTypeFound)
 	{
 		std::cout << "error >> could not find the right type of memory for uniform buffer" << std::endl;
+		return EXIT_FAILURE;
+		
+	} else if (not textureImageStagingBufferMemoryTypeFound)
+	{
+		std::cout << "error >> could not find the right type of memory for texture image staging buffer" << std::endl;
+		return EXIT_FAILURE;
+		
+	} else if (not textureImageMemoryTypeFound)
+	{
+		std::cout << "error >> could not find the right type of memory for texture image" << std::endl;
 		return EXIT_FAILURE;
 		
 	}
@@ -1171,6 +1276,32 @@ auto main(int argc, char **argv) -> int
 
 
 
+
+	auto textureImageStagingBufferMemory = VkDeviceMemory {};
+
+	if (vkAllocateMemory (device, &textureImageStagingBufferMemoryAllocateInfo, nullptr, &textureImageStagingBufferMemory) != VK_SUCCESS)
+	{
+		std::cout << "error >> failed to allocate memory for the texture image buffer" << std::endl;
+		return EXIT_FAILURE;
+	}
+
+	vkBindBufferMemory (device, textureImageStagingBuffer, textureImageStagingBufferMemory, 0);
+
+
+
+
+	auto textureImageMemory = VkDeviceMemory {};
+
+	if (vkAllocateMemory (device, &textureImageMemoryAllocateInfo, nullptr, &textureImageMemory) != VK_SUCCESS)
+	{
+		std::cout << "error >> failed to allocate memory for the texture image buffer" << std::endl;
+		return EXIT_FAILURE;
+	}
+
+	vkBindImageMemory (device, textureImage, textureImageMemory, 0);
+
+
+
 	auto uniformBufferMemory = VkDeviceMemory {};
 
 	if (vkAllocateMemory (device, &uniformBufferMemoryAllocateInfo, nullptr, &uniformBufferMemory) != VK_SUCCESS)
@@ -1195,6 +1326,19 @@ auto main(int argc, char **argv) -> int
 	memcpy (indicesData, indices.data(), (size_t) indicesStagingBufferCreateInfo.size);
 	vkUnmapMemory (device, indicesStagingBufferMemory);
 
+
+	void * textureImageStagingData;
+	vkMapMemory (device, textureImageStagingBufferMemory, 0, textureImageStagingBufferCreateInfo.size, 0, &textureImageStagingData);
+	memcpy (textureImageStagingData, pixels, (size_t) textureImageStagingBufferCreateInfo.size);
+	vkUnmapMemory (device, textureImageStagingBufferMemory);
+
+	stbi_image_free (pixels);
+
+	
+
+
+
+	
 	// copy data from staging buffer to device buffer
 
 	// create a command buffer to execute memory transfer operations
@@ -1240,6 +1384,58 @@ auto main(int argc, char **argv) -> int
 
 	vkCmdCopyBuffer (copyCommandBuffer, indicesStagingBuffer, indicesBuffer, 1, &indicesCopyRegion);
 
+	auto textureImageMemoryBarrier = VkImageMemoryBarrier
+	{
+		.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+		.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+		.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+		.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+		.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+		.image = textureImage,
+		.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+		.subresourceRange.baseMipLevel = 0,
+		.subresourceRange.levelCount = 1,
+		.subresourceRange.baseArrayLayer = 0,
+		.subresourceRange.layerCount = 1,
+		.srcAccessMask = 0,
+		.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT
+	};
+
+	auto srcStage = VkPipelineStageFlags {VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT};
+	auto dstStage = VkPipelineStageFlags {VK_PIPELINE_STAGE_TRANSFER_BIT};
+
+	vkCmdPipelineBarrier (copyCommandBuffer, srcStage, dstStage, 0, 0, nullptr, 0, nullptr, 1, &textureImageMemoryBarrier);
+
+	auto textureImageCopyRegion = VkBufferImageCopy
+	{
+		.bufferOffset = 0,
+		.bufferRowLength = 0,
+		.bufferImageHeight = 0,
+		.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+		.imageSubresource.mipLevel = 0,
+		.imageSubresource.baseArrayLayer = 0,
+		.imageSubresource.layerCount = 1,
+		.imageOffset = {0, 0, 0},
+		.imageExtent = 
+		{
+			static_cast <uint32_t> (texWidth),
+			static_cast <uint32_t> (texHeight),
+			1
+		}
+	};
+
+	vkCmdCopyBufferToImage (copyCommandBuffer, textureImageStagingBuffer, textureImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &textureImageCopyRegion);
+
+	textureImageMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+	textureImageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	textureImageMemoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+	textureImageMemoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+	srcStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+	dstStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+
+	vkCmdPipelineBarrier (copyCommandBuffer, srcStage, dstStage, 0, 0, nullptr, 0, nullptr, 1, &textureImageMemoryBarrier);
+
+
 	if (vkEndCommandBuffer(copyCommandBuffer) != VK_SUCCESS)
 	{
 		std::cout << "error >> failed to end recording copy command buffer" << std::endl;
@@ -1257,6 +1453,9 @@ auto main(int argc, char **argv) -> int
 	vkQueueWaitIdle (transferQueue);
 
 	vkFreeCommandBuffers (device, transferCommandPool, 1, &copyCommandBuffer);
+
+	vkDestroyBuffer (device, textureImageStagingBuffer, nullptr);
+	vkFreeMemory (device, textureImageStagingBufferMemory, nullptr);
 
 	vkDestroyBuffer (device, verticesStagingBuffer, nullptr);
 	vkFreeMemory (device, verticesStagingBufferMemory, nullptr);
@@ -1390,7 +1589,7 @@ auto main(int argc, char **argv) -> int
 		VkBuffer verticesBuffers [] = {verticesBuffer};
 		VkDeviceSize offsets [] = {0};
 		vkCmdBindVertexBuffers (graphicsCommandBuffer, 0, 1, verticesBuffers, offsets);
-		static auto startTime = std::chrono::high_resolution_clock::now();
+		static auto const startTime = std::chrono::high_resolution_clock::now();
 		auto currentTime = std::chrono::high_resolution_clock::now();
 		float time = std::chrono::duration <float,std::chrono::seconds::period> (currentTime - startTime).count ();
 		auto pushConstants = push_constants
@@ -1479,6 +1678,9 @@ auto main(int argc, char **argv) -> int
 	vkFreeMemory (device, uniformBufferMemory, nullptr);
 
 	vkDestroySwapchainKHR (device, swapchain, nullptr);
+
+	vkDestroyImage (device, textureImage, nullptr);
+	vkFreeMemory (device, textureImageMemory, nullptr);
 
 	vkDestroyDescriptorSetLayout (device, descriptorSetLayout, nullptr);
 
