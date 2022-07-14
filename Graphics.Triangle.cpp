@@ -55,11 +55,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBits
 }
 #endif
 
-struct vertex
-{
-	glm::vec2 pos;
-	glm::vec3 color;
-};
+
 
 
 
@@ -620,6 +616,13 @@ auto main(int argc, char **argv) -> int
 
 	VkPipelineShaderStageCreateInfo shaderStageCreateInfos[] = {vertShaderStageCreateInfo, fragShaderStageCreateInfo};
 	
+	struct vertex
+	{
+		glm::vec2 pos;
+		glm::vec3 color;
+		glm::vec2 texCoord;
+	};
+
 	auto vertexBindingDescription = VkVertexInputBindingDescription
 	{
 		.binding = 0,
@@ -627,7 +630,7 @@ auto main(int argc, char **argv) -> int
 		.inputRate = VK_VERTEX_INPUT_RATE_VERTEX
 	};
 
-	auto vertexAttributeDescriptions = std::array <VkVertexInputAttributeDescription, 2>
+	auto vertexAttributeDescriptions = std::array <VkVertexInputAttributeDescription, 3>
 	{
 		VkVertexInputAttributeDescription{
 			.binding = 0,
@@ -641,6 +644,14 @@ auto main(int argc, char **argv) -> int
 			.location = 1,
 			.format = VK_FORMAT_R32G32B32_SFLOAT,
 			.offset = offsetof (vertex, color)
+		},
+
+		VkVertexInputAttributeDescription
+		{
+			.binding = 0,
+			.location = 2,
+			.format = VK_FORMAT_R32G32_SFLOAT,
+			.offset = offsetof (vertex, texCoord)
 		}
 	};
 
@@ -760,11 +771,20 @@ auto main(int argc, char **argv) -> int
 
 	};
 
+	auto samplerLayoutBinding = VkDescriptorSetLayoutBinding
+	{
+		.binding = 0,
+		.descriptorCount = 1,
+		.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+		.pImmutableSamplers = nullptr,
+		.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT
+	};
+
 	auto descriptorSetLayoutCreateInfo = VkDescriptorSetLayoutCreateInfo
 	{
 		.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
 		.bindingCount = 1,
-		.pBindings = &descriptorSetLayoutBinding
+		.pBindings = &samplerLayoutBinding
 	};
 
 	auto descriptorSetLayout = VkDescriptorSetLayout {};
@@ -792,8 +812,8 @@ auto main(int argc, char **argv) -> int
 	auto layoutCreateInfo = VkPipelineLayoutCreateInfo
 	{
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
-		.setLayoutCount = 0,
-		.pSetLayouts = nullptr,//&descriptorSetLayout,
+		.setLayoutCount = 1,
+		.pSetLayouts = &descriptorSetLayout,
 		.pushConstantRangeCount = 1,
 		.pPushConstantRanges = &pushConstantRange
 	};
@@ -867,29 +887,12 @@ auto main(int argc, char **argv) -> int
 
 
 
-	auto transferCommandPoolCreateInfo = VkCommandPoolCreateInfo 
-	{
-		.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
-		.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
-		.queueFamilyIndex = transferFamily.value()
-	};
-
-	auto transferCommandPool = VkCommandPool {};
-
-	if (vkCreateCommandPool(device, &transferCommandPoolCreateInfo, nullptr, &transferCommandPool) != VK_SUCCESS)
-	{
-		std::cout << "error >> failed to create transfer command pool" << std::endl;
-		return EXIT_FAILURE;
-	}
-
-
-
 	auto vertices = std::vector <vertex>
 	{
-		{{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-		{{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
-		{{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
-		{{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}
+		{{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
+		{{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+		{{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
+		{{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}}
 	};
 
 	//////////////////////////////////////////////////////////////
@@ -1338,6 +1341,21 @@ auto main(int argc, char **argv) -> int
 
 
 
+	auto transferCommandPoolCreateInfo = VkCommandPoolCreateInfo 
+	{
+		.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
+		.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
+		.queueFamilyIndex = transferFamily.value()
+	};
+
+	auto transferCommandPool = VkCommandPool {};
+
+	if (vkCreateCommandPool(device, &transferCommandPoolCreateInfo, nullptr, &transferCommandPool) != VK_SUCCESS)
+	{
+		std::cout << "error >> failed to create transfer command pool" << std::endl;
+		return EXIT_FAILURE;
+	}
+
 	
 	// copy data from staging buffer to device buffer
 
@@ -1462,6 +1480,116 @@ auto main(int argc, char **argv) -> int
 
 	vkDestroyBuffer (device, indicesStagingBuffer, nullptr);
 	vkFreeMemory (device, indicesStagingBufferMemory, nullptr);
+
+
+
+	auto textureImageViewCreateInfo = VkImageViewCreateInfo
+	{
+		.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+		.image = textureImage,
+		.viewType = VK_IMAGE_VIEW_TYPE_2D,
+		.format = VK_FORMAT_R8G8B8A8_SRGB,
+		.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+		.subresourceRange.baseMipLevel = 0,
+		.subresourceRange.levelCount = 1,
+		.subresourceRange.baseArrayLayer = 0,
+		.subresourceRange.layerCount = 1
+	};
+
+	auto textureImageView = VkImageView {};
+
+	if (vkCreateImageView (device, &textureImageViewCreateInfo, nullptr, &textureImageView) != VK_SUCCESS)
+	{
+		std::cout << "error >> failed to texture image view" << std::endl;
+		return EXIT_FAILURE;
+	}
+
+
+	auto textureSamplerCreateInfo = VkSamplerCreateInfo
+	{
+		.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
+		.magFilter = VK_FILTER_LINEAR,
+		.minFilter = VK_FILTER_LINEAR,
+		.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+		.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+		.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+		.anisotropyEnable = VK_TRUE, // or VK_FALSE
+		.maxAnisotropy = deviceProperties.limits.maxSamplerAnisotropy, // or 1.0f
+		.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK,
+		.unnormalizedCoordinates = VK_FALSE,
+		.compareEnable = VK_FALSE,
+		.compareOp = VK_COMPARE_OP_ALWAYS,
+		.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR,
+		.mipLodBias = 0.0f,
+		.minLod = 0.0f,
+		.maxLod = 0.0f
+	};
+
+	auto textureSampler = VkSampler {};
+
+	if (vkCreateSampler (device, &textureSamplerCreateInfo, nullptr, &textureSampler) != VK_SUCCESS) 
+	{
+		std::cout << "error >> failed to create texture sampler" << std::endl;
+		return EXIT_FAILURE;
+	}
+
+	auto textureSamplerDescriptorPoolSize = VkDescriptorPoolSize
+	{
+		.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+		.descriptorCount = 1
+	};
+
+	auto textureSamplerDescriptorPoolCreateInfo = VkDescriptorPoolCreateInfo
+	{
+		.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
+		.poolSizeCount = 1,
+		.pPoolSizes = &textureSamplerDescriptorPoolSize,
+		.maxSets = 1
+	};
+
+	auto textureSamplerDescriptorPool = VkDescriptorPool {};
+
+	if (vkCreateDescriptorPool (device, &textureSamplerDescriptorPoolCreateInfo, nullptr, &textureSamplerDescriptorPool) != VK_SUCCESS)
+	{
+		std::cout << "error >> failed to create texture sampler descriptor pool" << std::endl;
+		return EXIT_FAILURE;
+	}
+
+	auto textureSamplerDescriptorSetAllocateInfo = VkDescriptorSetAllocateInfo
+	{
+		.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
+		.descriptorPool = textureSamplerDescriptorPool,
+		.descriptorSetCount = 1,
+		.pSetLayouts = &descriptorSetLayout
+	};
+
+	auto textureSamplerDescriptorSet = VkDescriptorSet {};
+
+	if (vkAllocateDescriptorSets (device, &textureSamplerDescriptorSetAllocateInfo, &textureSamplerDescriptorSet) != VK_SUCCESS)
+	{
+		std::cout << "error >> failed to allocate texture sampler descriptor set" << std::endl;
+		return EXIT_FAILURE;
+	}
+
+	auto textureSamplerDescriptorImageCreateInfo = VkDescriptorImageInfo
+	{
+		.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+		.imageView = textureImageView,
+		.sampler = textureSampler
+	};
+
+	auto textureSamplerWriteDescriptorSet = VkWriteDescriptorSet
+	{
+		.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+		.dstSet = textureSamplerDescriptorSet,
+		.dstBinding = 0,
+		.dstArrayElement = 0,
+		.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+		.descriptorCount = 1,
+		.pImageInfo = &textureSamplerDescriptorImageCreateInfo
+	};
+
+	vkUpdateDescriptorSets (device, 1, &textureSamplerWriteDescriptorSet, 0, nullptr);
 
 
 
@@ -1598,7 +1726,9 @@ auto main(int argc, char **argv) -> int
 			.view = glm::lookAt (glm::vec3 (2.0f, 2.0f, 2.0f), glm::vec3 (0.0f,0.0f, 0.0f), glm::vec3 (0.0f, 0.0f, 1.0f)),
 			.proj = glm::perspective (glm::radians (45.0f), surfaceExtent.width / (float) surfaceExtent.height, 0.1f, 10.0f)
 		};
+		// pushConstants.proj[1][1] *= -1;
 		vkCmdPushConstants (graphicsCommandBuffer, layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof (push_constants), &pushConstants);
+		vkCmdBindDescriptorSets (graphicsCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, 1, &textureSamplerDescriptorSet, 0, nullptr);
 		vkCmdBindIndexBuffer (graphicsCommandBuffer, indicesBuffer, 0, VK_INDEX_TYPE_UINT16);
 		vkCmdDrawIndexed (graphicsCommandBuffer, static_cast <uint32_t> (indices.size()), 1, 0, 0, 0);
 		vkCmdEndRenderPass (graphicsCommandBuffer);
@@ -1679,9 +1809,13 @@ auto main(int argc, char **argv) -> int
 
 	vkDestroySwapchainKHR (device, swapchain, nullptr);
 
+	vkDestroySampler (device, textureSampler, nullptr);
+	vkDestroyImageView (device, textureImageView, nullptr);
+
 	vkDestroyImage (device, textureImage, nullptr);
 	vkFreeMemory (device, textureImageMemory, nullptr);
 
+	vkDestroyDescriptorPool (device, textureSamplerDescriptorPool, nullptr);
 	vkDestroyDescriptorSetLayout (device, descriptorSetLayout, nullptr);
 
 	vkDestroyBuffer (device, indicesBuffer, nullptr);
