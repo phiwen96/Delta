@@ -24,7 +24,7 @@
 #include FT_FREETYPE_H
 
 // import Delta;
-import Delta.Graphics;
+// import Delta.Graphics;
 
 
 
@@ -64,48 +64,8 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBits
 
 auto main(int argc, char **argv) -> int
 {
-	auto freetypeLibrary = FT_Library {};
-
-	if (FT_Init_FreeType (&freetypeLibrary))
-	{
-		std::cout << "error >> failed to initialize freetype library" << std::endl;
-		return EXIT_FAILURE;
-	} 
-
-	auto face = FT_Face {};
-
-	if (FT_New_Face (freetypeLibrary, (std::string (FONTS_DIR) + "/Times new Roman.ttf").c_str (), 0, &face))
-	{
-		std::cout << "error >> failed to load font from file" << std::endl;
-		return EXIT_FAILURE;
-	}
-
-	if (FT_Set_Pixel_Sizes (face, 0, 50))
-	{
-		std::cout << "error >> failed to set font size" << std::endl;
-		return EXIT_FAILURE;
-	}
-
-	auto glyphIndex = FT_Get_Char_Index (face, 'F');
-
-	if (FT_Load_Glyph (face, glyphIndex, FT_LOAD_DEFAULT))
-	{
-		std::cout << "error >> failed to load glyph" << std::endl;
-		return EXIT_FAILURE;
-	}
-
-	if (FT_Render_Glyph (face->glyph, FT_RENDER_MODE_NORMAL))
-	{
-		std::cout << "error >> failed to render glyph" << std::endl;
-		return EXIT_FAILURE;
-	}
-
-	auto fontWidth = face->glyph->bitmap.width;
-	auto fontHeight = face->glyph->bitmap.rows;
-	auto fontBufferSize = fontWidth * fontHeight * 4;
-	auto* fontData = face->glyph->bitmap.buffer;
 	
-
+	// return 0;
 	// return 0;
 
 	/* Initialize the library */
@@ -607,7 +567,7 @@ auto main(int argc, char **argv) -> int
 	}
 
 
-	auto vertShaderCode = readByteFile ("Graphics.Triangle.vert.spv");
+	auto vertShaderCode = readByteFile ("Graphics.Text.vert.spv");
 
 	auto vertShaderModuleCreateInfo = VkShaderModuleCreateInfo 
 	{
@@ -624,7 +584,7 @@ auto main(int argc, char **argv) -> int
 		return EXIT_FAILURE;
 	}
 
-	auto fragShaderCode = readByteFile ("Graphics.Triangle.frag.spv");
+	auto fragShaderCode = readByteFile ("Graphics.Text.frag.spv");
 
 	auto fragShaderModuleCreateInfo = VkShaderModuleCreateInfo 
 	{
@@ -1088,6 +1048,8 @@ auto main(int argc, char **argv) -> int
 		std::cout << "error >> failed to load texture image" << std::endl;
 		return EXIT_FAILURE;
 	}
+
+	
 
 	auto textureImageStagingBufferCreateInfo = VkBufferCreateInfo 
 	{

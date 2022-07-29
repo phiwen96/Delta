@@ -16,6 +16,7 @@ layout (location = 1) out vec2 fragTexCoord;
 void main ()
 {
 	gl_Position = pushConstants.proj * pushConstants.view * pushConstants.model * vec4 (inPosition, 1.0);
+	//gl_Position = vec4 (inPosition, 1.0);
 	fragColor = inColor;
 	fragTexCoord = inTexCoord;
 }

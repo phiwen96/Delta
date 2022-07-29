@@ -1,11 +1,17 @@
 export module Delta;
 
 export import Delta.String;
+export import Delta.Graphics;
+
+export import std;
+#ifdef MACOS
+export import Darwin;
+#endif
 
 // static_assert (Array <char[10]>);
 // static_assert (Range <char[10]>);
 // static_assert (AllOf <>);
-
+export auto runk () -> int{return 5;}
 
 export template <Sentinel T>
 requires(not Array<T>)
@@ -85,3 +91,19 @@ static_assert (Same <element_type <int(&)[10]>, int>);
 // static_assert (AllOf <[]<typename T>{return Sentinel <T>;}, product_type <pointer_types, char_types>>);
 // static_assert (not Array <char*>);
 
+
+export auto operator += (auto & v, auto && t) noexcept -> auto& requires requires {
+	v.push_back (std::forward <decltype (t)> (t));
+} {
+	v.push_back (std::move (t));
+	return v;
+}
+
+export template <typename T>
+auto operator << (std::ostream& os, std::vector <T> const& v) noexcept -> std::ostream& requires requires (T const & t) {
+	std::cout << t;
+} {
+	for (auto const& i : v)
+		std::cout << i << std::endl;
+	return os;
+}

@@ -17,7 +17,7 @@ auto input = std::string{};
 
 auto main(int argc, char **argv) -> int
 {
-
+	runk();
 	// no input
 	if (argc < 2)
 	{
