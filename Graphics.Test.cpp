@@ -81,11 +81,11 @@ auto main (int argc, char** argv) -> int {
 	window.set_resize_callback (resize_callback);
 
 	// std::cout << make_names (get_instance_extension_properties ()) << std::endl;
-	// std::cout << make_names (get_instance_layer_properties ()) << std::endl;
+	// std::cout << make_names (get_instance_layer_properties ()) << std::endl << std::endl;;
 
 	auto const instance = Details <VkInstance> {
 		.layers = {"VK_LAYER_KHRONOS_validation"/*, "VK_LAYER_LUNARG_api_dump"*/},
-		.extensions = {"VK_KHR_portability_enumeration", "VK_KHR_surface", "VK_EXT_metal_surface", "VK_MVK_macos_surface"/*"VK_KHR_get_physical_device_properties2"*/}
+		.extensions = {"VK_KHR_portability_enumeration", "VK_KHR_surface", "VK_EXT_metal_surface", "VK_MVK_macos_surface", "VK_KHR_get_physical_device_properties2"}
 	} ();
 
 	auto const surface = Details <VkSurfaceKHR> {
@@ -100,15 +100,14 @@ auto main (int argc, char** argv) -> int {
 		}
 	} ();
 
-	// std::cout << make_names (get_extension_properties (physical_device.handle)) << std::endl;
+	// std::cout << make_names (get_layer_properties (physical_device.handle)) << std::endl;
 	// VkAccelerationStructureGeometryTrianglesDataKHR ddd {};
 	// vkCmdBuildAccelerationStructuresKHR ();
-
 	auto device = Details <LogicalDevice> {
-		.physical_device = physical_device.handle,
+		.physical_device = physical_device,
 		.surface = surface,
 		.extensions = {"VK_KHR_swapchain", "VK_KHR_portability_subset", "VK_KHR_dynamic_rendering", "VK_KHR_depth_stencil_resolve", "VK_KHR_create_renderpass2"},
-		.features = {},
+		.features = {.samplerAnisotropy = true},
 		.layers = {}
 	} ();
 
@@ -185,7 +184,7 @@ auto main (int argc, char** argv) -> int {
 	auto swapchain = swapchain_details ();
 
 	auto graphics_pipeline_details = Details <GraphicsPipeline> {
-		.device = device.handle,
+		.device = device,
 		.render_pass = render_pass.handle,
 		.image_format = VK_FORMAT_B8G8R8A8_SRGB,
 		.shaders = {{"Graphics.Test.vert.spv", VK_SHADER_STAGE_VERTEX_BIT}, {"Graphics.Test.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT}},
@@ -194,13 +193,12 @@ auto main (int argc, char** argv) -> int {
 				.binding = 0,
 				.stride = sizeof (Vertex),
 				.inputRate = VK_VERTEX_INPUT_RATE_VERTEX
-			}
-		},
+			}},
 		.vertex_attribute_descriptions = {
 			{
 				.binding = 0,
 				.location = 0,
-				.format = VK_FORMAT_R32G32_SFLOAT,
+				.format = VK_FORMAT_R32G32B32_SFLOAT,
 				.offset = offsetof (Vertex, pos)
 			},
 			{
@@ -208,8 +206,13 @@ auto main (int argc, char** argv) -> int {
 				.location = 1,
 				.format = VK_FORMAT_R32G32B32_SFLOAT,
 				.offset = offsetof (Vertex, color)
-			}
-		},
+			},
+			{
+				.binding = 0,
+				.location = 2,
+				.format = VK_FORMAT_R32G32_SFLOAT,
+				.offset = offsetof (Vertex, tex_coord)
+			}},
 		.input_assembly = {
 			.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
 			.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
@@ -265,18 +268,27 @@ auto main (int argc, char** argv) -> int {
 			.logicOp = VK_LOGIC_OP_COPY,
 			.blendConstants = {0.0f, 0.0f, 0.0f, 0.0f}},
 		.dynamic_states = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR, VK_DYNAMIC_STATE_LINE_WIDTH},
+		.descriptor_set_layout_bindings = {
+			{
+				.binding = 0,
+				.descriptorCount = 1,
+				.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+				.pImmutableSamplers = nullptr,
+				.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT
+			}},
 		.push_constant_ranges = {
 			{
 				.offset = 0,
 				.size = sizeof (mvp_push_constants),
 				.stageFlags = VK_SHADER_STAGE_VERTEX_BIT
-			}
-		}
+			}}
 	};
-
+	// auto hh = __builtin_choose_expr (0 == 0, true, false);
+	// static_assert (Convertible_to <int, std::string>);
+	// Convertible_to <int> auto ss = std::string {};
 	auto graphics_pipeline = graphics_pipeline_details ();
 	
-	auto presentation_queue = [&] -> VkQueue {
+	auto presentation_queue = [&] -> Queue {
 		for (auto const & queue_family : device.queue_families) {
 			if (queue_family.present_support) {
 				return queue_family.handles.front ();
@@ -286,7 +298,7 @@ auto main (int argc, char** argv) -> int {
 		exit (-1);
 	} ();
 
-	auto graphics_queue = [&] -> VkQueue {
+	auto graphics_queue = [&] -> Queue {
 		for (auto const & queue_family : device.queue_families) {
 			if (queue_family.supports_graphics_operations ()) {
 				return queue_family.handles.front ();
@@ -296,7 +308,7 @@ auto main (int argc, char** argv) -> int {
 		exit (-1);
 	} ();
 
-	auto transfer_queue = [&] -> VkQueue {
+	auto transfer_queue = [&] -> Queue {
 		for (auto i = device.queue_families.size () - 1; i >= 0; --i){
 			if (device.queue_families[i].supports_graphics_operations ()) {
 				return device.queue_families[i].handles.front ();
@@ -334,27 +346,22 @@ auto main (int argc, char** argv) -> int {
 	};
 
 	auto vertices = std::vector <Vertex> {
-		{{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-		{{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
-		{{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}
+		{{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
+		{{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+		{{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
+		{{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
+		{{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}},
+		{{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
+
+		{{-0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
+		{{0.5f, -0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+		{{0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
+		{{0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
+		{{-0.5f, 0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}},
+		{{-0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}}
 	};
 
-	auto host_visible_vertex_buffer = Details <Buffer> {
-		.device = device,
-		.size = sizeof (vertices [0]) * vertices.size (),
-		.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-		.sharing_mode = VK_SHARING_MODE_EXCLUSIVE
-	} ();
-
-	auto host_visible_vertex_buffer_memory = Details <DeviceMemory> {
-		.physical_device = physical_device,
-		.device = device,
-		.size = host_visible_vertex_buffer.get_memory_requirements ().size,
-		.flags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
-	} ();
-
-	host_visible_vertex_buffer_memory.bind (host_visible_vertex_buffer).paste (vertices.data(), host_visible_vertex_buffer.get_memory_requirements ().size);
-	
+		
 
 	auto device_local_vertex_buffer = Details <Buffer> {
 		.device = device,
@@ -371,11 +378,77 @@ auto main (int argc, char** argv) -> int {
 	} ();
 
 	device_local_vertex_buffer_memory.bind (device_local_vertex_buffer);
-	device_local_vertex_buffer.copy_from (host_visible_vertex_buffer);
 
-	host_visible_vertex_buffer.destroy ();
-	host_visible_vertex_buffer_memory.destroy ();
-	
+	{
+		auto host_visible_vertex_buffer = Details <Buffer> {
+			.device = device,
+			.size = sizeof (vertices [0]) * vertices.size (),
+			.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+			.sharing_mode = VK_SHARING_MODE_EXCLUSIVE
+		} ();
+
+		auto host_visible_vertex_buffer_memory = Details <DeviceMemory> {
+			.physical_device = physical_device,
+			.device = device,
+			.size = host_visible_vertex_buffer.get_memory_requirements ().size,
+			.flags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
+		} ();
+
+		host_visible_vertex_buffer_memory.bind (host_visible_vertex_buffer).paste (vertices.data(), host_visible_vertex_buffer.get_memory_requirements ().size);
+		device_local_vertex_buffer.copy_from (host_visible_vertex_buffer);
+
+		host_visible_vertex_buffer.destroy ();
+		host_visible_vertex_buffer_memory.destroy ();
+	}
+
+	auto texture_image = Details <Image> {
+		.physical_device = physical_device,
+		.device = device,
+		.format = VK_FORMAT_R8G8B8A8_SRGB,
+		.path = "Graphics.Triangle.Texture.Lion.jpeg"
+	} ();
+
+	auto texture_sampler = Details <Sampler> {
+		.device = device
+	} ();
+
+	auto descriptor_pool = Details <DescriptorPool> {
+		.device = device,
+		.pool_sizes = {
+			{
+				.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+				.descriptorCount = (uint32_t) max_frames_in_flight
+			}
+		},
+		.max_sets = (uint32_t) max_frames_in_flight
+	} ();
+
+
+	auto descriptor_sets = descriptor_pool.allocate ({max_frames_in_flight, graphics_pipeline.descriptor_set_layout});
+	{
+		auto const image_info = VkDescriptorImageInfo {
+			.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+			.imageView = texture_image.view,
+			.sampler = texture_sampler.handle
+		};
+
+		auto descriptor_writes = std::vector <VkWriteDescriptorSet> {
+			{
+				.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+				.dstBinding = 0,
+				.dstArrayElement = 0,
+				.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+				.descriptorCount = 1,
+				.pImageInfo = &image_info,
+			}
+		};
+
+		for (auto const & descriptor_set : descriptor_sets){
+			descriptor_writes[0].dstSet = descriptor_set;
+			vkUpdateDescriptorSets (device.handle, static_cast <uint32_t> (descriptor_writes.size()), descriptor_writes.data(), 0, nullptr);
+		}
+	}
+
 	auto const rendering_tape = [&] (uint32_t image_index) noexcept -> void {
 
 		static auto startTime = std::chrono::high_resolution_clock::now();
@@ -385,6 +458,7 @@ auto main (int argc, char** argv) -> int {
 		pushConstants.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f),glm::vec3(0.0f, 0.0f, 1.0f));
 		pushConstants.view =  glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f,0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 		pushConstants.proj = glm::perspective(glm::radians(45.0f),swapchain.image_extent.width / (float) swapchain.image_extent.height, 0.1f,10.0f);
+		
 		auto const clear_value = VkClearValue {
 			{{0.0f, 0.0f, 0.0f, 1.0f}}
 		};
@@ -403,7 +477,7 @@ auto main (int argc, char** argv) -> int {
 
 		vkCmdBeginRenderPass (draw_command_buffer [current_frame].handle, &render_pass_begin_info, VK_SUBPASS_CONTENTS_INLINE);
 		vkCmdBindPipeline (draw_command_buffer [current_frame].handle, VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline.handle);
-		auto const viewports = std::array <VkViewport, 1> {
+		draw_command_buffer [current_frame].set_viewport (
 			VkViewport {
 				.x = 0.0f,
 				.y = 0.0f,
@@ -412,39 +486,23 @@ auto main (int argc, char** argv) -> int {
 				.minDepth = 0.0f,
 				.maxDepth = 1.0f
 			}
-		};
-		auto const scissors = std::array <VkRect2D, 1> {
+		);
+		draw_command_buffer [current_frame].set_scissor (
 			VkRect2D {
 				.offset = {0, 0},
 				.extent = swapchain.image_extent
 			}
-		};
-		vkCmdSetViewport (draw_command_buffer [current_frame].handle, 0, (uint32_t) viewports.size(), viewports.data());
-		vkCmdSetScissor (draw_command_buffer [current_frame].handle, 0, (uint32_t) scissors.size(), scissors.data());
-		vkCmdPushConstants (draw_command_buffer [current_frame].handle, graphics_pipeline.layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof (mvp_push_constants), &pushConstants);
+		);
 		VkBuffer vertex_buffers[] = {device_local_vertex_buffer.handle};
 		VkDeviceSize offsets[] = {0};
 		vkCmdBindVertexBuffers (draw_command_buffer [current_frame].handle, 0, 1, vertex_buffers, offsets);
-		vkCmdDraw (draw_command_buffer [current_frame].handle, static_cast<uint32_t> (vertices.size()), 1,0, 0);
+
+		vkCmdPushConstants (draw_command_buffer [current_frame].handle, graphics_pipeline.layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof (mvp_push_constants), &pushConstants);
+		
+		vkCmdBindDescriptorSets(draw_command_buffer [current_frame].handle, VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline.layout, 0, 1, &descriptor_sets [current_frame], 0, nullptr);
+		vkCmdDraw (draw_command_buffer [current_frame].handle, static_cast<uint32_t> (vertices.size()), 1, 0, 0);
 		vkCmdEndRenderPass (draw_command_buffer [current_frame].handle);
 	};
-
-	auto texture_image = Details <Image> {
-		.physical_device = physical_device,
-		.device = device,
-		.format = VK_FORMAT_R8G8B8A8_SRGB,
-		.path = "Graphics.Triangle.Texture.Lion.jpeg"
-	} ();
-
-	auto texture_image_memory = Details <DeviceMemory> {
-		.physical_device = physical_device,
-		.device = device,
-		.size = texture_image.get_memory_requirements ().size,
-		.flags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
-	} ();
-
-	texture_image.bind (texture_image_memory);
-
 
 	auto image_ready_for_rendering = Details <std::vector <VkSemaphore>> {.device = device.handle, .count = max_frames_in_flight} ();
 	auto image_finished_rendering = Details <std::vector <VkSemaphore>> {.device = device.handle, .count = max_frames_in_flight} ();
@@ -483,8 +541,8 @@ auto main (int argc, char** argv) -> int {
 
 		
 		
-		vkWaitForFences (device.handle, 1, &command_buffer_in_use [current_frame], VK_TRUE, UINT64_MAX);
-		vkResetFences (device.handle, 1, &command_buffer_in_use [current_frame]);
+		device.wait_for_fence (command_buffer_in_use [current_frame]);
+		device.reset_fence (command_buffer_in_use [current_frame]);
 
 		draw_command_buffer [current_frame].reset().record (rendering_tape, image_index);
 
@@ -500,12 +558,43 @@ auto main (int argc, char** argv) -> int {
 			.commandBufferCount = 1,
 			.pCommandBuffers = &draw_command_buffer [current_frame].handle,
 		};
+		vkQueueSubmit (graphics_queue.handle, 1, &submit_info, command_buffer_in_use [current_frame]);
+		// auto const wait_semaphore_infos = std::array <VkSemaphoreSubmitInfo, 1> {
+		// 	VkSemaphoreSubmitInfo {
+		// 		.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
+		// 		.semaphore = image_ready_for_rendering [current_frame],
+		// 		.stageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
+		// 	}
+		// };
+
+		// auto const signal_semaphore_infos = std::array <VkSemaphoreSubmitInfo, 1> {
+		// 	VkSemaphoreSubmitInfo {
+		// 		.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
+		// 		.semaphore = image_finished_rendering [current_frame],
+		// 		.stageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
+		// 	}
+		// };
+
+		// auto const command_buffer_infos = std::array <VkCommandBufferSubmitInfo, 1> {
+		// 	VkCommandBufferSubmitInfo {
+		// 		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO,
+		// 		.commandBuffer = draw_command_buffer [current_frame].handle
+		// 	}
+		// };
+
+		// auto const submit_info = VkSubmitInfo2 {
+		// 	.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+		// 	.waitSemaphoreInfoCount = (uint32_t) wait_semaphore_infos.size(),
+		// 	.pWaitSemaphoreInfos = wait_semaphore_infos.data(),
+		// 	.signalSemaphoreInfoCount = (uint32_t) signal_semaphore_infos.size(),
+		// 	.pSignalSemaphoreInfos = signal_semaphore_infos.data(),
+		// 	.commandBufferInfoCount = (uint32_t) command_buffer_infos.size(),
+		// 	.pCommandBufferInfos = command_buffer_infos.data(),
+		// };
 		
 		
-		if (vkQueueSubmit (graphics_queue, 1, &submit_info, command_buffer_in_use [current_frame]) != VK_SUCCESS) {
-			std::cout << "error >> failed to submit queue" << std::endl;
-			exit (-1);
-		}
+		// graphics_queue.submit (submit_info, command_buffer_in_use [current_frame]);
+		
 
 		auto const present_info = VkPresentInfoKHR {
 			.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
@@ -517,15 +606,14 @@ auto main (int argc, char** argv) -> int {
 			.pResults = nullptr
 		};
 
-		vkQueuePresentKHR (presentation_queue, &present_info);
+		presentation_queue.present (present_info);
 
 		current_frame = (current_frame + 1) % max_frames_in_flight;
-		
 		// break;
 		// ++i;
 		// if (i == 3) break;
 	}
-	vkDeviceWaitIdle (device.handle);
+	device.wait_idle ();
 
 	auto const destroy = [&] <typename T> (T a) noexcept -> void {
 		if constexpr (requires {a.destroy ();}) {
@@ -611,8 +699,10 @@ auto main (int argc, char** argv) -> int {
 	// destroy (views);
 	device_local_vertex_buffer.destroy ();
 	device_local_vertex_buffer_memory.destroy ();
+	texture_sampler.destroy ();
 	texture_image.destroy ();
-	texture_image_memory.destroy ();
+	descriptor_pool.destroy ();
+	// texture_image_memory.destroy ();
 	destroy (swapchain);
 	destroy (device);
 	destroy (surface);

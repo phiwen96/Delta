@@ -47,26 +47,26 @@ all: Graphics.Test
 
 # Delta.Concepts: 
 
-Delta.pcm: Delta.cpp Delta.Graphics.pcm Delta.String.pcm 
+Delta.pcm: Delta.cpp Delta.Graphics.pcm #Delta.String.pcm 
 	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@ 
 
-Delta.Graphics.pcm: Delta.Graphics.cpp
-	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) -c $< -Xclang -emit-module-interface -o $@ $(CXX_INCLUDES)
+Delta.Graphics.pcm: Delta.Graphics.cpp Delta.Range.pcm
+	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@ $(CXX_INCLUDES)
 
-Delta.String.pcm: Delta.String.cpp Delta.Array.pcm
+#Delta.String.pcm: Delta.String.cpp Delta.Array.pcm
+#	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@
+
+#Delta.Array.pcm: Delta.Array.cpp Delta.Range.pcm
+#	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@
+
+Delta.Range.pcm: Delta.Range.cpp #Delta.Iterator.pcm
 	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@
 
-Delta.Array.pcm: Delta.Array.cpp Delta.Range.pcm
-	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@
+#Delta.Iterator.pcm: Delta.Iterator.cpp Delta.Common.pcm
+#	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@
 
-Delta.Range.pcm: Delta.Range.cpp Delta.Iterator.pcm
-	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@
-
-Delta.Iterator.pcm: Delta.Iterator.cpp Delta.Common.pcm
-	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@
-
-Delta.Common.pcm: Delta.Common.cpp
-	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@
+#Delta.Common.pcm: Delta.Common.cpp
+#	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@
 
 # Delta.String.pcm: Delta.String.cpp Delta.Char.pcm Delta.Array.pcm 
 # 	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@

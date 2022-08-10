@@ -8,10 +8,8 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 export module Delta.Graphics;
+import Delta.Range;
 import std;
-
-template <typename T, typename U>
-concept Convertible_to = std::is_convertible_v <T, U>;
 
 export auto get_surface_capabilities (VkPhysicalDevice const & device, VkSurfaceKHR const & surface) noexcept -> VkSurfaceCapabilitiesKHR {
 	
@@ -404,6 +402,40 @@ export struct PhysicalDevice {
 		vkGetPhysicalDeviceMemoryProperties (handle, &mem_properties);
 		return mem_properties;
 	}
+
+	auto get_extension_properties () const noexcept -> std::vector <VkExtensionProperties> {
+		auto count = uint32_t {0};
+		vkEnumerateDeviceExtensionProperties (handle, nullptr, &count, nullptr);
+		auto extension_properties = std::vector <VkExtensionProperties> {count};
+		vkEnumerateDeviceExtensionProperties (handle, nullptr, &count, extension_properties.data());
+		return extension_properties;
+	}
+
+	auto get_queue_family_properties () const noexcept -> std::vector <VkQueueFamilyProperties> {
+		auto count = uint32_t {0};
+		vkGetPhysicalDeviceQueueFamilyProperties (handle, &count, nullptr);
+		auto queue_family_properties = std::vector <VkQueueFamilyProperties> {count};
+		vkGetPhysicalDeviceQueueFamilyProperties (handle, &count, queue_family_properties.data());
+		return queue_family_properties;
+	}
+
+	auto get_surface_support (uint32_t queue_family_index, VkSurfaceKHR const & surface) const noexcept -> VkBool32 {
+		auto result = VkBool32 {};
+		vkGetPhysicalDeviceSurfaceSupportKHR (handle, queue_family_index, surface, &result);
+		return result;
+	}
+
+	auto get_properties () const noexcept -> VkPhysicalDeviceProperties {
+		auto properties = VkPhysicalDeviceProperties {};
+		vkGetPhysicalDeviceProperties (handle, &properties);
+		return properties;
+	}
+
+	auto get_features () const noexcept -> VkPhysicalDeviceFeatures {
+		auto features = VkPhysicalDeviceFeatures {};
+		vkGetPhysicalDeviceFeatures (handle, &features);
+		return features;
+	}
 };
 
 export template <>
@@ -462,6 +494,19 @@ export struct CommandBuffer {
 		vkResetCommandBuffer (handle, flags);
 		return *this;
 	}
+
+	//////////////////////////////////
+	///	Commands
+	/////////////////////////////////
+	auto copy_buffer (VkBuffer const & src, VkBuffer const & dst, std::vector <VkBufferCopy> const & regions) const noexcept -> void {
+		vkCmdCopyBuffer (handle, src, dst, (uint32_t) regions.size(), regions.data());}
+	auto set_viewport (VkViewport const & viewport) const noexcept -> void {
+		vkCmdSetViewport (handle, 0, 1, &viewport);}
+	auto set_scissor (VkRect2D const & scissor) const noexcept -> void {
+		vkCmdSetScissor (handle, 0, 1, &scissor);}
+	// auto push_constants (VkPipelineLayout const & layout, VkShaderStageFlags const & flags)
+
+	
 };
 
 export struct CommandPool {
@@ -511,8 +556,28 @@ export struct CommandPool {
 	}
 };
 
+export struct Queue {
+	VkQueue handle;
+	
+	auto present (VkPresentInfoKHR const & info) noexcept -> void {
+		vkQueuePresentKHR (handle, &info);}
+	auto submit (VkSubmitInfo const & submits, VkFence const & fence = VK_NULL_HANDLE) const noexcept -> void {
+		if (vkQueueSubmit (handle, 1, &submits, fence) != VK_SUCCESS) {
+			std::cout << "error >> failed to submit queue" << std::endl;
+			exit (-1);
+		}}
+	auto submit (std::vector <VkSubmitInfo> const & submits, VkFence const & fence = VK_NULL_HANDLE) const noexcept -> void {
+		if (vkQueueSubmit (handle, (uint32_t) submits.size (), submits.data (), fence) != VK_SUCCESS) {
+			std::cout << "error >> failed to submit queue" << std::endl;
+			exit (-1);
+		}}
+	auto wait_idle () const noexcept -> void {
+		vkQueueWaitIdle (handle);
+	}
+};
+
 export struct QueueFamily {
-	std::vector <VkQueue> handles;
+	std::vector <Queue> handles;
 	CommandPool command_pool;
 	uint32_t index;
 	VkQueueFlags capabilities;
@@ -533,12 +598,16 @@ export struct QueueFamily {
 };
 
 export struct LogicalDevice {
+	PhysicalDevice const & physical_device;
 	VkDevice handle;
 	std::vector <QueueFamily> queue_families;
 
 	auto wait_idle () const noexcept -> void {
-		vkDeviceWaitIdle (handle);
-	}
+		vkDeviceWaitIdle (handle);}
+	auto wait_for_fence (VkFence const & fence, uint64_t timeout = UINT64_MAX) const noexcept -> void {
+		vkWaitForFences (handle, 1, &fence, VK_TRUE, timeout);}
+	auto reset_fence (VkFence const & fence) const noexcept -> void {
+		vkResetFences (handle, 1, &fence);}	
 	
 	auto make_command_buffer (VkQueueFlags const queue_capabilities, VkCommandBufferLevel const level) const noexcept -> decltype (auto) {
 		for (auto const & queue_family : queue_families) {
@@ -686,7 +755,7 @@ struct Details <std::vector <VkFence>> {
 
 export template <>
 struct Details <LogicalDevice> {
-	VkPhysicalDevice const & physical_device;
+	PhysicalDevice const & physical_device;
 	VkSurfaceKHR const & surface;
 	std::vector <char const*> const layers;
 	std::vector <char const*> const extensions;
@@ -694,7 +763,7 @@ struct Details <LogicalDevice> {
 
 	auto operator () () noexcept -> LogicalDevice {
 
-		auto const queue_family_properties = get_queue_family_properties (physical_device);
+		auto const queue_family_properties = physical_device.get_queue_family_properties ();
 		auto queue_create_infos = std::vector <VkDeviceQueueCreateInfo> {queue_family_properties.size()};
 		// auto queues = std::vector <Queue> {};
 		auto indices = std::vector <uint32_t> {};
@@ -756,15 +825,15 @@ struct Details <LogicalDevice> {
 
 		auto device = VkDevice {};
 		
-		if (vkCreateDevice (physical_device, &createInfo, nullptr, &device) != VK_SUCCESS) {
+		if (vkCreateDevice (physical_device.handle, &createInfo, nullptr, &device) != VK_SUCCESS) {
 			std::cout << "error >> failed to create device" << std::endl;
 			exit (-1);
 		}
 
 		for (auto & queue_family : queue_families) {
 			for (auto i = 0; i < queue_family.handles.size (); ++i) {
-				vkGetDeviceQueue (device, queue_family.index, static_cast <uint32_t> (i), &queue_family.handles [i]);
-				vkGetPhysicalDeviceSurfaceSupportKHR (physical_device, queue_family.index, surface, &queue_family.present_support);
+				vkGetDeviceQueue (device, queue_family.index, static_cast <uint32_t> (i), &queue_family.handles [i].handle);
+				queue_family.present_support = physical_device.get_surface_support (queue_family.index, surface);
 
 				auto const command_pool_create_info = VkCommandPoolCreateInfo {
 					.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
@@ -783,7 +852,7 @@ struct Details <LogicalDevice> {
 		// 	vkGetDeviceQueue (device, queues [i].family, indices [i], &queues [i].handle);
 		// }
 
-		return {device, queue_families};
+		return {physical_device, device, queue_families};
 	}
 };
 
@@ -968,19 +1037,22 @@ struct Details <RenderPass> {
 };
 
 export struct GraphicsPipeline {
-	VkDevice const & device;
+	LogicalDevice const & device;
 	VkPipeline handle;
+	VkDescriptorSetLayout descriptor_set_layout;
 	VkPipelineLayout layout;
 
 	auto destroy () noexcept -> void {
-		vkDestroyPipelineLayout (device, layout, nullptr);
-		vkDestroyPipeline (device, handle, nullptr);
+		vkDestroyDescriptorSetLayout (device.handle, descriptor_set_layout, nullptr);
+		vkDestroyPipelineLayout (device.handle, layout, nullptr);
+		vkDestroyPipeline (device.handle, handle, nullptr);
 	}
 };
 
 export struct Vertex {
-	glm::vec2 pos;
+	glm::vec3 pos;
 	glm::vec3 color;
+	glm::vec2 tex_coord;
 };
 
 export struct mvp_push_constants {
@@ -991,7 +1063,7 @@ export struct mvp_push_constants {
 
 export template <>
 struct Details <GraphicsPipeline> {
-	VkDevice const & device;
+	LogicalDevice const & device;
 	VkRenderPass const & render_pass;
 	VkFormat image_format;
 	std::vector <std::tuple <char const*, VkShaderStageFlagBits>> shaders;
@@ -1008,7 +1080,7 @@ struct Details <GraphicsPipeline> {
 	std::vector <VkPipelineColorBlendAttachmentState> color_blend_attachments;
 	VkPipelineColorBlendStateCreateInfo color_blend;
 	std::vector<VkDynamicState> dynamic_states;
-	std::vector <VkDescriptorSetLayout> descriptor_set_layouts;
+	std::vector <VkDescriptorSetLayoutBinding> descriptor_set_layout_bindings;
 	std::vector <VkPushConstantRange> push_constant_ranges;
 
 	auto operator () () noexcept -> GraphicsPipeline {
@@ -1016,7 +1088,7 @@ struct Details <GraphicsPipeline> {
 		auto shader_create_infos = std::vector <VkPipelineShaderStageCreateInfo> {shaders.size ()};
 		for (auto i = 0; i < shaders.size (); ++i) {
 			auto const & [path, stage] = shaders [i];
-			shader_modules [i] = make_shader_module (path, device);
+			shader_modules [i] = make_shader_module (path, device.handle);
 			shader_create_infos [i] = {
 				.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
 				nullptr,
@@ -1050,17 +1122,29 @@ struct Details <GraphicsPipeline> {
 			.stageFlags = VK_SHADER_STAGE_VERTEX_BIT
 		};
 
+		auto const descriptor_set_layout_create_info = VkDescriptorSetLayoutCreateInfo {
+			.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+			.bindingCount = (uint32_t) descriptor_set_layout_bindings.size(),
+			.pBindings = descriptor_set_layout_bindings.data()
+		};
+		auto descriptor_set_layout = VkDescriptorSetLayout {}; 
+
+		if (vkCreateDescriptorSetLayout (device.handle, &descriptor_set_layout_create_info, nullptr, &descriptor_set_layout) != VK_SUCCESS) {
+			std::cout << "error >> failed to create descriptor set layout" << std::endl;
+			exit (-1);
+		}
+
 		auto const pipeline_layout_create_info = VkPipelineLayoutCreateInfo {
 			.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
-			.setLayoutCount = static_cast <uint32_t> (descriptor_set_layouts.size ()),
-			.pSetLayouts = descriptor_set_layouts.data (),
+			.setLayoutCount = 1,
+			.pSetLayouts = &descriptor_set_layout,
 			.pushConstantRangeCount = static_cast <uint32_t> (push_constant_ranges.size ()),
 			.pPushConstantRanges = push_constant_ranges.data ()
 		};
 
 		auto pipeline_layout = VkPipelineLayout {};
 
-		if (vkCreatePipelineLayout(device, &pipeline_layout_create_info, nullptr, &pipeline_layout) != VK_SUCCESS) {
+		if (vkCreatePipelineLayout(device.handle, &pipeline_layout_create_info, nullptr, &pipeline_layout) != VK_SUCCESS) {
 			std::cout << "error >> failed to create pipeline layout" << std::endl;
 			exit (-1);
 		}
@@ -1101,15 +1185,15 @@ struct Details <GraphicsPipeline> {
 
 		auto pipeline = VkPipeline {};
 
-		if (vkCreateGraphicsPipelines (device, VK_NULL_HANDLE, 1, &create_info, nullptr, &pipeline) != VK_SUCCESS) {
+		if (vkCreateGraphicsPipelines (device.handle, VK_NULL_HANDLE, 1, &create_info, nullptr, &pipeline) != VK_SUCCESS) {
 			std::cout << "error >> failed to create graphics pipeline" << std::endl;
 		}
 
 		for (auto & i : shader_modules) {
-			vkDestroyShaderModule (device, i, nullptr);
+			vkDestroyShaderModule (device.handle, i, nullptr);
 		}
 
-		return {device, pipeline, pipeline_layout};
+		return {.device = device, .handle = pipeline, .descriptor_set_layout = descriptor_set_layout, .layout = pipeline_layout};
 	}
 	auto recreate (GraphicsPipeline & p) noexcept -> void {
 		p.destroy ();
@@ -1130,8 +1214,13 @@ export struct DeviceMemory {
 		vkUnmapMemory (device.handle, handle);
 	}
 
-	auto bind (auto & buffer, VkDeviceSize const & offset = 0) noexcept -> DeviceMemory& requires (std::is_same_v <decltype (buffer.handle), VkBuffer>) {
-		vkBindBufferMemory (device.handle, buffer.handle, handle, offset);
+	auto bind (VkBuffer const & buffer, VkDeviceSize const & offset = 0) noexcept -> DeviceMemory& {
+		vkBindBufferMemory (device.handle, buffer, handle, offset);
+		return *this;
+	}
+
+	auto bind (VkImage const & image, VkDeviceSize const & offset = 0) noexcept -> DeviceMemory& {
+		vkBindImageMemory (device.handle, image, handle, offset);
 		return *this;
 	}
 
@@ -1180,6 +1269,10 @@ export struct Buffer {
 	LogicalDevice const & device;
 	VkBuffer handle;	
 
+	operator VkBuffer& () noexcept {
+		return handle;
+	}
+
 	auto bind (DeviceMemory & device_memory, VkDeviceSize const & offset = 0) noexcept -> void {
 		vkBindBufferMemory (device.handle, handle, device_memory.handle, offset);
 	}
@@ -1194,20 +1287,20 @@ export struct Buffer {
 				auto command_buffer = queue_family.command_pool.make_command_buffer (VK_COMMAND_BUFFER_LEVEL_PRIMARY, device.handle);
 				auto & queue = queue_family.handles.back();
 				command_buffer.begin (VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-				auto const copy_region = VkBufferCopy {
-					.srcOffset = 0,
-					.dstOffset = 0,
-					.size = src.get_memory_requirements().size
-				};
-				vkCmdCopyBuffer (command_buffer.handle, src.handle, handle, 1, &copy_region);
+
+				command_buffer.copy_buffer (src.handle, handle, {VkBufferCopy {.srcOffset = 0, .dstOffset = 0, .size = src.get_memory_requirements().size}});
+				// vkCmdCopyBuffer (command_buffer.handle, src.handle, handle, 1, &copy_region);
 				command_buffer.end ();
-				auto const submit_info = VkSubmitInfo {
+	
+				// queue.submit (submit_info);
+				auto const s2 = VkSubmitInfo {
 					.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
 					.commandBufferCount = 1,
-					.pCommandBuffers = &command_buffer.handle	
+					.pCommandBuffers = &command_buffer.handle
 				};
-				vkQueueSubmit (queue, 1, &submit_info, VK_NULL_HANDLE);
-				vkQueueWaitIdle (queue);
+				vkQueueSubmit(queue.handle, 1, &s2, VK_NULL_HANDLE);
+				
+				queue.wait_idle ();
 				vkFreeCommandBuffers (device.handle, queue_family.command_pool.handle, 1, &command_buffer.handle);
 				return;
 			}
@@ -1250,6 +1343,8 @@ struct Details <Buffer> {
 export struct Image {
 	LogicalDevice const & device;
 	VkImage handle;
+	DeviceMemory device_local_memory;
+	VkImageView view;
 
 	auto bind (DeviceMemory & device_memory, VkDeviceSize const & offset = 0) noexcept -> void {
 		vkBindImageMemory (device.handle, handle, device_memory.handle, offset);
@@ -1260,7 +1355,9 @@ export struct Image {
 		return mem_requirements;
 	}
 	auto destroy () noexcept -> void {
+		vkDestroyImageView (device.handle, view, nullptr);
 		vkDestroyImage (device.handle, handle, nullptr);
+		device_local_memory.destroy ();
 	}
 };
 
@@ -1282,25 +1379,23 @@ struct Details <Image> {
 			exit (-1);
 		}
 
-		auto staging_buffer = Details <Buffer> {
+		auto host_visible_buffer = Details <Buffer> {
 			.device = device,
 			.size = image_size,
 			.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
 			.sharing_mode = VK_SHARING_MODE_EXCLUSIVE
 		} ();
 
-		auto staging_buffer_memory = Details <DeviceMemory> {
+		auto host_visible_buffer_memory = Details <DeviceMemory> {
 			.physical_device = physical_device,
 			.device = device,
 			.size = image_size,
 			.flags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
 		} ();
 
-		staging_buffer.bind (staging_buffer_memory);
-		memcpy (staging_buffer_memory.map_memory (image_size), pixels, static_cast <size_t> (image_size));
-		staging_buffer_memory.unmap_memory ();
-
+		host_visible_buffer_memory.bind (host_visible_buffer).paste (pixels, image_size);
 		stbi_image_free (pixels);
+
 
 		// createImage(texWidth, texHeight, VK_FORMAT_R8G8B8A8_SRGB,
 		// VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT |
@@ -1332,9 +1427,210 @@ struct Details <Image> {
 			exit (-1);
 		}
 
-		staging_buffer.destroy ();
-		staging_buffer_memory.destroy ();
+		// return 
 
-		return {device, image};
+		VkMemoryRequirements memRequirements;
+		vkGetImageMemoryRequirements (device.handle, image, &memRequirements);
+
+		auto device_local_memory = Details <DeviceMemory> {
+			.physical_device = physical_device,
+			.device = device,
+			.size = memRequirements.size,
+			.flags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
+		} ();
+
+		device_local_memory.bind (image);
+
+		auto queue_family = [&] -> QueueFamily {
+			for (auto & queue_family : device.queue_families) {
+				if (queue_family.supports_transfer_operations ()) {
+					return queue_family;
+				}
+			}
+			std::cout << "error >> failed to create image" << std::endl;
+			exit (-1);
+		} ();
+		auto & queue = queue_family.handles.front();
+		auto cmd_buffer = queue_family.command_pool.make_command_buffer (VK_COMMAND_BUFFER_LEVEL_PRIMARY, device.handle);
+		auto barrier = VkImageMemoryBarrier {
+			.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+			.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+			.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+			.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+			.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+			.image = image,
+			.subresourceRange = VkImageSubresourceRange {
+				.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+				.baseMipLevel = 0,
+				.levelCount = 1,
+				.baseArrayLayer = 0,
+				.layerCount = 1
+			},
+			.srcAccessMask = 0,
+			.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT
+		};
+		auto copy_region = VkBufferImageCopy {
+			.bufferOffset = 0,
+			.bufferRowLength = 0,
+			.bufferImageHeight = 0,
+			.imageSubresource = VkImageSubresourceLayers {
+				.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+				.mipLevel = 0,
+				.baseArrayLayer = 0,
+				.layerCount = 1
+			},
+			.imageOffset = {0, 0, 0},
+			.imageExtent = {(uint32_t) texWidth, (uint32_t) texHeight, 1}
+		};
+		auto source_stage = VkPipelineStageFlags {VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT};
+		auto destination_stage = VkPipelineStageFlags {VK_PIPELINE_STAGE_TRANSFER_BIT};
+
+		cmd_buffer.begin (VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+		vkCmdPipelineBarrier (cmd_buffer.handle, source_stage, destination_stage, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+		vkCmdCopyBufferToImage (cmd_buffer.handle, host_visible_buffer.handle, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy_region);
+		barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+		barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+		barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+		source_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+		destination_stage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+		vkCmdPipelineBarrier (cmd_buffer.handle, source_stage, destination_stage, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+		// cmd_buffer.copy_buffer (src.handle, handle, {VkBufferCopy {.srcOffset = 0, .dstOffset = 0, .size = src.get_memory_requirements().size}});
+				// vkCmdCopyBuffer (command_buffer.handle, src.handle, handle, 1, &copy_region);
+		cmd_buffer.end ();
+		auto const submit_info = VkSubmitInfo {
+			.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+			.commandBufferCount = 1,
+			.pCommandBuffers = &cmd_buffer.handle	
+		};
+
+		queue.submit (submit_info);
+	
+		queue.wait_idle ();
+
+		vkFreeCommandBuffers (device.handle, queue_family.command_pool.handle, 1, &cmd_buffer.handle);
+
+		host_visible_buffer.destroy ();
+		host_visible_buffer_memory.destroy ();
+
+		auto const view_create_info = VkImageViewCreateInfo {
+			.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+			.image = image,
+			.viewType = VK_IMAGE_VIEW_TYPE_2D,
+			.format = format,
+			.subresourceRange = {
+				.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+				.baseMipLevel = 0,
+				.levelCount = 1,
+				.baseArrayLayer = 0,
+				.layerCount = 1
+			}
+		};
+
+		auto view = VkImageView {};
+
+		if (vkCreateImageView (device.handle, &view_create_info, nullptr, &view) != VK_SUCCESS) {
+			std::cout << "error >> failed to create image view" << std::endl;
+			exit (-1);
+		}
+
+		return {.device = device, .handle = image, .device_local_memory = device_local_memory, .view = view};
+	}
+};
+
+export struct Sampler {
+	LogicalDevice const & device;
+	VkSampler handle;
+
+	auto destroy () const noexcept -> void {
+		vkDestroySampler (device.handle, handle, nullptr);
+	}
+};
+
+export template <>
+struct Details <Sampler> {
+	LogicalDevice const & device;
+
+	auto operator () () const noexcept -> Sampler {
+		auto const create_info = VkSamplerCreateInfo {
+			.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
+			.magFilter = VK_FILTER_LINEAR,
+			.minFilter = VK_FILTER_LINEAR,
+			.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+			.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+			.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+			.anisotropyEnable = VK_TRUE,
+			.maxAnisotropy = device.physical_device.get_properties().limits.maxSamplerAnisotropy,
+			.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK,
+			.unnormalizedCoordinates = VK_FALSE,
+			.compareEnable = VK_FALSE,
+			.compareOp = VK_COMPARE_OP_ALWAYS,
+			.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR,
+			.mipLodBias = 0.0f,
+			.minLod = 0.0f,
+			.maxLod = 0.0f
+		};
+
+		auto sampler = VkSampler {};
+
+		if (vkCreateSampler (device.handle, &create_info, nullptr, &sampler) != VK_SUCCESS) {
+			std::cout << "error >> failed to create sampler" << std::endl;
+			exit (-1);
+		}
+
+		return {.device = device, .handle = sampler};
+	}
+};
+
+export struct DescriptorPool {
+	LogicalDevice const & device;
+	VkDescriptorPool handle;
+
+	auto allocate (std::vector <VkDescriptorSetLayout> const & layouts) const noexcept -> std::vector <VkDescriptorSet> {
+		
+		auto const allocate_info = VkDescriptorSetAllocateInfo {
+			.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
+			.descriptorPool = handle,
+			.descriptorSetCount = (uint32_t) layouts.size (),
+			.pSetLayouts = layouts.data ()
+		};
+
+		auto descriptor_sets = std::vector <VkDescriptorSet> {layouts.size ()};
+
+		if (vkAllocateDescriptorSets (device.handle, &allocate_info, descriptor_sets.data()) != VK_SUCCESS) {
+			std::cout << "error >> failed to allocate descriptor sets" << std::endl;
+			exit (-1);
+		}
+
+		return descriptor_sets;
+	}
+	auto destroy () const noexcept -> void {
+		vkDestroyDescriptorPool (device.handle, handle, nullptr);
+	}
+};
+
+export template <>
+struct Details <DescriptorPool> {
+	LogicalDevice const & device;
+	std::vector <VkDescriptorPoolSize> pool_sizes;
+	uint32_t const & max_sets;
+
+	auto operator () () const noexcept -> DescriptorPool {
+
+		auto const create_info = VkDescriptorPoolCreateInfo {
+			.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
+			.poolSizeCount = (uint32_t) pool_sizes.size(),
+			.pPoolSizes = pool_sizes.data(),
+			.maxSets = max_sets,
+		};
+
+		auto handle = VkDescriptorPool {};
+
+		if (vkCreateDescriptorPool (device.handle, &create_info, nullptr, &handle) != VK_SUCCESS) {
+			std::cout << "error >> failed to create descriptor pool" << std::endl;
+			exit (-1);
+		}
+
+		return {.device = device, .handle = handle};
 	}
 };
