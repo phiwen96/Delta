@@ -75,7 +75,7 @@ auto main (int argc, char** argv) -> int {
 	vkGetPhysicalDeviceSurfaceSupportKHR (physical_device, indices.front (), surface, &present_support);
 		
 
-	auto const [swapchain, images, format, extent] = make_swapchain (
+	auto const [swapchain, images, image_format, extent] = make_swapchain (
 		device, 
 		surface, 
 		std::move (indices), 
@@ -85,9 +85,23 @@ auto main (int argc, char** argv) -> int {
 		choose_surface_presentation_mode (physical_device, surface)
 	);
 
-	auto const views = make_views (device, images, format);
+	auto const views = make (
+		image_view_details {
+			.format = image_format
+		}, 
+		images, 
+		device
+	);
 
-	auto const render_pass = make_render_pass (format, device);
+	auto const [render_pass, framebuffers] = make (
+		render_pass_details {
+
+		}
+	);
+
+	auto const render_pass = make_render_pass (image_format, device);
+
+	
 
 	// auto ss = graphics_pipeline_details {
 	// 	.vert_shader_module = make_shader_module ("App.Graphics.Info.vert.spv", device),

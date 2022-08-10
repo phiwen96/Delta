@@ -842,13 +842,6 @@ auto main(int argc, char **argv) -> int
 		return EXIT_FAILURE;
 	}
 
-	struct push_constants 
-	{
-		alignas (16) glm::mat4 model;
-		alignas (16) glm::mat4 view;
-		alignas (16) glm::mat4 proj;
-	};
-
 	auto pushConstantRange = VkPushConstantRange
 	{
 		.offset = 0,

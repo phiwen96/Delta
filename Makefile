@@ -5,7 +5,7 @@ CXX = clang++
 CXX_FLAGS = -D DEBUG -std=c++2b
 CXX_MODULES = -fmodules-ts -fmodules -fbuiltin-module-map -fimplicit-modules -fimplicit-module-maps -fprebuilt-module-path=.
 
-CXX_INCLUDES = -I/usr/local/include -I/opt/homebrew/Cellar/glm/0.9.9.8/include -I/opt/homebrew/Cellar/freetype/2.12.1/include/freetype2
+CXX_INCLUDES = -I/usr/local/include -I/opt/homebrew/Cellar/glm/0.9.9.8/include -I/opt/homebrew/Cellar/freetype/2.12.1/include/freetype2 #-I/Users/philipwenkel/VulkanSDK/1.3.216.0/macOS/include
 CXX_APP_FLAGS = -lpthread 
 
 ifeq ($(OS),Windows_NT) 
@@ -25,7 +25,7 @@ ifeq ($(detected_OS),Darwin)
 	# CXX_INCLUDES += -I/opt/homebrew/Cellar/glfw/3.3.7/include
 	# CXX_LIBS = -L/opt/homebrew/Cellar/glfw/3.3.7/lib -lglfw3
 	# CXX_LIBS = -lglfw3
-	CXX_LIBS = -L/opt/homebrew/Cellar/glfw/3.3.7/lib -lglfw -lvulkan -L/opt/homebrew/Cellar/freetype/2.12.1/lib -lfreetype
+	CXX_LIBS = -L/opt/homebrew/Cellar/glfw/3.3.7/lib -lglfw -lvulkan.1.3.216 -L/opt/homebrew/Cellar/freetype/2.12.1/lib -lfreetype -L/Users/philipwenkel/VulkanSDK/1.3.216.0/macOS/lib
 	# FONTS_DIR = /System/Library/Fonts/Supplemental
 endif
 ifeq ($(detected_OS),Linux)
@@ -40,7 +40,7 @@ APP=main
 apps:= App.Server App.FileNotifier Graphics.Triangle App.Graphics.Info#App.Client
 tests:= Test.Yolo Test.Array Test.Range
 # all: $(apps) $(tests)
-all: App.Graphics.Info
+all: Graphics.Test
 
 # std_headers:
 # 	$(GCC) -xc++-system-header iostream
@@ -51,7 +51,7 @@ Delta.pcm: Delta.cpp Delta.Graphics.pcm Delta.String.pcm
 	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@ 
 
 Delta.Graphics.pcm: Delta.Graphics.cpp
-	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) -c $< -Xclang -emit-module-interface -o $@
+	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) -c $< -Xclang -emit-module-interface -o $@ $(CXX_INCLUDES)
 
 Delta.String.pcm: Delta.String.cpp Delta.Array.pcm
 	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@
@@ -169,6 +169,12 @@ App.Graphics.Info: App.Graphics.Info.o Delta.pcm Delta.Graphics.pcm
 	$(CXX) $(CXX_FLAGS) $^ -o $@ $(CXX_INCLUDES) $(CXX_LIBS)
 
 App.Graphics.Info.o: App.Graphics.Info.cpp Delta.pcm Delta.Graphics.pcm App.Graphics.Info.vert.spv App.Graphics.Info.frag.spv
+	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) -c $< -o $@ $(CXX_INCLUDES)
+
+Graphics.Test: Graphics.Test.o Delta.pcm Delta.Graphics.pcm
+	$(CXX) $(CXX_FLAGS) $^ -o $@ $(CXX_INCLUDES) $(CXX_LIBS)
+
+Graphics.Test.o: Graphics.Test.cpp Delta.pcm Delta.Graphics.pcm Graphics.Test.vert.spv Graphics.Test.frag.spv
 	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) -c $< -o $@ $(CXX_INCLUDES)
 
 App.Compiler: App.Compiler.o Delta.pcm 
