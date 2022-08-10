@@ -1369,11 +1369,12 @@ struct Details <Image> {
 	char const * path;
 
 
+
 	auto operator () () noexcept -> Image {
 
 		int texWidth, texHeight, texChannels;
 		stbi_uc* pixels = stbi_load (path, &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
-		VkDeviceSize image_size = texWidth * texHeight * 4;
+		VkDeviceSize image_size = texWidth * texHeight * 4; // 4 bytes per pixel in the case of STBI_rgb_alpha
 		if (!pixels) {
 			std::cout << "error >> failed to load texture image" << std::endl;
 			exit (-1);
@@ -1537,6 +1538,181 @@ struct Details <Image> {
 		return {.device = device, .handle = image, .device_local_memory = device_local_memory, .view = view};
 	}
 };
+
+
+export struct Details_image2 {
+	PhysicalDevice const & physical_device;
+	LogicalDevice const & device;
+	VkFormat const & format;
+	uint32_t tex_width, tex_height;
+	unsigned char * pixels;
+
+
+
+	auto operator () () noexcept -> Image {
+
+		VkDeviceSize image_size = tex_width * tex_height * 4; // 4 bytes per pixel in the case of STBI_rgb_alpha
+
+		auto host_visible_buffer = Details <Buffer> {
+			.device = device,
+			.size = image_size,
+			.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+			.sharing_mode = VK_SHARING_MODE_EXCLUSIVE
+		} ();
+
+		auto host_visible_buffer_memory = Details <DeviceMemory> {
+			.physical_device = physical_device,
+			.device = device,
+			.size = image_size,
+			.flags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
+		} ();
+
+		host_visible_buffer_memory.bind (host_visible_buffer).paste (pixels, image_size);
+		// stbi_image_free (pixels);
+
+
+		// createImage(texWidth, texHeight, VK_FORMAT_R8G8B8A8_SRGB,
+		// VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT |
+		// VK_IMAGE_USAGE_SAMPLED_BIT,
+		// VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, textureImage,
+		// textureImageMemory);
+		
+		auto const create_info = VkImageCreateInfo {
+			.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+			.imageType = VK_IMAGE_TYPE_2D,
+			.extent.width = static_cast<uint32_t>(tex_width),
+			.extent.height = static_cast<uint32_t>(tex_height),
+			.extent.depth = 1,
+			.mipLevels = 1,
+			.arrayLayers = 1,
+			.format = format,
+			.tiling = VK_IMAGE_TILING_OPTIMAL,
+			.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+			.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+			.sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+			.samples = VK_SAMPLE_COUNT_1_BIT,
+			.flags = 0
+		};
+
+		auto image = VkImage {};
+
+		if (vkCreateImage (device.handle, &create_info, nullptr, &image) != VK_SUCCESS) {
+			std::cout << "error >> failed to create image" << std::endl;
+			exit (-1);
+		}
+
+		// return 
+
+		VkMemoryRequirements memRequirements;
+		vkGetImageMemoryRequirements (device.handle, image, &memRequirements);
+
+		auto device_local_memory = Details <DeviceMemory> {
+			.physical_device = physical_device,
+			.device = device,
+			.size = memRequirements.size,
+			.flags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
+		} ();
+
+		device_local_memory.bind (image);
+
+		auto queue_family = [&] -> QueueFamily {
+			for (auto & queue_family : device.queue_families) {
+				if (queue_family.supports_transfer_operations ()) {
+					return queue_family;
+				}
+			}
+			std::cout << "error >> failed to create image" << std::endl;
+			exit (-1);
+		} ();
+		auto & queue = queue_family.handles.front();
+		auto cmd_buffer = queue_family.command_pool.make_command_buffer (VK_COMMAND_BUFFER_LEVEL_PRIMARY, device.handle);
+		auto barrier = VkImageMemoryBarrier {
+			.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+			.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+			.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+			.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+			.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+			.image = image,
+			.subresourceRange = VkImageSubresourceRange {
+				.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+				.baseMipLevel = 0,
+				.levelCount = 1,
+				.baseArrayLayer = 0,
+				.layerCount = 1
+			},
+			.srcAccessMask = 0,
+			.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT
+		};
+		auto copy_region = VkBufferImageCopy {
+			.bufferOffset = 0,
+			.bufferRowLength = 0,
+			.bufferImageHeight = 0,
+			.imageSubresource = VkImageSubresourceLayers {
+				.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+				.mipLevel = 0,
+				.baseArrayLayer = 0,
+				.layerCount = 1
+			},
+			.imageOffset = {0, 0, 0},
+			.imageExtent = {(uint32_t) tex_width, (uint32_t) tex_height, 1}
+		};
+		auto source_stage = VkPipelineStageFlags {VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT};
+		auto destination_stage = VkPipelineStageFlags {VK_PIPELINE_STAGE_TRANSFER_BIT};
+
+		cmd_buffer.begin (VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+		vkCmdPipelineBarrier (cmd_buffer.handle, source_stage, destination_stage, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+		vkCmdCopyBufferToImage (cmd_buffer.handle, host_visible_buffer.handle, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy_region);
+		barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+		barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+		barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+		source_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+		destination_stage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+		vkCmdPipelineBarrier (cmd_buffer.handle, source_stage, destination_stage, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+		// cmd_buffer.copy_buffer (src.handle, handle, {VkBufferCopy {.srcOffset = 0, .dstOffset = 0, .size = src.get_memory_requirements().size}});
+				// vkCmdCopyBuffer (command_buffer.handle, src.handle, handle, 1, &copy_region);
+		cmd_buffer.end ();
+		auto const submit_info = VkSubmitInfo {
+			.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+			.commandBufferCount = 1,
+			.pCommandBuffers = &cmd_buffer.handle	
+		};
+
+		queue.submit (submit_info);
+	
+		queue.wait_idle ();
+
+		vkFreeCommandBuffers (device.handle, queue_family.command_pool.handle, 1, &cmd_buffer.handle);
+
+		host_visible_buffer.destroy ();
+		host_visible_buffer_memory.destroy ();
+
+		auto const view_create_info = VkImageViewCreateInfo {
+			.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+			.image = image,
+			.viewType = VK_IMAGE_VIEW_TYPE_2D,
+			.format = format,
+			.subresourceRange = {
+				.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+				.baseMipLevel = 0,
+				.levelCount = 1,
+				.baseArrayLayer = 0,
+				.layerCount = 1
+			}
+		};
+
+		auto view = VkImageView {};
+
+		if (vkCreateImageView (device.handle, &view_create_info, nullptr, &view) != VK_SUCCESS) {
+			std::cout << "error >> failed to create image view" << std::endl;
+			exit (-1);
+		}
+
+		return {.device = device, .handle = image, .device_local_memory = device_local_memory, .view = view};
+	}
+};
+
+
 
 export struct Sampler {
 	LogicalDevice const & device;

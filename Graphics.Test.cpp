@@ -5,6 +5,8 @@
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <ft2build.h>
+#include FT_FREETYPE_H
 // #define STB_IMAGE_IMPLEMENTATION
 // #include "stb_image.h"
 import Delta;
@@ -60,9 +62,94 @@ auto resize_callback (GLFWwindow* window, int width, int height) noexcept -> voi
 	// reinterpret_cast <Window*> (glfwGetWindowUserPointer (window)) -> resized = true;
 }
 
+auto printNexit (char const* txt) noexcept -> void {
+	std::cout << txt << std::endl;
+	exit (-1);
+}
 
+struct TextureBitmap {
+	uint32_t width;
+	uint32_t height;
+	unsigned char * buffer;
+};
 
 auto main (int argc, char** argv) -> int {
+
+
+
+	TextureBitmap font_bitmap;
+	{
+		auto const columns = 15;
+		auto const rows = 20;
+		auto const padding = 2;
+		
+		auto const font_size = int {48};
+		
+		auto lib = FT_Library {};
+
+		if (FT_Init_FreeType (&lib)) printNexit ("error >> failed to initialize freetype lib");
+		
+		auto face = FT_Face {};
+		// "/Impact.ttf"
+		if (FT_New_Face (lib, (std::string {FONTS_DIR} + "/Charter.ttc").c_str (), 0, &face)) printNexit ("error >> failed to load font file");
+
+		if (FT_Set_Pixel_Sizes (face, 0, font_size)) printNexit ("error >> failed to set pixel sizes");
+
+		uint32_t image_width = (font_size + padding) * columns; 
+		uint32_t image_height = (font_size + padding) * rows;
+		auto * buffer = new unsigned char [image_width * image_height * 4];
+		auto * widths = new int [255];
+
+		auto max_under_baseline = int {0};
+
+		auto glyph_index = FT_UInt {};
+
+		for (auto i = 32; i < 255; ++i) {
+			glyph_index = FT_Get_Char_Index (face, i);  
+			if (FT_Load_Glyph (face, glyph_index, FT_LOAD_DEFAULT)) printNexit ("error >> failed to load glyph");
+			auto const & glyph_metrics = face->glyph->metrics;
+			auto glyph_hang = (glyph_metrics.horiBearingY - glyph_metrics.height) / 64;
+			if (glyph_hang < max_under_baseline) max_under_baseline = glyph_hang;
+		}
+
+
+
+		for (auto i = 32; i < 255; ++i) {
+			glyph_index = FT_Get_Char_Index (face, i); 
+			if (FT_Load_Glyph (face, glyph_index, FT_LOAD_DEFAULT)) printNexit ("error >> failed to load glyph");
+			if (FT_Render_Glyph (face->glyph, FT_RENDER_MODE_NORMAL)) printNexit ("error >> failed to render glyph");
+			widths[i] = face->glyph->metrics.width/64;
+
+			auto x = ((i - 33) % columns) * (font_size + padding);
+			auto y = ((i - 33 )/ columns) * (font_size + padding);
+			x += 1;
+			y += (font_size + padding) - face->glyph->bitmap_top + max_under_baseline - 1;
+			
+			auto const & bitmap = face -> glyph -> bitmap;
+			// font_bitmap.buffer = bitmap.buffer;
+			// font_bitmap.width = bitmap.width;
+			// font_bitmap.height = bitmap.rows;
+			// break;
+			for (auto xx = 0; xx < bitmap.width; ++xx) {
+				for (auto yy = 0; yy < bitmap.rows; ++yy) {
+					auto r = bitmap.buffer [(yy * (bitmap.width) + xx)];
+					buffer [(y + yy) * image_width * 4 - (x + xx) * 4 + 0] = r;
+					buffer [(y + yy) * image_width * 4 - (x + xx) * 4 + 1] = r;
+					buffer [(y + yy) * image_width * 4 - (x + xx) * 4 + 2] = r;
+					buffer [(y + yy) * image_width * 4 - (x + xx) * 4 + 3] = 255;
+				}
+			}
+
+			// if (i == 50) break;
+		}
+
+		delete [] widths;
+		font_bitmap.buffer = buffer;
+		font_bitmap.width = image_width;
+		font_bitmap.height = image_height;
+	}
+
+	// return 0;
 
 	glfwInit ();
 
@@ -70,8 +157,8 @@ auto main (int argc, char** argv) -> int {
 
 	auto window = Details <Window> {
 		.extent = {
-			.width = 640,
-			.height = 480},
+			.width = font_bitmap.width,//640,
+			.height = font_bitmap.height},//480},
 		.hints = {
 			{GLFW_CLIENT_API, GLFW_NO_API}
 			// {GLFW_RESIZABLE, GLFW_FALSE}
@@ -346,19 +433,26 @@ auto main (int argc, char** argv) -> int {
 	};
 
 	auto vertices = std::vector <Vertex> {
+		// {{-1.0f, -1.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
+		// {{1.0f, -1.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+		// {{1.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
+		// {{1.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
+		// {{-1.0f, 1.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}},
+		// {{-1.0f, -1.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}}
+
 		{{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
 		{{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
 		{{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
 		{{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
 		{{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}},
-		{{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
+		{{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}}
 
-		{{-0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
-		{{0.5f, -0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-		{{0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
-		{{0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
-		{{-0.5f, 0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}},
-		{{-0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}}
+		// {{-0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
+		// {{0.5f, -0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+		// {{0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
+		// {{0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
+		// {{-0.5f, 0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}},
+		// {{-0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}}
 	};
 
 		
@@ -401,11 +495,20 @@ auto main (int argc, char** argv) -> int {
 		host_visible_vertex_buffer_memory.destroy ();
 	}
 
-	auto texture_image = Details <Image> {
+	// auto texture_image = Details <Image> {
+	// 	.physical_device = physical_device,
+	// 	.device = device,
+	// 	.format = VK_FORMAT_R8G8B8A8_SRGB,
+	// 	.path = "Graphics.Triangle.Texture.Lion.jpeg"
+	// } ();
+
+	auto texture_image = Details_image2 {
 		.physical_device = physical_device,
 		.device = device,
 		.format = VK_FORMAT_R8G8B8A8_SRGB,
-		.path = "Graphics.Triangle.Texture.Lion.jpeg"
+		.tex_width = font_bitmap.width,
+		.tex_height = font_bitmap.height,
+		.pixels = font_bitmap.buffer
 	} ();
 
 	auto texture_sampler = Details <Sampler> {
@@ -455,10 +558,10 @@ auto main (int argc, char** argv) -> int {
 
 		auto currentTime = std::chrono::high_resolution_clock::now();
 		float time = std::chrono::duration<float,std::chrono::seconds::period>(currentTime -startTime).count();
-		pushConstants.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f),glm::vec3(0.0f, 0.0f, 1.0f));
-		pushConstants.view =  glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f,0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-		pushConstants.proj = glm::perspective(glm::radians(45.0f),swapchain.image_extent.width / (float) swapchain.image_extent.height, 0.1f,10.0f);
-		
+		pushConstants.model = {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}};//glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f),glm::vec3(0.0f, 0.0f, 1.0f));
+		pushConstants.view =  {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}};//glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f,0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+		pushConstants.proj = {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}};//glm::perspective(glm::radians(45.0f),swapchain.image_extent.width / (float) swapchain.image_extent.height, 0.1f,10.0f);
+		// pushConstants.proj[1][1] *= -1;
 		auto const clear_value = VkClearValue {
 			{{0.0f, 0.0f, 0.0f, 1.0f}}
 		};
