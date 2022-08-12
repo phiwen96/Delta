@@ -2,7 +2,7 @@
 
 # GCC=g++-12 -std=gnu++2a -fcoroutines -fmodules-ts -fconcepts-diagnostics-depth=1
 CXX = clang++
-CXX_FLAGS = -D DEBUG -std=c++2b
+CXX_FLAGS = -D DEBUG -std=c++2b 
 CXX_MODULES = -fmodules-ts -fmodules -fbuiltin-module-map -fimplicit-modules -fimplicit-module-maps -fprebuilt-module-path=.
 
 CXX_INCLUDES = -I/usr/local/include -I/opt/homebrew/Cellar/glm/0.9.9.8/include -I/opt/homebrew/Cellar/freetype/2.12.1/include/freetype2 #-I/Users/philipwenkel/VulkanSDK/1.3.216.0/macOS/include
@@ -25,7 +25,7 @@ ifeq ($(detected_OS),Darwin)
 	# CXX_INCLUDES += -I/opt/homebrew/Cellar/glfw/3.3.7/include
 	# CXX_LIBS = -L/opt/homebrew/Cellar/glfw/3.3.7/lib -lglfw3
 	# CXX_LIBS = -lglfw3
-	CXX_LIBS = -L/opt/homebrew/Cellar/glfw/3.3.7/lib -lglfw -lvulkan.1.3.216 -L/opt/homebrew/Cellar/freetype/2.12.1/lib -lfreetype -L/Users/philipwenkel/VulkanSDK/1.3.216.0/macOS/lib
+	CXX_LIBS = -L/opt/homebrew/Cellar/glfw/3.3.7/lib -lglfw -lvulkan.1.3.216 -L/opt/homebrew/Cellar/freetype/2.12.1/lib -lfreetype -L/Users/philipwenkel/VulkanSDK/1.3.216.0/macOS/lib -lsdl2
 	# FONTS_DIR = /System/Library/Fonts/Supplemental
 endif
 ifeq ($(detected_OS),Linux)

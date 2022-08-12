@@ -12,6 +12,8 @@
 import Delta;
 
 
+
+
 template <typename T, typename U>
 concept Bigger_than = sizeof (T) > sizeof (U);
 
@@ -62,110 +64,132 @@ auto resize_callback (GLFWwindow* window, int width, int height) noexcept -> voi
 	// reinterpret_cast <Window*> (glfwGetWindowUserPointer (window)) -> resized = true;
 }
 
-auto printNexit (char const* txt) noexcept -> void {
-	std::cout << txt << std::endl;
-	exit (-1);
+auto scroll_callback (GLFWwindow* window, double xoffset, double yoffset) noexcept -> void {
+	std::cout << "scroll!" << std::endl;
 }
 
-struct TextureBitmap {
-	uint32_t width;
-	uint32_t height;
-	unsigned char * buffer;
-};
+auto mouse_button_callback(GLFWwindow* window, int button, int action, int mods) noexcept -> void {
+    if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS) {
+
+	}
+}
+
+auto key_callback (GLFWwindow* window, int key, int scancode, int action, int mods) noexcept -> void {
+    if (key == GLFW_KEY_E && action == GLFW_PRESS){
+
+	}
+}
+
+
 
 auto main (int argc, char** argv) -> int {
 
+	// auto ba = bajs <int> {.odd = 5};
 
+	// auto font_bitmap = Details <FontBitmap2> {
+	// 	.file = "/System/Library/Fonts/Supplemental/Impact.ttf",
+	// 	.font_size = 48,
+	// 	.padding = 2,
+	// 	.rows = 1,
+	// 	.columns = 1,
+	// 	.ascii = 'h'
+	// } ();
 
-	TextureBitmap font_bitmap;
+	auto font_bitmaps = std::unordered_map <char, FontBitmap2> {};
+	
 	{
-		auto const columns = 15;
-		auto const rows = 20;
-		auto const padding = 2;
-		
-		auto const font_size = int {48};
-		
-		auto lib = FT_Library {};
+		auto details = Details <FontBitmap2> {
+			.file = "/System/Library/Fonts/Supplemental/Impact.ttf",
+			.font_size = 48,
+			.padding = 2,
+			.rows = 1,
+			.columns = 1
+		};
 
-		if (FT_Init_FreeType (&lib)) printNexit ("error >> failed to initialize freetype lib");
-		
-		auto face = FT_Face {};
-		// "/Impact.ttf"
-		if (FT_New_Face (lib, (std::string {FONTS_DIR} + "/Charter.ttc").c_str (), 0, &face)) printNexit ("error >> failed to load font file");
+		for (auto i = 'a'; i <= 'z'; ++i) {
+			details.ascii = (uint32_t) i;
+			font_bitmaps [i] = details ();
 
-		if (FT_Set_Pixel_Sizes (face, 0, font_size)) printNexit ("error >> failed to set pixel sizes");
-
-		uint32_t image_width = (font_size + padding) * columns; 
-		uint32_t image_height = (font_size + padding) * rows;
-		auto * buffer = new unsigned char [image_width * image_height * 4];
-		auto * widths = new int [255];
-
-		auto max_under_baseline = int {0};
-
-		auto glyph_index = FT_UInt {};
-
-		for (auto i = 32; i < 255; ++i) {
-			glyph_index = FT_Get_Char_Index (face, i);  
-			if (FT_Load_Glyph (face, glyph_index, FT_LOAD_DEFAULT)) printNexit ("error >> failed to load glyph");
-			auto const & glyph_metrics = face->glyph->metrics;
-			auto glyph_hang = (glyph_metrics.horiBearingY - glyph_metrics.height) / 64;
-			if (glyph_hang < max_under_baseline) max_under_baseline = glyph_hang;
+			details.ascii = (uint32_t) toupper (i);
+			font_bitmaps [toupper (i)] = details ();
 		}
 
-
-
-		for (auto i = 32; i < 255; ++i) {
-			glyph_index = FT_Get_Char_Index (face, i); 
-			if (FT_Load_Glyph (face, glyph_index, FT_LOAD_DEFAULT)) printNexit ("error >> failed to load glyph");
-			if (FT_Render_Glyph (face->glyph, FT_RENDER_MODE_NORMAL)) printNexit ("error >> failed to render glyph");
-			widths[i] = face->glyph->metrics.width/64;
-
-			auto x = ((i - 33) % columns) * (font_size + padding);
-			auto y = ((i - 33 )/ columns) * (font_size + padding);
-			x += 1;
-			y += (font_size + padding) - face->glyph->bitmap_top + max_under_baseline - 1;
-			
-			auto const & bitmap = face -> glyph -> bitmap;
-			// font_bitmap.buffer = bitmap.buffer;
-			// font_bitmap.width = bitmap.width;
-			// font_bitmap.height = bitmap.rows;
-			// break;
-			for (auto xx = 0; xx < bitmap.width; ++xx) {
-				for (auto yy = 0; yy < bitmap.rows; ++yy) {
-					auto r = bitmap.buffer [(yy * (bitmap.width) + xx)];
-					buffer [(y + yy) * image_width * 4 - (x + xx) * 4 + 0] = r;
-					buffer [(y + yy) * image_width * 4 - (x + xx) * 4 + 1] = r;
-					buffer [(y + yy) * image_width * 4 - (x + xx) * 4 + 2] = r;
-					buffer [(y + yy) * image_width * 4 - (x + xx) * 4 + 3] = 255;
-				}
-			}
-
-			// if (i == 50) break;
-		}
-
-		delete [] widths;
-		font_bitmap.buffer = buffer;
-		font_bitmap.width = image_width;
-		font_bitmap.height = image_height;
+		
 	}
+	
+	auto font_bitmap = font_bitmaps ['s'];
+
+	// return 0;
+
+	
 
 	// return 0;
 
 	glfwInit ();
 
 	// auto const framebuffer_resize_callback = []
+	auto const resolution = get_resolution ();
+	// std::cout << resolution.width << " " << resolution.height << std::endl;
 
 	auto window = Details <Window> {
 		.extent = {
-			.width = font_bitmap.width,//640,
-			.height = font_bitmap.height},//480},
+			// .width = font_bitmap.width,//640,
+			// .height = font_bitmap.height},//480},
+			.width = 640,
+			.height = 480},
+			// .width = resolution.width,
+			// .height = resolution.height},
 		.hints = {
 			{GLFW_CLIENT_API, GLFW_NO_API}
 			// {GLFW_RESIZABLE, GLFW_FALSE}
 		}
 	} ();
 
-	window.set_resize_callback (resize_callback);
+	window.set_resize_callback (resize_callback).set_scroll_callback (scroll_callback).set_mouse_callback (mouse_button_callback);
+
+	auto f_width = ((float) font_bitmap.width) / ((float) resolution.width);
+	auto f_height = ((float) font_bitmap.height) / ((float) resolution.height);
+	auto f_padding_w = 2.0f / ((float) resolution.width); 
+	auto f_padding_h = 2.0f / ((float) resolution.height); 
+
+	auto v0 = glm::vec3 {0.0f, 0.0f, 0.0f};
+	auto v1 = glm::vec3 {f_width, 0.0f, 0.0f};
+	auto v2 = glm::vec3 {f_width, f_height, 0.0f};
+	auto v3 = glm::vec3 {f_width, f_height, 0.0f};
+	auto v4 = glm::vec3 {0.0f, f_height, 0.0f};
+	auto v5 = glm::vec3 {0.0f, 0.0f, 0.0f};
+
+	auto v6 = glm::vec3 {v1.x + 0.0f, 0.0f, 0.0f};
+	auto v7 = glm::vec3 {v1.x + f_width, 0.0f, 0.0f};
+	auto v8 = glm::vec3 {v1.x + f_width, f_height, 0.0f};
+	auto v9 = glm::vec3 {v1.x + f_width, f_height, 0.0f};
+	auto v10 = glm::vec3 {v1.x, f_height, 0.0f};
+	auto v11 = glm::vec3 {v1.x, 0.0f, 0.0f};
+
+	auto vertices = std::vector <Vertex> {
+		{v0, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
+		{v1, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+		{v2, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
+		{v3, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
+		{v4, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}},
+		{v5, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
+
+		{v6, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
+		{v7, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+		{v8, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
+		{v9, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
+		{v10, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}},
+		{v11, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}}
+
+		// {{-1.0f, -1.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
+		// {{1.0f, -1.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+		// {{1.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
+		// {{1.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
+		// {{-1.0f, 1.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}},
+		// {{-1.0f, -1.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}}
+	};
+
+	
 
 	// std::cout << make_names (get_instance_extension_properties ()) << std::endl;
 	// std::cout << make_names (get_instance_layer_properties ()) << std::endl << std::endl;;
@@ -431,29 +455,9 @@ auto main (int argc, char** argv) -> int {
 		.view = {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}},//glm::lookAt (glm::vec3 (2.0f, 2.0f, 2.0f), glm::vec3 (0.0f,0.0f, 0.0f), glm::vec3 (0.0f, 0.0f, 1.0f)),
 		.proj = {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}},//glm::perspective (glm::radians (45.0f), surfaceExtent.width / (float) surfaceExtent.height, 0.1f, 10.0f)
 	};
+	
 
-	auto vertices = std::vector <Vertex> {
-		// {{-1.0f, -1.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
-		// {{1.0f, -1.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-		// {{1.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
-		// {{1.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
-		// {{-1.0f, 1.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}},
-		// {{-1.0f, -1.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}}
-
-		{{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
-		{{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-		{{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
-		{{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
-		{{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}},
-		{{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}}
-
-		// {{-0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
-		// {{0.5f, -0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-		// {{0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
-		// {{0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
-		// {{-0.5f, 0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}},
-		// {{-0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}}
-	};
+	
 
 		
 
@@ -558,9 +562,10 @@ auto main (int argc, char** argv) -> int {
 
 		auto currentTime = std::chrono::high_resolution_clock::now();
 		float time = std::chrono::duration<float,std::chrono::seconds::period>(currentTime -startTime).count();
-		pushConstants.model = {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}};//glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f),glm::vec3(0.0f, 0.0f, 1.0f));
-		pushConstants.view =  {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}};//glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f,0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-		pushConstants.proj = {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}};//glm::perspective(glm::radians(45.0f),swapchain.image_extent.width / (float) swapchain.image_extent.height, 0.1f,10.0f);
+		pushConstants.model = glm::translate (glm::mat4 (1.0f), glm::vec3 (0.0f, 0.0f, 0.0f));//{{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}};//glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f),glm::vec3(0.0f, 0.0f, 1.0f));
+		pushConstants.model = glm::scale (pushConstants.model, glm::vec3 (1.0f, 1.0f, 1.0f));
+		// pushConstants.view =  {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}};//glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f,0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+		// pushConstants.proj = {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}};//glm::perspective(glm::radians(45.0f),swapchain.image_extent.width / (float) swapchain.image_extent.height, 0.1f,10.0f);
 		// pushConstants.proj[1][1] *= -1;
 		auto const clear_value = VkClearValue {
 			{{0.0f, 0.0f, 0.0f, 1.0f}}

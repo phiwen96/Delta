@@ -7,9 +7,21 @@
 #include <glm/gtc/matrix_transform.hpp>
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
+#include <ft2build.h>
+#include FT_FREETYPE_H
 export module Delta.Graphics;
 import Delta.Range;
 import std;
+
+export auto printNexit (char const* txt) noexcept -> void {
+	std::cout << txt << std::endl;
+	exit (-1);
+}
+
+export auto get_resolution () noexcept -> VkExtent2D {
+	auto const * mode = glfwGetVideoMode (glfwGetPrimaryMonitor ());
+	return {.width = (uint32_t) mode -> width, .height = (uint32_t) mode -> height};
+}
 
 export auto get_surface_capabilities (VkPhysicalDevice const & device, VkSurfaceKHR const & surface) noexcept -> VkSurfaceCapabilitiesKHR {
 	
@@ -298,9 +310,32 @@ export struct Window {
 		glfwDestroyWindow (handle);
 	}
 
-	auto set_resize_callback (void (*callback) (GLFWwindow* window, int width, int height)) {
+	auto set_resize_callback (void (*callback) (GLFWwindow* window, int width, int height)) noexcept -> Window & {
 		glfwSetFramebufferSizeCallback (handle, callback);
+		return *this;
 	}
+	
+	auto set_scroll_callback (void (*callback) (GLFWwindow* window, double xoffset, double yoffset)) noexcept -> Window & {
+		glfwSetScrollCallback (handle, callback);
+		return *this;
+	}
+
+	auto set_mouse_callback (void (*callback) (GLFWwindow* window, int button, int action, int mods)) noexcept -> Window & {
+		glfwSetMouseButtonCallback (handle, callback);
+		return *this;
+	}
+
+	auto set_key_callback (void (*callback) (GLFWwindow* window, int key, int scancode, int action, int mods)) noexcept -> Window & {
+		glfwSetMouseButtonCallback (handle, callback);
+		return *this;
+	}
+
+	auto set_cur_callback (void (*callback) (GLFWwindow* window, int key, int scancode, int action, int mods)) noexcept -> Window & {
+		glfwSetMouseButtonCallback (handle, callback);
+		return *this;
+	}
+
+	
 };
 
 export template <>
@@ -1808,5 +1843,193 @@ struct Details <DescriptorPool> {
 		}
 
 		return {.device = device, .handle = handle};
+	}
+};
+
+
+
+export struct FontBitmap {
+	uint32_t width;
+	uint32_t height;
+	unsigned char * buffer;
+
+	auto destroy () noexcept -> void {
+		delete [] buffer;
+	}
+};
+
+export template <>
+struct Details <FontBitmap> {
+	char const * file;
+	unsigned int font_size;
+	unsigned int padding;
+	unsigned int columns;
+	unsigned int rows;
+	unsigned int ascii_begin;
+	unsigned int ascii_end;
+
+	auto operator () () const noexcept -> FontBitmap {
+		// auto const columns = 25;
+		// auto const rows = 10;
+		// auto const padding = 2;
+		
+		// auto const font_size = int {48};
+		
+		auto lib = FT_Library {};
+
+		if (FT_Init_FreeType (&lib)) printNexit ("error >> failed to initialize freetype lib");
+		
+		auto face = FT_Face {};
+		// "/Impact.ttf"
+		if (FT_New_Face (lib, (std::string {FONTS_DIR} + "/Charter.ttc").c_str (), 0, &face)) printNexit ("error >> failed to load font file");
+
+		if (FT_Set_Pixel_Sizes (face, 0, font_size)) printNexit ("error >> failed to set pixel sizes");
+
+		uint32_t image_width = (font_size + padding) * columns; 
+		uint32_t image_height = (font_size + padding) * rows;
+		auto * buffer = new unsigned char [image_width * image_height * 4];
+		auto * widths = new int [ascii_end];
+
+		auto max_under_baseline = int {0};
+
+		auto glyph_index = FT_UInt {};
+
+		for (auto i = ascii_begin; i < ascii_end - 1; ++i) {
+			glyph_index = FT_Get_Char_Index (face, i);  
+			if (FT_Load_Glyph (face, glyph_index, FT_LOAD_DEFAULT)) printNexit ("error >> failed to load glyph");
+			auto const & glyph_metrics = face->glyph->metrics;
+			auto glyph_hang = (glyph_metrics.horiBearingY - glyph_metrics.height) / 64;
+			if (glyph_hang < max_under_baseline) max_under_baseline = glyph_hang;
+		}
+
+
+
+		for (auto i = ascii_begin; i < ascii_end - 1; ++i) {
+			glyph_index = FT_Get_Char_Index (face, i); 
+			if (FT_Load_Glyph (face, glyph_index, FT_LOAD_DEFAULT)) printNexit ("error >> failed to load glyph");
+			if (FT_Render_Glyph (face->glyph, FT_RENDER_MODE_NORMAL)) printNexit ("error >> failed to render glyph");
+			widths[i] = face->glyph->metrics.width/64;
+
+			auto x = ((i - ascii_begin - 1) % columns) * (font_size + padding);
+			auto y = ((i - ascii_begin - 1) / columns) * (font_size + padding);
+			x += 1;
+			y += (font_size + padding) - face->glyph->bitmap_top + max_under_baseline - 1;
+			
+			auto const & bitmap = face -> glyph -> bitmap;
+			// font_bitmap.buffer = bitmap.buffer;
+			// font_bitmap.width = bitmap.width;
+			// font_bitmap.height = bitmap.rows;
+			// break;
+			for (auto xx = 0; xx < bitmap.width; ++xx) {
+				for (auto yy = 0; yy < bitmap.rows; ++yy) {
+					auto r = bitmap.buffer [(yy * (bitmap.width) + xx)];
+					buffer [(y + yy) * image_width * 4 - (x + xx) * 4 + 0] = r;
+					buffer [(y + yy) * image_width * 4 - (x + xx) * 4 + 1] = r;
+					buffer [(y + yy) * image_width * 4 - (x + xx) * 4 + 2] = r;
+					buffer [(y + yy) * image_width * 4 - (x + xx) * 4 + 3] = 255;
+				}
+			}
+
+			// if (i == 50) break;
+		}
+		
+		delete [] widths;
+
+		if (FT_Done_FreeType (lib)) printNexit ("error >> failed to shut down freetype library");
+
+		return {.width = image_width, .height = image_height, .buffer = buffer};
+	}
+};
+
+export struct FontBitmap2 {
+	uint32_t width;
+	uint32_t height;
+	unsigned char * buffer;
+
+	auto destroy () noexcept -> void {
+		delete [] buffer;
+	}
+};
+
+export template <>
+struct Details <FontBitmap2> {
+	char const * file;
+	unsigned int font_size;
+	unsigned int padding;
+	unsigned int columns;
+	unsigned int rows;
+	unsigned int ascii;
+
+	auto operator () () const noexcept -> FontBitmap2 {
+		// auto const columns = 25;
+		// auto const rows = 10;
+		// auto const padding = 2;
+		
+		// auto const font_size = int {48};
+		
+		auto lib = FT_Library {};
+
+		if (FT_Init_FreeType (&lib)) printNexit ("error >> failed to initialize freetype lib");
+		
+		auto face = FT_Face {};
+		// "/Impact.ttf"
+		if (FT_New_Face (lib, (std::string {FONTS_DIR} + "/Charter.ttc").c_str (), 0, &face)) printNexit ("error >> failed to load font file");
+
+		if (FT_Set_Pixel_Sizes (face, 0, font_size)) printNexit ("error >> failed to set pixel sizes");
+
+		uint32_t image_width = (font_size + padding) * columns; 
+		uint32_t image_height = (font_size + padding) * rows;
+		auto * buffer = new unsigned char [image_width * image_height * 4];
+		// auto * widths = new int [ascii_end];
+
+		auto max_under_baseline = int {0};
+
+		auto glyph_index = FT_UInt {};
+
+		// for (auto i = ascii_begin; i < ascii_end - 1; ++i) {
+		// 	glyph_index = FT_Get_Char_Index (face, i);  
+		// 	if (FT_Load_Glyph (face, glyph_index, FT_LOAD_DEFAULT)) printNexit ("error >> failed to load glyph");
+		// 	auto const & glyph_metrics = face->glyph->metrics;
+		// 	auto glyph_hang = (glyph_metrics.horiBearingY - glyph_metrics.height) / 64;
+		// 	if (glyph_hang < max_under_baseline) max_under_baseline = glyph_hang;
+		// }
+
+
+
+		glyph_index = FT_Get_Char_Index (face, ascii); 
+		if (FT_Load_Glyph (face, glyph_index, FT_LOAD_DEFAULT)) printNexit ("error >> failed to load glyph");
+		if (FT_Render_Glyph (face->glyph, FT_RENDER_MODE_NORMAL)) printNexit ("error >> failed to render glyph");
+		// widths[i] = face->glyph->metrics.width/64;
+
+		auto x = /*((i - ascii - 1) % columns) * */(font_size + padding);
+		auto y = /*((i - ascii - 1) / columns) * */(font_size + padding);
+		x += 1;
+		y += (font_size + padding) - face->glyph->bitmap_top /*+ max_under_baseline*/ - 1;
+		x = 1;
+		y = 1;
+		auto const & bitmap = face -> glyph -> bitmap;
+			// font_bitmap.buffer = bitmap.buffer;
+			// font_bitmap.width = bitmap.width;
+			// font_bitmap.height = bitmap.rows;
+			// break;
+		for (auto xx = 0; xx < bitmap.width; ++xx) {
+			for (auto yy = 0; yy < bitmap.rows; ++yy) {
+				auto r = bitmap.buffer [(yy * (bitmap.width) + xx)];
+				buffer [(y + yy) * image_width * 4 - (x + xx) * 4 + 0] = r;
+				buffer [(y + yy) * image_width * 4 - (x + xx) * 4 + 1] = r;
+				buffer [(y + yy) * image_width * 4 - (x + xx) * 4 + 2] = r;
+				buffer [(y + yy) * image_width * 4 - (x + xx) * 4 + 3] = 255;
+				// std::cout << 
+			}
+		}
+
+			// if (i == 50) break;
+		
+		
+		//delete [] widths;
+
+		if (FT_Done_FreeType (lib)) printNexit ("error >> failed to shut down freetype library");
+
+		return {.width = image_width, .height = image_height, .buffer = buffer};
 	}
 };
