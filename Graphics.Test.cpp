@@ -834,6 +834,7 @@ auto main (int argc, char** argv) -> int {
 				auto f4 = glm::vec2 {f0.x, f3.y};
 				auto f5 = f0;
 
+
 				
 				vertices.push_back ({v0, color, f0});
 				vertices.push_back ({v1, color, f1});
