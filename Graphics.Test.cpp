@@ -58,66 +58,141 @@ auto choose_surface_extent (VkPhysicalDevice const & device, VkSurfaceKHR const 
 
 auto window_resized = false;
 
-auto resize_callback (GLFWwindow* window, int width, int height) noexcept -> void {	
-	window_resized = true;
-	// std::cout << "whaat" << std::endl;
-	// reinterpret_cast <Window*> (glfwGetWindowUserPointer (window)) -> resized = true;
-}
-
-auto scroll_callback (GLFWwindow* window, double xoffset, double yoffset) noexcept -> void {
-	std::cout << "scroll!" << std::endl;
-}
-
-auto mouse_button_callback(GLFWwindow* window, int button, int action, int mods) noexcept -> void {
-    if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS) {
-
-	}
-}
-
-auto key_callback (GLFWwindow* window, int key, int scancode, int action, int mods) noexcept -> void {
-    if (key == GLFW_KEY_E && action == GLFW_PRESS){
-
-	}
-}
 
 
 
 auto main (int argc, char** argv) -> int {
 
-	// auto ba = bajs <int> {.odd = 5};
+	auto bitm = FontBitmap {}; 
 
-	// auto font_bitmap = Details <FontBitmap2> {
-	// 	.file = "/System/Library/Fonts/Supplemental/Impact.ttf",
-	// 	.font_size = 48,
-	// 	.padding = 2,
-	// 	.rows = 1,
-	// 	.columns = 1,
-	// 	.ascii = 'h'
-	// } ();
-
-	auto font_bitmaps = std::unordered_map <char, FontBitmap2> {};
-	
 	{
-		auto details = Details <FontBitmap2> {
-			.file = "/System/Library/Fonts/Supplemental/Impact.ttf",
-			.font_size = 48,
-			.padding = 2,
-			.rows = 1,
-			.columns = 1
-		};
+		auto font_size = 128;
 
-		for (auto i = 'a'; i <= 'z'; ++i) {
-			details.ascii = (uint32_t) i;
-			font_bitmaps [i] = details ();
+		auto lib = FT_Library {};
 
-			details.ascii = (uint32_t) toupper (i);
-			font_bitmaps [toupper (i)] = details ();
+		if (FT_Init_FreeType (&lib)) printNexit ("error >> failed to initialize freetype lib");
+		
+		auto face = FT_Face {};
+		// "/Impact.ttf"
+		if (FT_New_Face (lib, (std::string {FONTS_DIR} + "/Charter.ttc").c_str (), 0, &face)) printNexit ("error >> failed to load font file");
+
+		if (FT_Set_Pixel_Sizes (face, 0, font_size)) printNexit ("error >> failed to set pixel sizes");
+
+		// create bitmap font
+		int image_width = (font_size+2)*16;
+		int image_height = (font_size+2)*8;
+
+		// create a buffer for the bitmap
+		unsigned char* buffer = new unsigned char[image_width*image_height*4];
+		memset( buffer , 0 , image_width*image_height*4 );
+
+		// create an array to save the character widths
+		int* widths = new int[128];
+		int* heights = new int[128];
+		int* xs = new int[128];
+		int* ys = new int[128];
+
+		// we need to find the character that goes below the baseline by the biggest value
+		int maxUnderBaseline = 0;
+		for ( int i = 32 ; i < 127 ; ++i )
+		{
+			// get the glyph index from character code
+			auto glyphIndex = FT_Get_Char_Index( face , i );
+
+			// load the glyph image into the slot
+			if (FT_Load_Glyph( face , glyphIndex , FT_LOAD_DEFAULT )) printNexit ("BitmapFontGenerator > failed to load glyph");
+			
+
+			// get the glyph metrics
+			const FT_Glyph_Metrics& glyphMetrics = face->glyph->metrics;
+
+			// find the character that reaches below the baseline by the biggest value
+			int glyphHang = (glyphMetrics.horiBearingY-glyphMetrics.height)/64;
+			if( glyphHang < maxUnderBaseline )
+			{
+				maxUnderBaseline = glyphHang;
+			}
 		}
 
+		// draw all characters
+		for ( int i = 0 ; i < 128 ; ++i )
+		{
+			// get the glyph index from character code
+			auto glyphIndex = FT_Get_Char_Index( face , i );
+
+			// load the glyph image into the slot
+			if (FT_Load_Glyph( face , glyphIndex , FT_LOAD_DEFAULT )) printNexit ("BitmapFontGenerator > failed to load glyph, error code: ");
+
+			// convert to an anti-aliased bitmap
+			if (FT_Render_Glyph( face->glyph , FT_RENDER_MODE_NORMAL )) printNexit ("BitmapFontGenerator > failed to render glyph, error code: ");
 		
+
+			// save the character width
+			widths[i] = face->glyph->metrics.width/64;
+
+			// find the tile position where we have to draw the character
+			int x = (i%16)*(font_size+2);
+			int y = (i/16)*(font_size+2);
+			x += 1; // 1 pixel padding from the left side of the tile
+			y += (font_size+2) - face->glyph->bitmap_top + maxUnderBaseline - 1;
+
+			xs [i] = x;
+			ys [i] = y;
+
+			// draw the character
+			const FT_Bitmap& bitmap = face->glyph->bitmap;
+			heights [i] = bitmap.rows;
+			for ( int xx = 0 ; xx < bitmap.width ; ++xx )
+			{
+				for ( int yy = 0 ; yy < bitmap.rows ; ++yy )
+				{
+				unsigned char r = bitmap.buffer[(yy*(bitmap.width)+xx)];
+				buffer[(y+yy)*image_width*4+(x+xx)*4+0] = r;
+				buffer[(y+yy)*image_width*4+(x+xx)*4+1] = r;
+				buffer[(y+yy)*image_width*4+(x+xx)*4+2] = r;
+				buffer[(y+yy)*image_width*4+(x+xx)*4+3] = 255;
+				}
+			}
+		}
+
+		bitm.buffer = buffer;
+		bitm.width = image_width;
+		bitm.height = image_height;
+		bitm.widths = widths;
+		bitm.heights = heights;
+		bitm.xs = xs;
+		bitm.ys = ys;
 	}
+
+	// for (auto i = 0; i < 128; ++i) std::cout << bitm.ys [i] << std::endl;
+
+	// return 0;
+	// auto ba = bajs <int> {.odd = 5};
+
 	
-	auto font_bitmap = font_bitmaps ['s'];
+	// auto font_bitmaps = std::unordered_map <char, FontBitmap2> {};
+	
+	// {
+	// 	auto details = Details <FontBitmap2> {
+	// 		.file = "/System/Library/Fonts/Supplemental/Impact.ttf",
+	// 		.font_size = 96,
+	// 		.padding = 2,
+	// 		.rows = 1,
+	// 		.columns = 1
+	// 	};
+
+	// 	for (auto i = 'a'; i <= 'z'; ++i) {
+	// 		details.ascii = (uint32_t) i;
+	// 		font_bitmaps [i] = details ();
+
+	// 		details.ascii = (uint32_t) toupper (i);
+	// 		font_bitmaps [toupper (i)] = details ();
+	// 	}
+
+		
+	// }
+	
+	// auto font_bitmap = font_bitmaps ['s'];
 
 	// return 0;
 
@@ -129,14 +204,32 @@ auto main (int argc, char** argv) -> int {
 
 	// auto const framebuffer_resize_callback = []
 	auto const resolution = get_resolution ();
+
+	auto nr_of_chars = 93;
+
+	// return 0;
+	// (2 + width) * count = resolution.width;
+
+	auto font_bitmap = Details <FontBitmap> {
+		.file = "/System/Library/Fonts/Supplemental/Impact.ttf",
+		.font_size = 48,
+		.padding = 2,
+		.rows = 10,
+		.columns = 20,
+		.ascii_begin = 33,
+		.ascii_end = 33 + 95
+	} ();
+
+	// std::cout << font_bitmap.width << " " << font_bitmap.height << std::endl;
+
 	// std::cout << resolution.width << " " << resolution.height << std::endl;
 
 	auto window = Details <Window> {
 		.extent = {
 			// .width = font_bitmap.width,//640,
 			// .height = font_bitmap.height},//480},
-			.width = 640,
-			.height = 480},
+			.width = resolution.width,
+			.height = resolution.height},
 			// .width = resolution.width,
 			// .height = resolution.height},
 		.hints = {
@@ -145,41 +238,39 @@ auto main (int argc, char** argv) -> int {
 		}
 	} ();
 
-	window.set_resize_callback (resize_callback).set_scroll_callback (scroll_callback).set_mouse_callback (mouse_button_callback);
+	// auto f_width = ((float) font_bitmap.width) / ((float) resolution.width);
+	// auto f_height = ((float) font_bitmap.height) / ((float) resolution.height);
+	// auto f_padding_w = 2.0f / ((float) resolution.width); 
+	// auto f_padding_h = 2.0f / ((float) resolution.height); 
 
-	auto f_width = ((float) font_bitmap.width) / ((float) resolution.width);
-	auto f_height = ((float) font_bitmap.height) / ((float) resolution.height);
-	auto f_padding_w = 2.0f / ((float) resolution.width); 
-	auto f_padding_h = 2.0f / ((float) resolution.height); 
+	// auto v0 = glm::vec3 {0.0f, 0.0f, 0.0f};
+	// auto v1 = glm::vec3 {f_width, 0.0f, 0.0f};
+	// auto v2 = glm::vec3 {f_width, f_height, 0.0f};
+	// auto v3 = glm::vec3 {f_width, f_height, 0.0f};
+	// auto v4 = glm::vec3 {0.0f, f_height, 0.0f};
+	// auto v5 = glm::vec3 {0.0f, 0.0f, 0.0f};
 
-	auto v0 = glm::vec3 {0.0f, 0.0f, 0.0f};
-	auto v1 = glm::vec3 {f_width, 0.0f, 0.0f};
-	auto v2 = glm::vec3 {f_width, f_height, 0.0f};
-	auto v3 = glm::vec3 {f_width, f_height, 0.0f};
-	auto v4 = glm::vec3 {0.0f, f_height, 0.0f};
-	auto v5 = glm::vec3 {0.0f, 0.0f, 0.0f};
-
-	auto v6 = glm::vec3 {v1.x + 0.0f, 0.0f, 0.0f};
-	auto v7 = glm::vec3 {v1.x + f_width, 0.0f, 0.0f};
-	auto v8 = glm::vec3 {v1.x + f_width, f_height, 0.0f};
-	auto v9 = glm::vec3 {v1.x + f_width, f_height, 0.0f};
-	auto v10 = glm::vec3 {v1.x, f_height, 0.0f};
-	auto v11 = glm::vec3 {v1.x, 0.0f, 0.0f};
+	// auto v6 = glm::vec3 {v1.x + 0.0f, 0.0f, 0.0f};
+	// auto v7 = glm::vec3 {v1.x + f_width, 0.0f, 0.0f};
+	// auto v8 = glm::vec3 {v1.x + f_width, f_height, 0.0f};
+	// auto v9 = glm::vec3 {v1.x + f_width, f_height, 0.0f};
+	// auto v10 = glm::vec3 {v1.x, f_height, 0.0f};
+	// auto v11 = glm::vec3 {v1.x, 0.0f, 0.0f};
 
 	auto vertices = std::vector <Vertex> {
-		{v0, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
-		{v1, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-		{v2, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
-		{v3, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
-		{v4, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}},
-		{v5, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
+		// {{-1.0f, -1.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
+		// {{1.0f, -1.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+		// {{1.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
+		// {{1.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
+		// {{-1.0f, 1.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}},
+		// {{-1.0f, -1.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}}
 
-		{v6, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
-		{v7, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-		{v8, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
-		{v9, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
-		{v10, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}},
-		{v11, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}}
+		// {v6, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
+		// {v7, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+		// {v8, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
+		// {v9, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
+		// {v10, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}},
+		// {v11, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}}
 
 		// {{-1.0f, -1.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
 		// {{1.0f, -1.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
@@ -392,6 +483,11 @@ auto main (int argc, char** argv) -> int {
 				.offset = 0,
 				.size = sizeof (mvp_push_constants),
 				.stageFlags = VK_SHADER_STAGE_VERTEX_BIT
+			},
+			{
+				.offset = 0,
+				.size = sizeof (texture_push_constants),
+				.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT
 			}}
 	};
 	// auto hh = __builtin_choose_expr (0 == 0, true, false);
@@ -455,6 +551,10 @@ auto main (int argc, char** argv) -> int {
 		.view = {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}},//glm::lookAt (glm::vec3 (2.0f, 2.0f, 2.0f), glm::vec3 (0.0f,0.0f, 0.0f), glm::vec3 (0.0f, 0.0f, 1.0f)),
 		.proj = {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}},//glm::perspective (glm::radians (45.0f), surfaceExtent.width / (float) surfaceExtent.height, 0.1f, 10.0f)
 	};
+
+	auto texturePushConstants = texture_push_constants {
+
+	};
 	
 
 	
@@ -463,7 +563,7 @@ auto main (int argc, char** argv) -> int {
 
 	auto device_local_vertex_buffer = Details <Buffer> {
 		.device = device,
-		.size = sizeof (vertices [0]) * vertices.size (),
+		.size = sizeof (vertices [0]) * 2048,
 		.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
 		.sharing_mode = VK_SHARING_MODE_EXCLUSIVE
 	} ();
@@ -477,10 +577,10 @@ auto main (int argc, char** argv) -> int {
 
 	device_local_vertex_buffer_memory.bind (device_local_vertex_buffer);
 
-	{
+	
 		auto host_visible_vertex_buffer = Details <Buffer> {
 			.device = device,
-			.size = sizeof (vertices [0]) * vertices.size (),
+			.size = sizeof (vertices [0]) * 2048,
 			.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
 			.sharing_mode = VK_SHARING_MODE_EXCLUSIVE
 		} ();
@@ -492,27 +592,32 @@ auto main (int argc, char** argv) -> int {
 			.flags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
 		} ();
 
-		host_visible_vertex_buffer_memory.bind (host_visible_vertex_buffer).paste (vertices.data(), host_visible_vertex_buffer.get_memory_requirements ().size);
-		device_local_vertex_buffer.copy_from (host_visible_vertex_buffer);
+		host_visible_vertex_buffer_memory.bind (host_visible_vertex_buffer);
 
-		host_visible_vertex_buffer.destroy ();
-		host_visible_vertex_buffer_memory.destroy ();
-	}
+		// host_visible_vertex_buffer_memory.bind (host_visible_vertex_buffer).paste (vertices.data(), host_visible_vertex_buffer.get_memory_requirements ().size);
+		// device_local_vertex_buffer.copy_from (host_visible_vertex_buffer);
 
+		// host_visible_vertex_buffer.destroy ();
+		// host_visible_vertex_buffer_memory.destroy ();
+		
+	// std::cout << "start" << std::endl;
+
+	// device_local_vertex_buffer_memory.bind (device_local_vertex_buffer);
+	// std::cout << "start" << std::endl;
 	// auto texture_image = Details <Image> {
 	// 	.physical_device = physical_device,
 	// 	.device = device,
 	// 	.format = VK_FORMAT_R8G8B8A8_SRGB,
 	// 	.path = "Graphics.Triangle.Texture.Lion.jpeg"
 	// } ();
-
+	
 	auto texture_image = Details_image2 {
 		.physical_device = physical_device,
 		.device = device,
 		.format = VK_FORMAT_R8G8B8A8_SRGB,
-		.tex_width = font_bitmap.width,
-		.tex_height = font_bitmap.height,
-		.pixels = font_bitmap.buffer
+		.tex_width = bitm.width,
+		.tex_height = bitm.height,
+		.pixels = bitm.buffer
 	} ();
 
 	auto texture_sampler = Details <Sampler> {
@@ -531,11 +636,19 @@ auto main (int argc, char** argv) -> int {
 	} ();
 
 
+	constexpr auto TEXTURE_ARRAY_SIZE = uint32_t {2};
+
 	auto descriptor_sets = descriptor_pool.allocate ({max_frames_in_flight, graphics_pipeline.descriptor_set_layout});
 	{
-		auto const image_info = VkDescriptorImageInfo {
+		auto const sampler_info = VkDescriptorImageInfo {
 			.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
 			.imageView = texture_image.view,
+			.sampler = texture_sampler.handle
+		};
+
+		auto const sampler_info2 = VkDescriptorImageInfo {
+			// .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+			// .imageView = texture_image.view,
 			.sampler = texture_sampler.handle
 		};
 
@@ -546,8 +659,16 @@ auto main (int argc, char** argv) -> int {
 				.dstArrayElement = 0,
 				.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
 				.descriptorCount = 1,
-				.pImageInfo = &image_info,
-			}
+				.pImageInfo = &sampler_info,
+			},
+			// {
+			// 	.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+			// 	.dstBinding = 1,
+			// 	.dstArrayElement = 0,
+			// 	.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER,
+			// 	.descriptorCount = TEXTURE_ARRAY_SIZE,
+			// 	.pImageInfo = &sampler_info,
+			// }
 		};
 
 		for (auto const & descriptor_set : descriptor_sets){
@@ -556,14 +677,18 @@ auto main (int argc, char** argv) -> int {
 		}
 	}
 
+	auto text = std::string ("");
+
+	
+
 	auto const rendering_tape = [&] (uint32_t image_index) noexcept -> void {
 
 		static auto startTime = std::chrono::high_resolution_clock::now();
 
 		auto currentTime = std::chrono::high_resolution_clock::now();
 		float time = std::chrono::duration<float,std::chrono::seconds::period>(currentTime -startTime).count();
-		pushConstants.model = glm::translate (glm::mat4 (1.0f), glm::vec3 (0.0f, 0.0f, 0.0f));//{{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}};//glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f),glm::vec3(0.0f, 0.0f, 1.0f));
-		pushConstants.model = glm::scale (pushConstants.model, glm::vec3 (1.0f, 1.0f, 1.0f));
+		// pushConstants.model = glm::translate (glm::mat4 (1.0f), glm::vec3 (0.0f, 0.0f, 0.0f));//{{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}};//glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f),glm::vec3(0.0f, 0.0f, 1.0f));
+		// pushConstants.model = glm::scale (pushConstants.model, glm::vec3 (1.0f, 1.0f, 1.0f));
 		// pushConstants.view =  {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}};//glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f,0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 		// pushConstants.proj = {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}};//glm::perspective(glm::radians(45.0f),swapchain.image_extent.width / (float) swapchain.image_extent.height, 0.1f,10.0f);
 		// pushConstants.proj[1][1] *= -1;
@@ -603,12 +728,41 @@ auto main (int argc, char** argv) -> int {
 		);
 		VkBuffer vertex_buffers[] = {device_local_vertex_buffer.handle};
 		VkDeviceSize offsets[] = {0};
+		// vertices.clear();
+		// auto v11 = glm::vec3 {0.0f, 0.0f, 0.0f}; 
+		// for (auto c : text) {
+		// 	int ascii = c - 32;
+		// 	std::cout << ascii << std::endl;
+			// auto v0 = glm::vec3 {v11.x + 0.0f, 0.0f, 0.0f};
+			// auto v1 = glm::vec3 {v11.x + f_width, 0.0f, 0.0f};
+			// auto v2 = glm::vec3 {v11.x + f_width, f_height, 0.0f};
+			// auto v3 = glm::vec3 {v11.x + f_width, f_height, 0.0f};
+			// auto v4 = glm::vec3 {v11.x, f_height, 0.0f};
+			// auto v5 = glm::vec3 {v11.x, 0.0f, 0.0f};
+
+			// vertices.push_back ({v0, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}});
+			// vertices.push_back ({v1, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}});
+			// vertices.push_back ({v2, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}});
+			// vertices.push_back ({v3, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}});
+			// vertices.push_back ({v4, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}});
+			// vertices.push_back ({v5, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}});
+		// 	v11.x += v1.x;
+		// }
+		// host_visible_vertex_buffer_memory.paste (vertices.data(), host_visible_vertex_buffer.get_memory_requirements ().size);
+		// device_local_vertex_buffer.copy_from (host_visible_vertex_buffer);
+		
 		vkCmdBindVertexBuffers (draw_command_buffer [current_frame].handle, 0, 1, vertex_buffers, offsets);
 
 		vkCmdPushConstants (draw_command_buffer [current_frame].handle, graphics_pipeline.layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof (mvp_push_constants), &pushConstants);
 		
 		vkCmdBindDescriptorSets(draw_command_buffer [current_frame].handle, VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline.layout, 0, 1, &descriptor_sets [current_frame], 0, nullptr);
 		vkCmdDraw (draw_command_buffer [current_frame].handle, static_cast<uint32_t> (vertices.size()), 1, 0, 0);
+		// std::cout << vertices.size() << std::endl;
+		
+		// for (auto i = 0; i < vertices.size(); ++i) {
+			// vkCmdDraw (draw_command_buffer [current_frame].handle, 6, 1, i * 6, 0);
+		// }
+
 		vkCmdEndRenderPass (draw_command_buffer [current_frame].handle);
 	};
 
@@ -616,6 +770,7 @@ auto main (int argc, char** argv) -> int {
 	auto image_finished_rendering = Details <std::vector <VkSemaphore>> {.device = device.handle, .count = max_frames_in_flight} ();
 
 	auto i = 0;
+	
 	// auto wait_semaphores = std::vector <VkSemaphore> {
 	// 	image_ready_for_rendering
 	// };
@@ -626,9 +781,154 @@ auto main (int argc, char** argv) -> int {
 	// 	VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
 	// };
 
+	
+
 	auto command_buffer_in_use = Details <std::vector <VkFence>> {.device = device.handle, .flags = VK_FENCE_CREATE_SIGNALED_BIT, .count = max_frames_in_flight} ();
 
+	auto event_handler = [&] <typename T> (T && event, auto* myself) noexcept -> void {
+
+		if constexpr (Same <Window::Event::Resize, T>) {
+ 			device.wait_idle ();
+			swapchain_details.image_extent = window.get_extent ();
+			swapchain_details.recreate (swapchain);
+		} else if constexpr (Same <Window::Event::Scroll, T>) {
+			pushConstants.model = glm::translate (pushConstants.model, glm::vec3 (event.x/10, event.y/10, 0.0f));//{{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}};//glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f),glm::vec3(0.0f, 0.0f, 1.0f));
+			// pushConstants.model = glm::scale (pushConstants.model, glm::vec3 (1.0f, 1.0f, 1.0f));
+			// std::cout << event.x << ":" << event.y << std::endl;
+		} else if constexpr (Same <Window::Event::MouseButton, T>) {
+			// std::cout << "mouse button" << std::endl;
+		} else if constexpr (Same <Window::Event::Key, T>) {
+			if (event.action == GLFW_RELEASE) {
+				text += event.key;
+
+				// std::cout << text << std::endl;
+				// std::cout << event.key - 32 << std::endl;
+				// std::cout << text << std::endl;
+				auto color = glm::vec3 {1.0f, 0.0f, 0.0f};
+				auto v0 = vertices.size() > 0 ? glm::vec3 {vertices [vertices.size() - 4].pos.x, -1.0f, 0.0f} : glm::vec3 {-1.0f, -1.0f, 0.0f};
+				auto v1 = glm::vec3 {v0.x + (bitm.widths [event.key] / (float) bitm.width), v0.y, 0.0f};
+				auto v2 = glm::vec3 {v1.x, v1.y + (bitm.heights [event.key] / (float) bitm.height), 0.0f};
+				auto v3 = v2;
+				auto v4 = glm::vec3 {v0.x, v3.y, 0.0f};
+				auto v5 = v0;
+				std::cout << event.key << std::endl;
+				std::cout << bitm.widths [event.key] / (float) bitm.width << std::endl;
+				// v0 = {-1.0f, -1.0f, 0.0f};
+				// v1 = {1.0f, -1.0f, 0.0f};
+				// v2 = {1.0f, 1.0f, 0.0f};
+				// v3 = v2;
+				// v4 = {-1.0f, 1.0f, 0.0f};
+				// v5 = v0;
+
+				// auto f0 = glm::vec2 {0.0f, 0.0f};
+				// auto f1 = glm::vec2 {1.0f, 0.0f};
+				// auto f2 = glm::vec2 {1.0f, 1.0f};
+				// auto f3 = f2;
+				// auto f4 = glm::vec2 {0.0f, 1.0f};
+				// auto f5 = f0;
+
+				auto f0 = glm::vec2 {bitm.xs [event.key] / (float) bitm.width, bitm.ys [event.key] / (float) bitm.height};
+				auto f1 = glm::vec2 {f0.x + (bitm.widths [event.key] / (float) bitm.width), f0.y};
+				auto f2 = glm::vec2 {f1.x, f1.y + (bitm.heights [event.key] / (float) bitm.height)};
+				auto f3 = f2;
+				auto f4 = glm::vec2 {f0.x, f3.y};
+				auto f5 = f0;
+
+				
+				vertices.push_back ({v0, color, f0});
+				vertices.push_back ({v1, color, f1});
+				vertices.push_back ({v2, color, f2});
+				vertices.push_back ({v3, color, f3});
+				vertices.push_back ({v4, color, f4});
+				vertices.push_back ({v5, color, f5});
+
+				host_visible_vertex_buffer_memory.paste (vertices.data(), host_visible_vertex_buffer.get_memory_requirements ().size);
+				device_local_vertex_buffer.copy_from (host_visible_vertex_buffer);
+				
+				// std::cout << f_width << std::endl;
+				// std::cout << v11.x << std::endl;
+				// auto v0 = glm::vec3 {v11.x + 0.0f, 0.0f, 0.0f};
+				// auto v1 = glm::vec3 {v11.x + 0.1f, 0.0f, 0.0f};
+				// auto v2 = glm::vec3 {v11.x + 0.1f, f_height, 0.0f};
+				// auto v3 = glm::vec3 {v11.x + 0.1f, f_height, 0.0f};
+				// auto v4 = glm::vec3 {v11.x, f_height, 0.0f};
+				// auto v5 = glm::vec3 {v11.x, 0.0f, 0.0f};
+
+				// auto color0x = 1.0f;//1.0f - ((event.key - 32.0f) / 128.0f);
+				// std::cout << color0x << std::endl;
+				// float key_index = (event.key - 32);
+				// float pixel_x_start = key_index * 50.0f;
+
+				// float g0 = (pixel_x_start / resolution.width);// * (event.key - 32);
+
+				// float pixel_x_end = g0 + (50.0f/resolution.width);
+				// std::cout << g0 << " : " << pixel_x_end << std::endl;
+				// std::cout << g0 << std::endl;
+				// auto b0 = 
+
+				// auto f0 = glm::vec2 {1.0f, 0.0f};
+				// auto f1 = glm::vec2 {0.0f, 0.0f};
+				// auto f2 = glm::vec2 {0.0f, 1.0f};
+				// auto f3 = glm::vec2 {0.0f, 0.0f};
+				// auto f4 = glm::vec2 {1.0f, 1.0f};
+
+				// vertices.push_back ({v0, {1.0f, 0.0f, 0.0f}, f0});
+				// vertices.push_back ({v1, {0.0f, 1.0f, 0.0f}, f1});
+				// vertices.push_back ({v2, {0.0f, 0.0f, 1.0f}, f2});
+				// vertices.push_back ({v3, {0.0f, 0.0f, 1.0f}, f2});
+				// vertices.push_back ({v4, {1.0f, 1.0f, 1.0f}, f4});
+				// vertices.push_back ({v5, {1.0f, 0.0f, 0.0f}, f0});
+
+				// host_visible_vertex_buffer_memory.paste (vertices.data(), host_visible_vertex_buffer.get_memory_requirements ().size);
+				// device_local_vertex_buffer.copy_from (host_visible_vertex_buffer);
+
+				// vertices.push_back ()
+				// myself -> operator () (DrawEvent::UpdatedText {}, myself);
+				// event_handler (43);
+			}
+		} else if constexpr (Same <Window::Event::CursorPosition, T>) {
+			// std::cout << "cursor position" << std::endl;
+		} else if constexpr (Same <Window::Event::CursorEnter, T>) {
+			// std::cout << "cursor enter" << std::endl;
+		} else if constexpr (Same <Window::Event::Drop, T>) {
+			// std::cout << "drop" << std::endl;
+		} else if constexpr (Same <DrawEvent::UpdatedText, T>) {
+			std::cout << "updated text" << std::endl;
+		}
+	};
+	
+	using EventHandler = decltype (event_handler) *;
+
+	window.callbacks = {
+		.resize = [] (GLFWwindow* window, int width, int height) noexcept -> void {	
+			reinterpret_cast <EventHandler> (glfwGetWindowUserPointer (window)) -> operator () (Window::Event::Resize {width, height}, reinterpret_cast <EventHandler> (glfwGetWindowUserPointer (window)));
+		},
+		.scroll = [] (GLFWwindow* window, double xoffset, double yoffset) noexcept -> void {
+			reinterpret_cast <EventHandler> (glfwGetWindowUserPointer (window)) -> operator () (Window::Event::Scroll {xoffset, yoffset}, reinterpret_cast <EventHandler> (glfwGetWindowUserPointer (window)));
+		},
+		.mouse_button = [] (GLFWwindow* window, int button, int action, int mods) noexcept -> void {
+			reinterpret_cast <EventHandler> (glfwGetWindowUserPointer (window)) -> operator () (Window::Event::MouseButton {button, action, mods}, reinterpret_cast <EventHandler> (glfwGetWindowUserPointer (window)));
+		},
+		.key = [] (GLFWwindow* window, int key, int scancode, int action, int mods) noexcept -> void {
+			reinterpret_cast <EventHandler> (glfwGetWindowUserPointer (window)) -> operator () (Window::Event::Key {key, scancode, action, mods}, reinterpret_cast <EventHandler> (glfwGetWindowUserPointer (window)));
+		},
+		.cursor_position = [] (GLFWwindow* window, double xpos, double ypos) noexcept -> void {
+			reinterpret_cast <EventHandler> (glfwGetWindowUserPointer (window)) -> operator () (Window::Event::CursorPosition {xpos, ypos}, reinterpret_cast <EventHandler> (glfwGetWindowUserPointer (window)));
+		},
+		.cursor_enter = [] (GLFWwindow* window, int entered) noexcept -> void {
+			reinterpret_cast <EventHandler> (glfwGetWindowUserPointer (window)) -> operator () (Window::Event::CursorEnter {entered}, reinterpret_cast <EventHandler> (glfwGetWindowUserPointer (window)));
+		},
+		.drop = [] (GLFWwindow* window, int count, const char** paths) noexcept -> void {
+			reinterpret_cast <EventHandler> (glfwGetWindowUserPointer (window)) -> operator () (Window::Event::Drop {paths, count}, reinterpret_cast <EventHandler> (glfwGetWindowUserPointer (window)));
+		}
+	};
+	window.set_user_pointer (&event_handler).register_callbacks ();
+	// window.set_resize_callback (resize_callback);
+	// glfwSetWindowUserPointer (window.handle, &event_handler);
+	// aa.template operator () <int> ();
 	// // main loop
+
+	
 	while (not window.should_close ()) {
 		glfwPollEvents ();
 		// auto image_index = AcquireNextImageIndex {
@@ -638,12 +938,12 @@ auto main (int argc, char** argv) -> int {
 		// 	}
 		// } ();
 		
-		if (window_resized) {
-			device.wait_idle ();
-			swapchain_details.image_extent = window.get_extent ();
-			swapchain_details.recreate (swapchain);
-			window_resized = false;
-		}
+		// if (window_resized) {
+		// 	device.wait_idle ();
+		// 	swapchain_details.image_extent = window.get_extent ();
+		// 	swapchain_details.recreate (swapchain);
+		// 	window_resized = false;
+		// }
 		
 		auto const image_index = swapchain.acquire_next_image (image_ready_for_rendering [current_frame]);
 
@@ -805,6 +1105,8 @@ auto main (int argc, char** argv) -> int {
 	// destroy (command_pools);
 	// free (mem);
 	// destroy (views);
+	host_visible_vertex_buffer.destroy ();
+	host_visible_vertex_buffer_memory.destroy ();
 	device_local_vertex_buffer.destroy ();
 	device_local_vertex_buffer_memory.destroy ();
 	texture_sampler.destroy ();

@@ -293,6 +293,55 @@ struct Details;
 
 export struct Window {
 	GLFWwindow * handle;
+
+	struct {
+		void (*resize) (GLFWwindow* window, int width, int height) noexcept = nullptr;
+		void (*scroll) (GLFWwindow* window, double xoffset, double yoffset) noexcept = nullptr;
+		void (*mouse_button) (GLFWwindow* window, int button, int action, int mods) noexcept = nullptr;
+		void (*key) (GLFWwindow* window, int key, int scancode, int action, int mods) noexcept = nullptr;
+		void (*cursor_position) (GLFWwindow* window, double xpos, double ypos) noexcept = nullptr;
+		void (*cursor_enter) (GLFWwindow* window, int entered) noexcept = nullptr;
+		void (*drop) (GLFWwindow* window, int count, const char** paths) noexcept = nullptr;
+	} callbacks;
+
+	struct Event {
+		struct Resize {int width, height;};
+		struct Scroll {double x, y;};
+		struct MouseButton {int button, action, mods;};
+		struct Key {int key, scancode, action, mods;};
+		struct CursorPosition {double x, y;};
+		struct CursorEnter {int entered;};
+		struct Drop {char const ** paths; int count;};
+	};
+
+	
+
+	
+	auto register_callbacks () noexcept -> Window & {
+		if (callbacks.resize != nullptr) {
+			glfwSetFramebufferSizeCallback (handle, callbacks.resize);
+		}
+		if (callbacks.scroll != nullptr) {
+			glfwSetScrollCallback (handle, callbacks.scroll);
+		}
+		if (callbacks.mouse_button != nullptr) {
+			glfwSetMouseButtonCallback (handle, callbacks.mouse_button);
+		}
+		if (callbacks.key != nullptr) {
+			glfwSetKeyCallback (handle, callbacks.key);
+		}
+		if (callbacks.cursor_position != nullptr) {
+			glfwSetCursorPosCallback (handle, callbacks.cursor_position);
+		}
+		if (callbacks.cursor_enter != nullptr) {
+			glfwSetCursorEnterCallback (handle, callbacks.cursor_enter);
+		}
+		if (callbacks.drop != nullptr) {
+			glfwSetDropCallback (handle, callbacks.drop);
+		}
+
+		return *this;
+	}
 	
 	auto get_extent () const noexcept -> VkExtent2D {
 		int width, height;
@@ -306,8 +355,22 @@ export struct Window {
 	auto should_close () const noexcept -> bool {
 		return glfwWindowShouldClose (handle);
 	}
+	auto disable_cursor () const noexcept -> void {
+		glfwSetInputMode (handle, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	}
+	auto hide_cursor () const noexcept -> void {
+		glfwSetInputMode (handle, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+	}
+	auto enable_cursor () const noexcept -> void {
+		glfwSetInputMode (handle, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+	}
 	auto destroy () noexcept -> void {
 		glfwDestroyWindow (handle);
+	}
+
+	auto set_user_pointer (auto * p) noexcept -> Window & {
+		glfwSetWindowUserPointer (handle, p);
+		return *this;
 	}
 
 	auto set_resize_callback (void (*callback) (GLFWwindow* window, int width, int height)) noexcept -> Window & {
@@ -320,18 +383,28 @@ export struct Window {
 		return *this;
 	}
 
-	auto set_mouse_callback (void (*callback) (GLFWwindow* window, int button, int action, int mods)) noexcept -> Window & {
+	auto set_mouse_button_callback (void (*callback) (GLFWwindow* window, int button, int action, int mods)) noexcept -> Window & {
 		glfwSetMouseButtonCallback (handle, callback);
 		return *this;
 	}
 
 	auto set_key_callback (void (*callback) (GLFWwindow* window, int key, int scancode, int action, int mods)) noexcept -> Window & {
-		glfwSetMouseButtonCallback (handle, callback);
+		glfwSetKeyCallback (handle, callback);
 		return *this;
 	}
 
-	auto set_cur_callback (void (*callback) (GLFWwindow* window, int key, int scancode, int action, int mods)) noexcept -> Window & {
-		glfwSetMouseButtonCallback (handle, callback);
+	auto set_cursor_position_callback (void (*callback) (GLFWwindow* window, double xpos, double ypos)) noexcept -> Window & {
+		glfwSetCursorPosCallback (handle, callback);
+		return *this;
+	}
+
+	auto set_cursor_enter_callback (void (*callback) (GLFWwindow* window, int entered)) noexcept -> Window & {
+		glfwSetCursorEnterCallback (handle, callback);
+		return *this;
+	}
+
+	auto set_drop_callback (void (*callback) (GLFWwindow* window, int count, const char** paths)) noexcept -> Window & {
+		glfwSetDropCallback (handle, callback);
 		return *this;
 	}
 
@@ -1096,6 +1169,9 @@ export struct mvp_push_constants {
 	alignas (16) glm::mat4 proj;
 };
 
+export struct texture_push_constants {
+	int imageIdx;
+};
 export template <>
 struct Details <GraphicsPipeline> {
 	LogicalDevice const & device;
@@ -1775,11 +1851,11 @@ struct Details <Sampler> {
 			.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK,
 			.unnormalizedCoordinates = VK_FALSE,
 			.compareEnable = VK_FALSE,
-			.compareOp = VK_COMPARE_OP_ALWAYS,
+			.compareOp = VK_COMPARE_OP_NEVER,// VK_COMPARE_OP_ALWAYS,
 			.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR,
 			.mipLodBias = 0.0f,
 			.minLod = 0.0f,
-			.maxLod = 0.0f
+			.maxLod = 1.0f
 		};
 
 		auto sampler = VkSampler {};
@@ -1852,6 +1928,10 @@ export struct FontBitmap {
 	uint32_t width;
 	uint32_t height;
 	unsigned char * buffer;
+	int * widths;
+	int * heights;
+	int * xs;
+	int * ys;
 
 	auto destroy () noexcept -> void {
 		delete [] buffer;
@@ -1904,22 +1984,27 @@ struct Details <FontBitmap> {
 
 
 
-		for (auto i = ascii_begin; i < ascii_end - 1; ++i) {
+		for (auto i = ascii_begin + 1; i < ascii_end - 1; ++i) {
 			glyph_index = FT_Get_Char_Index (face, i); 
 			if (FT_Load_Glyph (face, glyph_index, FT_LOAD_DEFAULT)) printNexit ("error >> failed to load glyph");
 			if (FT_Render_Glyph (face->glyph, FT_RENDER_MODE_NORMAL)) printNexit ("error >> failed to render glyph");
 			widths[i] = face->glyph->metrics.width/64;
-
+			// std::cout << (char) i << std::endl;
 			auto x = ((i - ascii_begin - 1) % columns) * (font_size + padding);
 			auto y = ((i - ascii_begin - 1) / columns) * (font_size + padding);
 			x += 1;
 			y += (font_size + padding) - face->glyph->bitmap_top + max_under_baseline - 1;
-			
+			// std::cout << x << " : " << y << " : " << face->glyph->metrics.width/64 << std::endl;
 			auto const & bitmap = face -> glyph -> bitmap;
 			// font_bitmap.buffer = bitmap.buffer;
 			// font_bitmap.width = bitmap.width;
 			// font_bitmap.height = bitmap.rows;
 			// break;
+			// std::cout << (y) * image_width * 4 - (x) * 4 << std::endl;
+			// std::cout << (y + bitmap.rows) * image_width * 4 - (x + bitmap.width) * 4 << std::endl;
+			// auto xstart = x;
+			// auto ystart = y;
+			// std::cout << x << " : " << y << std::endl;
 			for (auto xx = 0; xx < bitmap.width; ++xx) {
 				for (auto yy = 0; yy < bitmap.rows; ++yy) {
 					auto r = bitmap.buffer [(yy * (bitmap.width) + xx)];
@@ -2012,6 +2097,8 @@ struct Details <FontBitmap2> {
 			// font_bitmap.width = bitmap.width;
 			// font_bitmap.height = bitmap.rows;
 			// break;
+
+		
 		for (auto xx = 0; xx < bitmap.width; ++xx) {
 			for (auto yy = 0; yy < bitmap.rows; ++yy) {
 				auto r = bitmap.buffer [(yy * (bitmap.width) + xx)];
@@ -2032,4 +2119,9 @@ struct Details <FontBitmap2> {
 
 		return {.width = image_width, .height = image_height, .buffer = buffer};
 	}
+};
+
+
+export struct DrawEvent {
+	struct UpdatedText {};
 };
