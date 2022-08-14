@@ -64,7 +64,8 @@ auto window_resized = false;
 auto main (int argc, char** argv) -> int {
 
 	auto bitm = FontBitmap {}; 
-
+	int max_under_baseline = 0;
+	int max_height = 0;
 	{
 		auto font_size = 128;
 
@@ -91,6 +92,7 @@ auto main (int argc, char** argv) -> int {
 		int* heights = new int[128];
 		int* xs = new int[128];
 		int* ys = new int[128];
+		int* hang = new int[128];
 
 		// we need to find the character that goes below the baseline by the biggest value
 		int maxUnderBaseline = 0;
@@ -105,14 +107,22 @@ auto main (int argc, char** argv) -> int {
 
 			// get the glyph metrics
 			const FT_Glyph_Metrics& glyphMetrics = face->glyph->metrics;
-
+			
 			// find the character that reaches below the baseline by the biggest value
 			int glyphHang = (glyphMetrics.horiBearingY-glyphMetrics.height)/64;
+			std::cout << (char) i << " " << glyphHang << std::endl;
+			hang [i] = glyphHang;
+			if ((glyphMetrics.height/64) + glyphHang > max_height) {
+				max_height = (glyphMetrics.height/64) + glyphHang;
+			}
+			
 			if( glyphHang < maxUnderBaseline )
 			{
 				maxUnderBaseline = glyphHang;
 			}
 		}
+
+		max_under_baseline = maxUnderBaseline;
 
 		// draw all characters
 		for ( int i = 0 ; i < 128 ; ++i )
@@ -133,6 +143,7 @@ auto main (int argc, char** argv) -> int {
 			// find the tile position where we have to draw the character
 			int x = (i%16)*(font_size+2);
 			int y = (i/16)*(font_size+2);
+			
 			x += 1; // 1 pixel padding from the left side of the tile
 			y += (font_size+2) - face->glyph->bitmap_top + maxUnderBaseline - 1;
 
@@ -162,7 +173,13 @@ auto main (int argc, char** argv) -> int {
 		bitm.heights = heights;
 		bitm.xs = xs;
 		bitm.ys = ys;
+		bitm.hang = hang;
 	}
+
+	std::cout << max_under_baseline << std::endl;
+	std::cout << max_height << std::endl;
+
+	// return 0;
 
 	// for (auto i = 0; i < 128; ++i) std::cout << bitm.ys [i] << std::endl;
 
@@ -237,6 +254,8 @@ auto main (int argc, char** argv) -> int {
 			// {GLFW_RESIZABLE, GLFW_FALSE}
 		}
 	} ();
+
+	glfwSetInputMode (window.handle, GLFW_LOCK_KEY_MODS, GLFW_TRUE);
 
 	// auto f_width = ((float) font_bitmap.width) / ((float) resolution.width);
 	// auto f_height = ((float) font_bitmap.height) / ((float) resolution.height);
@@ -798,94 +817,108 @@ auto main (int argc, char** argv) -> int {
 		} else if constexpr (Same <Window::Event::MouseButton, T>) {
 			// std::cout << "mouse button" << std::endl;
 		} else if constexpr (Same <Window::Event::Key, T>) {
+			
 			if (event.action == GLFW_RELEASE) {
-				text += event.key;
+				if (event.key == GLFW_KEY_ENTER) {
+					
+				} else if (event.key == GLFW_KEY_LEFT_SHIFT or event.key == GLFW_KEY_RIGHT_SHIFT){
 
-				// std::cout << text << std::endl;
-				// std::cout << event.key - 32 << std::endl;
-				// std::cout << text << std::endl;
-				auto color = glm::vec3 {1.0f, 0.0f, 0.0f};
-				auto v0 = vertices.size() > 0 ? glm::vec3 {vertices [vertices.size() - 4].pos.x, -1.0f, 0.0f} : glm::vec3 {-1.0f, -1.0f, 0.0f};
-				auto v1 = glm::vec3 {v0.x + (bitm.widths [event.key] / (float) bitm.width), v0.y, 0.0f};
-				auto v2 = glm::vec3 {v1.x, v1.y + (bitm.heights [event.key] / (float) bitm.height), 0.0f};
-				auto v3 = v2;
-				auto v4 = glm::vec3 {v0.x, v3.y, 0.0f};
-				auto v5 = v0;
-				std::cout << event.key << std::endl;
-				std::cout << bitm.widths [event.key] / (float) bitm.width << std::endl;
-				// v0 = {-1.0f, -1.0f, 0.0f};
-				// v1 = {1.0f, -1.0f, 0.0f};
-				// v2 = {1.0f, 1.0f, 0.0f};
-				// v3 = v2;
-				// v4 = {-1.0f, 1.0f, 0.0f};
-				// v5 = v0;
+				} else if (event.key >= 65 and event.key <= 90) { // bokstav
+					auto stor = event.mods & GLFW_MOD_CAPS_LOCK ? (event.mods & GLFW_MOD_SHIFT ? false : true) : (event.mods & GLFW_MOD_SHIFT ? true : false);
+					// std::cout << (stor ? "stor" : "liten") << std::endl;
+					// text += event.key;
 
-				// auto f0 = glm::vec2 {0.0f, 0.0f};
-				// auto f1 = glm::vec2 {1.0f, 0.0f};
-				// auto f2 = glm::vec2 {1.0f, 1.0f};
-				// auto f3 = f2;
-				// auto f4 = glm::vec2 {0.0f, 1.0f};
-				// auto f5 = f0;
+					// std::cout << text << std::endl;
+					// std::cout << event.key - 32 << std::endl;
+					// std::cout << text << std::endl;
+					if (not stor) {
+						event.key += 32;
+					}
+					auto yplus = (max_height - bitm.heights [event.key] - bitm.hang [event.key]) / (float) bitm.height;//(max_height / (float) bitm.height);//((bitm.hang [event.key]) / (float) bitm.height);
+					auto color = glm::vec3 {1.0f, 0.0f, 0.0f};
+					auto v0 = vertices.size() > 0 ? glm::vec3 {vertices [vertices.size() - 4].pos.x, -1.0f + yplus, 0.0f} : glm::vec3 {-1.0f, -1.0f + yplus, 0.0f};
+					auto v1 = glm::vec3 {v0.x + (bitm.widths [event.key] / (float) bitm.width), v0.y, 0.0f};
+					auto v2 = glm::vec3 {v1.x, v1.y + (bitm.heights [event.key] / (float) bitm.height), 0.0f};
+					auto v3 = v2;
+					auto v4 = glm::vec3 {v0.x, v3.y, 0.0f};
+					auto v5 = v0;
+					// std::cout << event.key << std::endl;
+					// std::cout << bitm.widths [event.key] / (float) bitm.width << std::endl;
+					// v0 = {-1.0f, -1.0f, 0.0f};
+					// v1 = {1.0f, -1.0f, 0.0f};
+					// v2 = {1.0f, 1.0f, 0.0f};
+					// v3 = v2;
+					// v4 = {-1.0f, 1.0f, 0.0f};
+					// v5 = v0;
 
-				auto f0 = glm::vec2 {bitm.xs [event.key] / (float) bitm.width, bitm.ys [event.key] / (float) bitm.height};
-				auto f1 = glm::vec2 {f0.x + (bitm.widths [event.key] / (float) bitm.width), f0.y};
-				auto f2 = glm::vec2 {f1.x, f1.y + (bitm.heights [event.key] / (float) bitm.height)};
-				auto f3 = f2;
-				auto f4 = glm::vec2 {f0.x, f3.y};
-				auto f5 = f0;
+					// auto f0 = glm::vec2 {0.0f, 0.0f};
+					// auto f1 = glm::vec2 {1.0f, 0.0f};
+					// auto f2 = glm::vec2 {1.0f, 1.0f};
+					// auto f3 = f2;
+					// auto f4 = glm::vec2 {0.0f, 1.0f};
+					// auto f5 = f0;
+
+					auto f0 = glm::vec2 {bitm.xs [event.key] / (float) bitm.width, bitm.ys [event.key] / (float) bitm.height};
+					auto f1 = glm::vec2 {f0.x + (bitm.widths [event.key] / (float) bitm.width), f0.y};
+					auto f2 = glm::vec2 {f1.x, f1.y + (bitm.heights [event.key] / (float) bitm.height)};
+					auto f3 = f2;
+					auto f4 = glm::vec2 {f0.x, f3.y};
+					auto f5 = f0;
 
 
+					
+					vertices.push_back ({v0, color, f0});
+					vertices.push_back ({v1, color, f1});
+					vertices.push_back ({v2, color, f2});
+					vertices.push_back ({v3, color, f3});
+					vertices.push_back ({v4, color, f4});
+					vertices.push_back ({v5, color, f5});
+
+					host_visible_vertex_buffer_memory.paste (vertices.data(), host_visible_vertex_buffer.get_memory_requirements ().size);
+					device_local_vertex_buffer.copy_from (host_visible_vertex_buffer);
+					
+					// std::cout << f_width << std::endl;
+					// std::cout << v11.x << std::endl;
+					// auto v0 = glm::vec3 {v11.x + 0.0f, 0.0f, 0.0f};
+					// auto v1 = glm::vec3 {v11.x + 0.1f, 0.0f, 0.0f};
+					// auto v2 = glm::vec3 {v11.x + 0.1f, f_height, 0.0f};
+					// auto v3 = glm::vec3 {v11.x + 0.1f, f_height, 0.0f};
+					// auto v4 = glm::vec3 {v11.x, f_height, 0.0f};
+					// auto v5 = glm::vec3 {v11.x, 0.0f, 0.0f};
+
+					// auto color0x = 1.0f;//1.0f - ((event.key - 32.0f) / 128.0f);
+					// std::cout << color0x << std::endl;
+					// float key_index = (event.key - 32);
+					// float pixel_x_start = key_index * 50.0f;
+
+					// float g0 = (pixel_x_start / resolution.width);// * (event.key - 32);
+
+					// float pixel_x_end = g0 + (50.0f/resolution.width);
+					// std::cout << g0 << " : " << pixel_x_end << std::endl;
+					// std::cout << g0 << std::endl;
+					// auto b0 = 
+
+					// auto f0 = glm::vec2 {1.0f, 0.0f};
+					// auto f1 = glm::vec2 {0.0f, 0.0f};
+					// auto f2 = glm::vec2 {0.0f, 1.0f};
+					// auto f3 = glm::vec2 {0.0f, 0.0f};
+					// auto f4 = glm::vec2 {1.0f, 1.0f};
+
+					// vertices.push_back ({v0, {1.0f, 0.0f, 0.0f}, f0});
+					// vertices.push_back ({v1, {0.0f, 1.0f, 0.0f}, f1});
+					// vertices.push_back ({v2, {0.0f, 0.0f, 1.0f}, f2});
+					// vertices.push_back ({v3, {0.0f, 0.0f, 1.0f}, f2});
+					// vertices.push_back ({v4, {1.0f, 1.0f, 1.0f}, f4});
+					// vertices.push_back ({v5, {1.0f, 0.0f, 0.0f}, f0});
+
+					// host_visible_vertex_buffer_memory.paste (vertices.data(), host_visible_vertex_buffer.get_memory_requirements ().size);
+					// device_local_vertex_buffer.copy_from (host_visible_vertex_buffer);
+
+					// vertices.push_back ()
+					// myself -> operator () (DrawEvent::UpdatedText {}, myself);
+					// event_handler (43);
+				}
 				
-				vertices.push_back ({v0, color, f0});
-				vertices.push_back ({v1, color, f1});
-				vertices.push_back ({v2, color, f2});
-				vertices.push_back ({v3, color, f3});
-				vertices.push_back ({v4, color, f4});
-				vertices.push_back ({v5, color, f5});
-
-				host_visible_vertex_buffer_memory.paste (vertices.data(), host_visible_vertex_buffer.get_memory_requirements ().size);
-				device_local_vertex_buffer.copy_from (host_visible_vertex_buffer);
-				
-				// std::cout << f_width << std::endl;
-				// std::cout << v11.x << std::endl;
-				// auto v0 = glm::vec3 {v11.x + 0.0f, 0.0f, 0.0f};
-				// auto v1 = glm::vec3 {v11.x + 0.1f, 0.0f, 0.0f};
-				// auto v2 = glm::vec3 {v11.x + 0.1f, f_height, 0.0f};
-				// auto v3 = glm::vec3 {v11.x + 0.1f, f_height, 0.0f};
-				// auto v4 = glm::vec3 {v11.x, f_height, 0.0f};
-				// auto v5 = glm::vec3 {v11.x, 0.0f, 0.0f};
-
-				// auto color0x = 1.0f;//1.0f - ((event.key - 32.0f) / 128.0f);
-				// std::cout << color0x << std::endl;
-				// float key_index = (event.key - 32);
-				// float pixel_x_start = key_index * 50.0f;
-
-				// float g0 = (pixel_x_start / resolution.width);// * (event.key - 32);
-
-				// float pixel_x_end = g0 + (50.0f/resolution.width);
-				// std::cout << g0 << " : " << pixel_x_end << std::endl;
-				// std::cout << g0 << std::endl;
-				// auto b0 = 
-
-				// auto f0 = glm::vec2 {1.0f, 0.0f};
-				// auto f1 = glm::vec2 {0.0f, 0.0f};
-				// auto f2 = glm::vec2 {0.0f, 1.0f};
-				// auto f3 = glm::vec2 {0.0f, 0.0f};
-				// auto f4 = glm::vec2 {1.0f, 1.0f};
-
-				// vertices.push_back ({v0, {1.0f, 0.0f, 0.0f}, f0});
-				// vertices.push_back ({v1, {0.0f, 1.0f, 0.0f}, f1});
-				// vertices.push_back ({v2, {0.0f, 0.0f, 1.0f}, f2});
-				// vertices.push_back ({v3, {0.0f, 0.0f, 1.0f}, f2});
-				// vertices.push_back ({v4, {1.0f, 1.0f, 1.0f}, f4});
-				// vertices.push_back ({v5, {1.0f, 0.0f, 0.0f}, f0});
-
-				// host_visible_vertex_buffer_memory.paste (vertices.data(), host_visible_vertex_buffer.get_memory_requirements ().size);
-				// device_local_vertex_buffer.copy_from (host_visible_vertex_buffer);
-
-				// vertices.push_back ()
-				// myself -> operator () (DrawEvent::UpdatedText {}, myself);
-				// event_handler (43);
 			}
 		} else if constexpr (Same <Window::Event::CursorPosition, T>) {
 			// std::cout << "cursor position" << std::endl;

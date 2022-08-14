@@ -1932,6 +1932,7 @@ export struct FontBitmap {
 	int * heights;
 	int * xs;
 	int * ys;
+	int * hang;
 
 	auto destroy () noexcept -> void {
 		delete [] buffer;
