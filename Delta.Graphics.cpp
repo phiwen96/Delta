@@ -10,6 +10,7 @@
 #include <ft2build.h>
 #include FT_FREETYPE_H
 export module Delta.Graphics;
+export import Delta.Graphics.Font;
 import Delta.Range;
 import std;
 
@@ -312,6 +313,31 @@ export struct Window {
 		struct CursorPosition {double x, y;};
 		struct CursorEnter {int entered;};
 		struct Drop {char const ** paths; int count;};
+
+		enum struct Type {
+			RESIZE,
+			SCROLL,
+			MOUSE_BUTTON,
+			KEY,
+			CURSOR_POSITION,
+			CURSOR_ENTER,
+			DROP,
+			NADA
+		};
+
+		struct State {
+			union {
+				Resize resize;
+				Scroll scroll;
+				MouseButton mouse_button;
+				Key key;
+				CursorPosition cursor_position;
+				CursorEnter cursor_enter;
+				Drop drop;
+			} as;
+
+			Type type;
+		};
 	};
 
 	
@@ -341,6 +367,30 @@ export struct Window {
 		}
 
 		return *this;
+	}
+
+	auto get_cursor_position () const noexcept -> VkOffset2D {
+		double x, y;
+		glfwGetCursorPos (handle, &x, &y);
+
+		return {
+			.x = static_cast <int32_t> (x),
+			.y = static_cast <int32_t> (y)
+		};
+	}
+
+	auto get_size () const noexcept -> VkExtent2D {
+		int width, height;
+		glfwGetWindowSize(handle, &width, &height);
+
+		return {
+			.width = static_cast <uint32_t> (width),
+			.height = static_cast <uint32_t> (height)
+		};
+	}
+
+	auto get_left_mouse_button () const noexcept -> int {
+		return glfwGetMouseButton (handle, GLFW_MOUSE_BUTTON_LEFT);
 	}
 	
 	auto get_extent () const noexcept -> VkExtent2D {
@@ -409,6 +459,14 @@ export struct Window {
 	}
 
 	
+};
+
+export struct Draw {
+	struct State {
+		enum {
+			NADA
+		};
+	};
 };
 
 export template <>
@@ -706,7 +764,7 @@ export struct QueueFamily {
 };
 
 export struct LogicalDevice {
-	PhysicalDevice const & physical_device;
+	PhysicalDevice physical_device;
 	VkDevice handle;
 	std::vector <QueueFamily> queue_families;
 
@@ -863,7 +921,7 @@ struct Details <std::vector <VkFence>> {
 
 export template <>
 struct Details <LogicalDevice> {
-	PhysicalDevice const & physical_device;
+	PhysicalDevice & physical_device;
 	VkSurfaceKHR const & surface;
 	std::vector <char const*> const layers;
 	std::vector <char const*> const extensions;
@@ -1161,6 +1219,7 @@ export struct Vertex {
 	glm::vec3 pos;
 	glm::vec3 color;
 	glm::vec2 tex_coord;
+	glm::vec2 as_texture;
 };
 
 export struct mvp_push_constants {
@@ -1315,7 +1374,7 @@ struct Details <GraphicsPipeline> {
 };
 
 export struct DeviceMemory {
-	LogicalDevice const & device;
+	LogicalDevice device;
 	VkDeviceMemory handle;
 
 	auto paste (auto * data, VkDeviceSize const size) noexcept -> void {
@@ -1351,7 +1410,7 @@ export struct DeviceMemory {
 export template <>
 struct Details <DeviceMemory> {
 	PhysicalDevice const & physical_device;
-	LogicalDevice const & device;
+	LogicalDevice & device;
 	VkDeviceSize size;
 	VkMemoryPropertyFlags flags;
 	// uint32_t memory_type_index;
@@ -1377,8 +1436,9 @@ struct Details <DeviceMemory> {
 };
 
 export struct Buffer {
-	LogicalDevice const & device;
-	VkBuffer handle;	
+	LogicalDevice device;
+	VkBuffer handle;
+	VkDeviceSize size;
 
 	operator VkBuffer& () noexcept {
 		return handle;
@@ -1426,7 +1486,7 @@ export struct Buffer {
 
 export template <>
 struct Details <Buffer> {
-	LogicalDevice const & device;
+	LogicalDevice & device;
 	VkDeviceSize size;
 	VkBufferUsageFlags usage;
 	VkSharingMode sharing_mode;
@@ -1447,7 +1507,7 @@ struct Details <Buffer> {
 			exit (-1);
 		}
 
-		return {device, buffer};
+		return {device, buffer, size};
 	}
 };
 
@@ -1475,7 +1535,7 @@ export struct Image {
 export template <>
 struct Details <Image> {
 	PhysicalDevice const & physical_device;
-	LogicalDevice const & device;
+	LogicalDevice & device;
 	VkFormat const & format;
 	char const * path;
 
@@ -1653,7 +1713,7 @@ struct Details <Image> {
 
 export struct Details_image2 {
 	PhysicalDevice const & physical_device;
-	LogicalDevice const & device;
+	LogicalDevice & device;
 	VkFormat const & format;
 	uint32_t tex_width, tex_height;
 	unsigned char * pixels;
@@ -1939,6 +1999,99 @@ export struct FontBitmap {
 	}
 };
 
+
+export template <uint32_t _width, uint32_t _height>
+struct FontBitmap3 {
+	constexpr static uint32_t image_width = _width;
+	constexpr static uint32_t image_height = _height;
+	unsigned char buffer [image_width * image_height * 4];
+	int width [128];
+	int height [128];
+	int x0 [128];
+	int y0 [128];
+	int hang [128];
+};
+
+export namespace font {
+
+enum opcode : uint_fast8_t {
+	OP_DRAW,
+	OP_SKIP,
+	OP_DELETE,
+	OP_UNDO
+};
+
+struct value {
+	union {
+		char character;
+
+
+	} as;
+	enum {
+		VAL_CHAR
+	} type;
+};
+
+struct chunk {
+	std::vector <uint_fast8_t> code;
+	std::vector <value> values;
+
+	auto add_instruction (uint_fast8_t opcode) noexcept -> auto & {
+		code.push_back (opcode);
+		return *this;
+	}
+	auto add_constant (value v) noexcept -> uint_fast8_t {
+		values.push_back (v);
+		return values.size()-1;
+	}
+};
+
+
+template <int max_stack>
+struct vm {
+	std::vector <Vertex> & vertices;
+	Buffer & device_local_vertex_buffer;
+	DeviceMemory & device_local_vertex_buffer_memory;
+	Buffer & host_visible_vertex_buffer;
+	DeviceMemory & host_visible_vertex_buffer_memory;
+	font::value stack [max_stack];
+	font::value * top = stack;
+
+	template <uint32_t width, uint32_t height>
+	auto interpret (font::chunk& chunk, FontBitmap3 <width, height> & bitmap) noexcept -> void {
+		auto * ip = chunk.code.data();
+
+		for (;;) {
+			auto instruction = *ip++;
+			switch (instruction) {
+				case OP_DRAW: {
+					auto constant = pop ();
+					break;
+				}
+				
+				default: {
+					break;
+				}
+			}
+		}
+	}
+
+	auto push (font::value v) noexcept -> void {
+		*top = v;
+		++top;
+	}
+
+	auto pop () noexcept -> font::value {
+		--top;
+		return *top;
+	}
+};
+
+}
+
+
+
+
 export template <>
 struct Details <FontBitmap> {
 	char const * file;
@@ -2126,3 +2279,8 @@ struct Details <FontBitmap2> {
 export struct DrawEvent {
 	struct UpdatedText {};
 };
+
+
+// struct State {
+
+// };

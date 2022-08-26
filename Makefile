@@ -40,7 +40,7 @@ APP=main
 apps:= App.Server App.FileNotifier Graphics.Triangle App.Graphics.Info#App.Client
 tests:= Test.Yolo Test.Array Test.Range
 # all: $(apps) $(tests)
-all: Graphics.Test
+all: HejHej Graphics.Test
 
 # std_headers:
 # 	$(GCC) -xc++-system-header iostream
@@ -50,7 +50,10 @@ all: Graphics.Test
 Delta.pcm: Delta.cpp Delta.Graphics.pcm #Delta.String.pcm 
 	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@ 
 
-Delta.Graphics.pcm: Delta.Graphics.cpp Delta.Range.pcm
+Delta.Graphics.pcm: Delta.Graphics.cpp Delta.Graphics.Font.pcm Delta.Range.pcm
+	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@ $(CXX_INCLUDES)
+
+Delta.Graphics.Font.pcm: Delta.Graphics.Font.cpp
 	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@ $(CXX_INCLUDES)
 
 #Delta.String.pcm: Delta.String.cpp Delta.Array.pcm
@@ -140,35 +143,41 @@ Delta.Range.pcm: Delta.Range.cpp #Delta.Iterator.pcm
 
 
 
-Test.%: Test.%.o 
-	$(CXX) $(CXX_FLAGS) $< -o $@ $(CXX_APP_FLAGS)
+# Test.%: Test.%.o 
+# 	$(CXX) $(CXX_FLAGS) $< -o $@ $(CXX_APP_FLAGS)
 
-Test.%.o: Test.%.cpp Delta.pcm
-	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -o $@
+# Test.%.o: Test.%.cpp Delta.pcm
+# 	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -o $@
 
-App.%: App.%.o Delta.pcm 
-	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) Delta.pcm $< -o $@ $(CXX_INCLUDES) $(CXX_LIBS)
+# App.%: App.%.o Delta.pcm 
+# 	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) Delta.pcm $< -o $@ $(CXX_INCLUDES) $(CXX_LIBS)
 
-App.%.o: App.%.cpp Delta.pcm 
-	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -o $@
+# App.%.o: App.%.cpp Delta.pcm 
+# 	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -o $@
 
 
-Graphics.Triangle: Graphics.Triangle.o 
-	$(CXX) $(CXX_FLAGS) $< -o $@ $(CXX_LIBS)
+# Graphics.Triangle: Graphics.Triangle.o 
+# 	$(CXX) $(CXX_FLAGS) $< -o $@ $(CXX_LIBS)
 
-Graphics.Triangle.o: Graphics.Triangle.cpp Graphics.Triangle.vert.spv Graphics.Triangle.frag.spv Delta.pcm
-	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) -fmodule-file=Delta.pcm -c $< -o $@ $(CXX_INCLUDES)
+# Graphics.Triangle.o: Graphics.Triangle.cpp Graphics.Triangle.vert.spv Graphics.Triangle.frag.spv Delta.pcm
+# 	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) -fmodule-file=Delta.pcm -c $< -o $@ $(CXX_INCLUDES)
 
-Graphics.Text: Graphics.Text.o 
-	$(CXX) $(CXX_FLAGS) $< -o $@ $(CXX_LIBS)
+# Graphics.Text: Graphics.Text.o 
+# 	$(CXX) $(CXX_FLAGS) $< -o $@ $(CXX_LIBS)
 
-Graphics.Text.o: Graphics.Text.cpp Graphics.Text.vert.spv Graphics.Text.frag.spv
-	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) -c $< -o $@ $(CXX_INCLUDES)
+# Graphics.Text.o: Graphics.Text.cpp Graphics.Text.vert.spv Graphics.Text.frag.spv
+# 	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) -c $< -o $@ $(CXX_INCLUDES)
 
-App.Graphics.Info: App.Graphics.Info.o Delta.pcm Delta.Graphics.pcm
+# App.Graphics.Info: App.Graphics.Info.o Delta.pcm Delta.Graphics.pcm
+# 	$(CXX) $(CXX_FLAGS) $^ -o $@ $(CXX_INCLUDES) $(CXX_LIBS)
+
+# App.Graphics.Info.o: App.Graphics.Info.cpp Delta.pcm Delta.Graphics.pcm App.Graphics.Info.vert.spv App.Graphics.Info.frag.spv
+# 	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) -c $< -o $@ $(CXX_INCLUDES)
+
+HejHej: HejHej.o Delta.pcm
 	$(CXX) $(CXX_FLAGS) $^ -o $@ $(CXX_INCLUDES) $(CXX_LIBS)
 
-App.Graphics.Info.o: App.Graphics.Info.cpp Delta.pcm Delta.Graphics.pcm App.Graphics.Info.vert.spv App.Graphics.Info.frag.spv
+HejHej.o: HejHej.cpp Delta.pcm
 	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) -c $< -o $@ $(CXX_INCLUDES)
 
 Graphics.Test: Graphics.Test.o Delta.pcm Delta.Graphics.pcm
@@ -177,11 +186,13 @@ Graphics.Test: Graphics.Test.o Delta.pcm Delta.Graphics.pcm
 Graphics.Test.o: Graphics.Test.cpp Delta.pcm Delta.Graphics.pcm Graphics.Test.vert.spv Graphics.Test.frag.spv
 	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) -c $< -o $@ $(CXX_INCLUDES)
 
-App.Compiler: App.Compiler.o Delta.pcm 
-	$(CXX) $(CXX_FLAGS) $^ -o $@ $(CXX_INCLUDES) $(CXX_LIBS)
 
-App.Compiler.o: App.Compiler.cpp Delta.pcm 
-	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) -c $< -o $@ $(CXX_INCLUDES)
+
+# App.Compiler: App.Compiler.o Delta.pcm 
+# 	$(CXX) $(CXX_FLAGS) $^ -o $@ $(CXX_INCLUDES) $(CXX_LIBS)
+
+# App.Compiler.o: App.Compiler.cpp Delta.pcm 
+# 	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) -c $< -o $@ $(CXX_INCLUDES)
 
 GLSLC_COMPILER = /Users/philipwenkel/VulkanSDK/1.2.182.0/macOS/bin/glslc
 
