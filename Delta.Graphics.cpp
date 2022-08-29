@@ -296,6 +296,7 @@ export struct Window {
 	GLFWwindow * handle;
 
 	struct {
+		void (*position) (GLFWwindow* window, int x, int y) noexcept = nullptr;
 		void (*resize) (GLFWwindow* window, int width, int height) noexcept = nullptr;
 		void (*scroll) (GLFWwindow* window, double xoffset, double yoffset) noexcept = nullptr;
 		void (*mouse_button) (GLFWwindow* window, int button, int action, int mods) noexcept = nullptr;
@@ -306,6 +307,7 @@ export struct Window {
 	} callbacks;
 
 	struct Event {
+		struct Position {int x, y;};
 		struct Resize {int width, height;};
 		struct Scroll {double x, y;};
 		struct MouseButton {int button, action, mods;};
@@ -344,6 +346,9 @@ export struct Window {
 
 	
 	auto register_callbacks () noexcept -> Window & {
+		if (callbacks.position != nullptr) {
+			glfwSetWindowPosCallback (handle, callbacks.position);
+		}
 		if (callbacks.resize != nullptr) {
 			glfwSetFramebufferSizeCallback (handle, callbacks.resize);
 		}
@@ -386,6 +391,16 @@ export struct Window {
 		return {
 			.width = static_cast <uint32_t> (width),
 			.height = static_cast <uint32_t> (height)
+		};
+	}
+
+	auto get_position () const noexcept -> VkOffset2D {
+		int x, y;
+		glfwGetWindowPos (handle, &x, &y);
+
+		return {
+			.x = static_cast <int32_t> (x),
+			.y = static_cast <int32_t> (y)
 		};
 	}
 
@@ -463,9 +478,62 @@ export struct Window {
 
 export struct Draw {
 	struct State {
-		enum {
-			NADA
+		union {
+			struct {float x0, y0, x1, y1;} line;
+			struct {float x0, y0, x1, y1;} rectangle;
+			struct {char character; float xoffset, yoffset;} letter;
+
+		} as;
+		enum : std::uint8_t {
+			BEGIN = 0b0000'0001,
+			LINE = 0b0000'0010,
+			RECTANGLE = 0b0000'0100,
+			LETTER = 0b0000'1000,
+			UNDO = 0b0001'0000
 		};
+		std::uint8_t type;
+
+		friend auto operator << (std::ostream& os, State const& s) -> std::ostream& {
+			if (s.type & RECTANGLE) {
+				os << "RECTANGLE >> [" << s.as.rectangle.x0 << "," << s.as.rectangle.y0 << "] [" << s.as.rectangle.x1 << "," << s.as.rectangle.y1 << "]";
+			} else if (s.type & LETTER) {
+				os << "LETTER >> [" << s.as.letter.character << "] [" << s.as.letter.xoffset << "," << s.as.letter.yoffset << "]";
+			}
+			return os;
+		}
+	};
+
+	struct PlayBack {
+		std::uint8_t stack [128];
+		std::vector <State> states;
+		std::vector <State> undos;
+		std::vector <State> redos;
+
+		auto top () -> std::uint8_t& {
+			return stack [_top - 1];
+		}
+
+		auto push (std::uint8_t v) {
+			// std::cout << "push!" << std::endl;
+			stack [_top++] = v;
+			if (_top == 128) {
+				full = true;
+				_top = 0;
+			}
+		}
+
+		auto pop () -> std::uint8_t {
+			if (_top == 0) {
+				if (full) {
+					_top = 127;
+				} else {
+					return 0b0000'0000;
+				}
+			}
+			return stack [_top--];
+		}
+		int _top {0};
+		bool full {false};
 	};
 };
 
@@ -670,6 +738,8 @@ export struct CommandBuffer {
 		vkCmdSetViewport (handle, 0, 1, &viewport);}
 	auto set_scissor (VkRect2D const & scissor) const noexcept -> void {
 		vkCmdSetScissor (handle, 0, 1, &scissor);}
+	auto set_line_width (float const width) const noexcept -> void {
+		vkCmdSetLineWidth (handle, width);}
 	// auto push_constants (VkPipelineLayout const & layout, VkShaderStageFlags const & flags)
 
 	
@@ -1153,8 +1223,10 @@ struct Details <Swapchain> {
 		return {device, swapchain, images, views, image_extent, frame_buffers};
 	}
 	auto recreate (Swapchain & s) noexcept -> void {
-		s.destroy ();
+		// s.destroy ();
+		old_swapchain = s.handle;
 		auto new_s = this->operator()();
+		s.destroy ();
 		std::swap (s.handle, new_s.handle);
 		std::swap (s.images, new_s.images);
 		std::swap (s.views, new_s.views);
@@ -1220,6 +1292,11 @@ export struct Vertex {
 	glm::vec3 color;
 	glm::vec2 tex_coord;
 	glm::vec2 as_texture;
+};
+
+export struct LineVertex {
+	glm::vec3 pos;
+	glm::vec3 color;
 };
 
 export struct mvp_push_constants {

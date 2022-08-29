@@ -70,9 +70,30 @@ struct overload : T... {
 
 
 
-
+// enum : std::uint8_t {
+// 	EGG_COOKING_BIT = 0b000'0001,
+// 	SMASHED_EGG_COOKING_BIT = 0b000'0010,
+// 	MILK_COOKING_BIT = 0b000'0100,
+// 	CHEESE_COOKING_BIT = 0b000'1000
+// };
 
 auto main (int argc, char** argv) -> int {
+
+	// auto cooking_flag = MILK_COOKING_BIT | CHEESE_COOKING_BIT | EGG_COOKING_BIT; // set
+
+	// cooking_flag &= ~CHEESE_COOKING_BIT; // turn off
+
+	// cooking_flag ^= CHEESE_COOKING_BIT; // toggle
+
+	// if (cooking_flag & CHEESE_COOKING_BIT) std::cout << "egg!" << std::endl;
+
+	// return 0;
+
+	// auto verts = const_map <Vertex, LineVertex> {"fonts", "lines"};
+	// verts ["lines"];
+	// auto & b = vers ["lines"];
+
+	// return 0;
 	
 
 	auto bitm = FontBitmap {}; 
@@ -243,7 +264,7 @@ auto main (int argc, char** argv) -> int {
 
 	auto font_bitmap = Details <FontBitmap> {
 		.file = "/System/Library/Fonts/Supplemental/Impact.ttf",
-		.font_size = 48,
+		.font_size = 96,
 		.padding = 2,
 		.rows = 10,
 		.columns = 20,
@@ -259,8 +280,10 @@ auto main (int argc, char** argv) -> int {
 		.extent = {
 			// .width = font_bitmap.width,//640,
 			// .height = font_bitmap.height},//480},
-			.width = resolution.width,
-			.height = resolution.height},
+			.width = 640,
+			.height = 480},
+			// .width = resolution.width,
+			// .height = resolution.height},
 			// .width = resolution.width,
 			// .height = resolution.height},
 		.hints = {
@@ -271,47 +294,11 @@ auto main (int argc, char** argv) -> int {
 
 	glfwSetInputMode (window.handle, GLFW_LOCK_KEY_MODS, GLFW_TRUE);
 
-	// auto f_width = ((float) font_bitmap.width) / ((float) resolution.width);
-	// auto f_height = ((float) font_bitmap.height) / ((float) resolution.height);
-	// auto f_padding_w = 2.0f / ((float) resolution.width); 
-	// auto f_padding_h = 2.0f / ((float) resolution.height); 
+	auto text_vertices = std::vector <Vertex> {};
 
-	// auto v0 = glm::vec3 {0.0f, 0.0f, 0.0f};
-	// auto v1 = glm::vec3 {f_width, 0.0f, 0.0f};
-	// auto v2 = glm::vec3 {f_width, f_height, 0.0f};
-	// auto v3 = glm::vec3 {f_width, f_height, 0.0f};
-	// auto v4 = glm::vec3 {0.0f, f_height, 0.0f};
-	// auto v5 = glm::vec3 {0.0f, 0.0f, 0.0f};
+	auto line_vertices = std::vector <LineVertex> {};
 
-	// auto v6 = glm::vec3 {v1.x + 0.0f, 0.0f, 0.0f};
-	// auto v7 = glm::vec3 {v1.x + f_width, 0.0f, 0.0f};
-	// auto v8 = glm::vec3 {v1.x + f_width, f_height, 0.0f};
-	// auto v9 = glm::vec3 {v1.x + f_width, f_height, 0.0f};
-	// auto v10 = glm::vec3 {v1.x, f_height, 0.0f};
-	// auto v11 = glm::vec3 {v1.x, 0.0f, 0.0f};
-
-	auto text_vertices = std::vector <Vertex> {
-		// {{-1.0f, -1.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
-		// {{1.0f, -1.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-		// {{1.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
-		// {{1.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
-		// {{-1.0f, 1.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}},
-		// {{-1.0f, -1.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}}
-
-		// {v6, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
-		// {v7, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-		// {v8, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
-		// {v9, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
-		// {v10, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}},
-		// {v11, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}}
-
-		// {{-1.0f, -1.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
-		// {{1.0f, -1.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-		// {{1.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
-		// {{1.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
-		// {{-1.0f, 1.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}},
-		// {{-1.0f, -1.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}}
-	};
+	auto line_indices = std::vector <uint16_t> {};
 
 	
 
@@ -533,6 +520,103 @@ auto main (int argc, char** argv) -> int {
 	// static_assert (Convertible_to <int, std::string>);
 	// Convertible_to <int> auto ss = std::string {};
 	auto graphics_pipeline = graphics_pipeline_details ();
+
+	auto graphics_pipeline_details_line = Details <GraphicsPipeline> {
+		.device = device,
+		.render_pass = render_pass.handle,
+		.image_format = VK_FORMAT_B8G8R8A8_SRGB,
+		.shaders = {{"Graphics.Test.Line.vert.spv", VK_SHADER_STAGE_VERTEX_BIT}, {"Graphics.Test.Line.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT}},
+		.vertex_binding_descriptions = {
+			{
+				.binding = 0,
+				.stride = sizeof (LineVertex),
+				.inputRate = VK_VERTEX_INPUT_RATE_VERTEX
+			}},
+		.vertex_attribute_descriptions = {
+			{
+				.binding = 0,
+				.location = 0,
+				.format = VK_FORMAT_R32G32B32_SFLOAT,
+				.offset = offsetof (LineVertex, pos)
+			},
+			{
+				.binding = 0,
+				.location = 1,
+				.format = VK_FORMAT_R32G32B32_SFLOAT,
+				.offset = offsetof (LineVertex, color)
+			}},
+		.input_assembly = {
+			.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
+			.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST,
+			
+			.primitiveRestartEnable = VK_FALSE},
+		.viewports = {
+			{
+				.x = 0.0f,
+				.y = 0.0f,
+				.width = (float) swapchain.image_extent.width,
+				.height = (float) swapchain.image_extent.height,
+				.minDepth = 0.0f,
+				.maxDepth = 1.0f
+			}},
+		.scissors = {
+			{
+				.offset = {0, 0},
+				.extent = swapchain.image_extent
+			}},
+		.rasterization = {
+			.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
+			.depthClampEnable = VK_FALSE,
+			.rasterizerDiscardEnable = VK_FALSE,
+			.polygonMode = VK_POLYGON_MODE_FILL, // VK_POLYGON_MODE_LINE,
+			.lineWidth = 1.0f,
+			.cullMode = VK_CULL_MODE_BACK_BIT,
+			.frontFace = VK_FRONT_FACE_CLOCKWISE,
+			.depthBiasEnable = VK_FALSE,
+			.depthBiasConstantFactor = 0.0f,
+			.depthBiasClamp = 0.0f,
+			.depthBiasSlopeFactor = 0.0f},
+		.multisample = {
+			.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
+			.sampleShadingEnable = VK_FALSE,
+			.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT,
+			.minSampleShading = 1.0f,
+			.pSampleMask = nullptr,
+			.alphaToCoverageEnable = VK_FALSE,
+			.alphaToOneEnable = VK_FALSE},
+		.color_blend_attachments = {
+			{
+				.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT,
+				.blendEnable = VK_FALSE,
+				.srcColorBlendFactor = VK_BLEND_FACTOR_ONE,
+				.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO,
+				.colorBlendOp = VK_BLEND_OP_ADD,
+				.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE,
+				.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO,
+				.alphaBlendOp = VK_BLEND_OP_ADD
+			}},
+		.color_blend = {
+			.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
+			.logicOpEnable = VK_FALSE,
+			.logicOp = VK_LOGIC_OP_COPY,
+			.blendConstants = {0.0f, 0.0f, 0.0f, 0.0f}},
+		.dynamic_states = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR, VK_DYNAMIC_STATE_LINE_WIDTH},
+		.descriptor_set_layout_bindings = {
+			{
+				.binding = 0,
+				.descriptorCount = 0
+			}},
+		.push_constant_ranges = {
+			{
+				.offset = 0,
+				.size = sizeof (mvp_push_constants),
+				.stageFlags = VK_SHADER_STAGE_VERTEX_BIT
+			}}
+	};
+	// auto hh = __builtin_choose_expr (0 == 0, true, false);
+	// static_assert (Convertible_to <int, std::string>);
+	// Convertible_to <int> auto ss = std::string {};
+	auto graphics_pipeline_line = graphics_pipeline_details_line ();
 	
 	auto presentation_queue = [&] -> Queue {
 		for (auto const & queue_family : device.queue_families) {
@@ -600,7 +684,7 @@ auto main (int argc, char** argv) -> int {
 
 	auto device_local_vertex_buffer_details = Details <Buffer> {
 		.device = device,
-		.size = sizeof (text_vertices [0]) * 2048,
+		.size = sizeof (text_vertices) * 2048,
 		.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
 		.sharing_mode = VK_SHARING_MODE_EXCLUSIVE
 	};
@@ -620,7 +704,7 @@ auto main (int argc, char** argv) -> int {
 
 	auto host_visible_vertex_buffer_details = Details <Buffer> {
 		.device = device,
-		.size = sizeof (text_vertices [0]) * 2048,
+		.size = sizeof (text_vertices) * 2048,
 		.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
 		.sharing_mode = VK_SHARING_MODE_EXCLUSIVE
 	};
@@ -659,6 +743,144 @@ auto main (int argc, char** argv) -> int {
 		host_visible_vertex_buffer_memory = host_visible_vertex_buffer_memory_details ();
 		host_visible_vertex_buffer_memory.bind (host_visible_vertex_buffer);
 	};
+
+
+
+
+
+
+	auto device_local_line_vertex_buffer_details = Details <Buffer> {
+		.device = device,
+		.size = sizeof (line_vertices) * 2048,
+		.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+		.sharing_mode = VK_SHARING_MODE_EXCLUSIVE
+	};
+
+	auto device_local_line_vertex_buffer = device_local_line_vertex_buffer_details ();
+
+	auto device_local_line_vertex_buffer_memory_details = Details <DeviceMemory> {
+		.physical_device = physical_device,
+		.device = device,
+		.size = device_local_line_vertex_buffer.get_memory_requirements ().size,
+		.flags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
+	};
+
+	auto device_local_line_vertex_buffer_memory = device_local_line_vertex_buffer_memory_details ();
+
+	device_local_line_vertex_buffer_memory.bind (device_local_line_vertex_buffer);
+
+	auto host_visible_line_vertex_buffer_details = Details <Buffer> {
+		.device = device,
+		.size = sizeof (line_vertices) * 2048,
+		.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+		.sharing_mode = VK_SHARING_MODE_EXCLUSIVE
+	};
+
+	auto host_visible_line_vertex_buffer = host_visible_line_vertex_buffer_details ();
+
+	auto host_visible_line_vertex_buffer_memory_details = Details <DeviceMemory> {
+		.physical_device = physical_device,
+		.device = device,
+		.size = host_visible_line_vertex_buffer.get_memory_requirements ().size,
+		.flags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
+	};
+
+	auto host_visible_line_vertex_buffer_memory = host_visible_line_vertex_buffer_memory_details ();
+
+	host_visible_line_vertex_buffer_memory.bind (host_visible_line_vertex_buffer);
+
+	auto const dublicate_line_vertex_buffers = [&] {
+		device.wait_idle ();
+		host_visible_line_vertex_buffer.destroy ();
+		host_visible_line_vertex_buffer_memory.destroy ();
+		device_local_line_vertex_buffer.destroy ();
+		device_local_line_vertex_buffer_memory.destroy ();
+
+		device_local_line_vertex_buffer_details.size *= 2;
+		device_local_line_vertex_buffer = device_local_line_vertex_buffer_details ();
+
+		device_local_line_vertex_buffer_memory_details.size *= 2;
+		device_local_line_vertex_buffer_memory = device_local_line_vertex_buffer_memory_details ();
+		device_local_line_vertex_buffer_memory.bind (device_local_line_vertex_buffer);
+
+		host_visible_line_vertex_buffer_details.size *= 2;
+		host_visible_line_vertex_buffer = host_visible_line_vertex_buffer_details ();
+
+		host_visible_line_vertex_buffer_memory_details.size *= 2;
+		host_visible_line_vertex_buffer_memory = host_visible_line_vertex_buffer_memory_details ();
+		host_visible_line_vertex_buffer_memory.bind (host_visible_line_vertex_buffer);
+	};
+
+
+
+
+
+
+	auto device_local_line_index_buffer_details = Details <Buffer> {
+		.device = device,
+		.size = sizeof (uint16_t) * 2048,
+		.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+		.sharing_mode = VK_SHARING_MODE_EXCLUSIVE
+	};
+
+	auto device_local_line_index_buffer = device_local_line_index_buffer_details ();
+
+	auto device_local_line_index_buffer_memory_details = Details <DeviceMemory> {
+		.physical_device = physical_device,
+		.device = device,
+		.size = device_local_line_index_buffer.get_memory_requirements ().size,
+		.flags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
+	};
+
+	auto device_local_line_index_buffer_memory = device_local_line_index_buffer_memory_details ();
+
+	device_local_line_index_buffer_memory.bind (device_local_line_index_buffer);
+
+	auto host_visible_line_index_buffer_details = Details <Buffer> {
+		.device = device,
+		.size = sizeof (uint16_t) * 2048,
+		.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+		.sharing_mode = VK_SHARING_MODE_EXCLUSIVE
+	};
+
+	auto host_visible_line_index_buffer = host_visible_line_index_buffer_details ();
+
+	auto host_visible_line_index_buffer_memory_details = Details <DeviceMemory> {
+		.physical_device = physical_device,
+		.device = device,
+		.size = host_visible_line_index_buffer.get_memory_requirements ().size,
+		.flags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
+	};
+
+	auto host_visible_line_index_buffer_memory = host_visible_line_index_buffer_memory_details ();
+
+	host_visible_line_index_buffer_memory.bind (host_visible_line_index_buffer);
+
+	auto const dublicate_line_index_buffers = [&] {
+		device.wait_idle ();
+		host_visible_line_index_buffer.destroy ();
+		host_visible_line_index_buffer_memory.destroy ();
+		device_local_line_index_buffer.destroy ();
+		device_local_line_index_buffer_memory.destroy ();
+
+		device_local_line_index_buffer_details.size *= 2;
+		device_local_line_index_buffer = device_local_line_index_buffer_details ();
+
+		device_local_line_index_buffer_memory_details.size *= 2;
+		device_local_line_index_buffer_memory = device_local_line_index_buffer_memory_details ();
+		device_local_line_index_buffer_memory.bind (device_local_line_index_buffer);
+
+		host_visible_line_index_buffer_details.size *= 2;
+		host_visible_line_index_buffer = host_visible_line_index_buffer_details ();
+
+		host_visible_line_index_buffer_memory_details.size *= 2;
+		host_visible_line_index_buffer_memory = host_visible_line_index_buffer_memory_details ();
+		host_visible_line_index_buffer_memory.bind (host_visible_line_index_buffer);
+	};
+
+
+
+
 
 		// host_visible_vertex_buffer_memory.bind (host_visible_vertex_buffer).paste (text_vertices.data(), host_visible_vertex_buffer.get_memory_requirements ().size);
 		// device_local_vertex_buffer.copy_from (host_visible_vertex_buffer);
@@ -745,7 +967,7 @@ auto main (int argc, char** argv) -> int {
 
 	auto text = std::string ("");
 
-	
+	auto viewport = VkRect2D {.offset = {.x = 0, .y = 0}, .extent = {.width = swapchain.image_extent.width, .height = swapchain.image_extent.height}};
 
 	auto const rendering_tape = [&] (uint32_t image_index) noexcept -> void {
 
@@ -778,10 +1000,10 @@ auto main (int argc, char** argv) -> int {
 		vkCmdBindPipeline (draw_command_buffer [current_frame].handle, VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline.handle);
 		draw_command_buffer [current_frame].set_viewport (
 			VkViewport {
-				.x = 0.0f,
-				.y = 0.0f,
-				.width = (float) swapchain.image_extent.width,
-				.height = (float) swapchain.image_extent.height,
+				.x = (float) viewport.offset.x,
+				.y = (float) viewport.offset.y,
+				.width = (float) viewport.extent.width,
+				.height = (float) viewport.extent.height,
 				.minDepth = 0.0f,
 				.maxDepth = 1.0f
 			}
@@ -818,16 +1040,40 @@ auto main (int argc, char** argv) -> int {
 		// device_local_vertex_buffer.copy_from (host_visible_vertex_buffer);
 		
 		vkCmdBindVertexBuffers (draw_command_buffer [current_frame].handle, 0, 1, vertex_buffers, offsets);
-
 		vkCmdPushConstants (draw_command_buffer [current_frame].handle, graphics_pipeline.layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof (mvp_push_constants), &pushConstants);
-		
 		vkCmdBindDescriptorSets(draw_command_buffer [current_frame].handle, VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline.layout, 0, 1, &descriptor_sets [current_frame], 0, nullptr);
 		vkCmdDraw (draw_command_buffer [current_frame].handle, static_cast<uint32_t> (text_vertices.size()), 1, 0, 0);
-		// std::cout << text_vertices.size() << std::endl;
 		
-		// for (auto i = 0; i < text_vertices.size(); ++i) {
-			// vkCmdDraw (draw_command_buffer [current_frame].handle, 6, 1, i * 6, 0);
-		// }
+
+		
+		VkBuffer line_vertex_buffers[] = {device_local_line_vertex_buffer.handle};
+		vkCmdBindPipeline (draw_command_buffer [current_frame].handle, VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline_line.handle);
+		draw_command_buffer [current_frame].set_viewport (
+			VkViewport {
+				.x = (float) viewport.offset.x,
+				.y = (float) viewport.offset.y,
+				.width = (float) viewport.extent.width,
+				.height = (float) viewport.extent.height,
+				.minDepth = 0.0f,
+				.maxDepth = 1.0f
+			}
+		);
+		draw_command_buffer [current_frame].set_scissor (
+			VkRect2D {
+				.offset = {0, 0},
+				.extent = swapchain.image_extent
+			}
+		);
+		draw_command_buffer [current_frame].set_line_width (1.0f);
+		vkCmdBindVertexBuffers (draw_command_buffer [current_frame].handle, 0, 1, line_vertex_buffers, offsets);
+		vkCmdBindIndexBuffer (draw_command_buffer [current_frame].handle, device_local_line_index_buffer.handle, 0, VK_INDEX_TYPE_UINT16);
+		vkCmdPushConstants (draw_command_buffer [current_frame].handle, graphics_pipeline_line.layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof (mvp_push_constants), &pushConstants);
+		// vkCmdBindDescriptorSets(draw_command_buffer [current_frame].handle, VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline_line.layout, 0, 1, &descriptor_sets [current_frame], 0, nullptr);
+		// vkCmdDraw (draw_command_buffer [current_frame].handle, static_cast<uint32_t> (line_vertices.size()), 1, 0, 0);
+		vkCmdDrawIndexed (draw_command_buffer [current_frame].handle, static_cast<uint32_t> (line_indices.size()), 1, 0, 0, 0);
+		
+
+
 
 		vkCmdEndRenderPass (draw_command_buffer [current_frame].handle);
 	};
@@ -878,11 +1124,115 @@ auto main (int argc, char** argv) -> int {
 		Window::Event::State current {.type = Window::Event::Type::NADA};
 	} inputState;
 
+
+
+	auto drawState = Draw::State {.type = 0b0000'0000};
+
+	auto playBack = Draw::PlayBack {};
+
+	auto printit = [&] {
+		std::cout << "STACK [" << playBack._top << "]" << std::endl;
+		for (auto i = 0; i < playBack._top; ++i) {
+			if (playBack.stack[i] == Draw::State::RECTANGLE)
+				std::cout << "    RECTANGLE" << std::endl;
+			else if (playBack.stack[i] == Draw::State::LETTER)
+				std::cout << "    LETTER" << std::endl;
+		}
+		std::cout << std::endl;
+
+		std::cout << "STATES [" << playBack.states.size () << "]" << std::endl;
+		for (auto const & state : playBack.states) {
+			std::cout << "    " << state << std::endl;
+		}
+		std::cout << std::endl;
+
+		std::cout << "UNDOS [" << playBack.undos.size () << "]" << std::endl;
+		for (auto const & undo : playBack.undos) {
+			std::cout << "    " << undo << std::endl;
+		}
+		std::cout << std::endl;
+	};
+
+	auto windowPos = window.get_position ();
+	auto windowSize = window.get_size ();
+	auto const startWindowSize = windowSize;
+	
+
 	auto inputEventHandler = overload {
+		[&](Window::Event::Position event){
+
+		}, 
 		[&](Window::Event::Resize event){
 			device.wait_idle ();
 			swapchain_details.image_extent = window.get_extent ();
 			swapchain_details.recreate (swapchain);
+			// auto s = window.get_size ();
+			auto newWindowPos = window.get_position ();
+			auto newWindowSize = window.get_size ();
+			// viewport.offset.x -= newWindowPos.x - windowPos.x;
+			// viewport.offset.y -= newWindowPos.y - windowPos.y;
+			// std::cout << "new " << newWindowPos.x << " old " << windowPos.x << std::endl;
+			viewport.offset.x -= (newWindowPos.x - windowPos.x) - (newWindowSize.width - windowSize.width);
+			viewport.offset.y -= (newWindowPos.y - windowPos.y) - (newWindowSize.height - windowSize.height);
+			windowPos = newWindowPos;
+			windowSize = newWindowSize;
+
+			// windowSize = window.get_size();
+			
+			// if (windowPos.x );
+			// std::cout << s.width << " " << event.width << std::endl;
+			// std::cout << viewport.extent.width << std::endl;
+			// viewport.extent.width *= 2;
+			// viewport.extent.height *= 2;
+			// glfwSetWindowAspectRatio (window.handle, windowSize.width, windowSize.height);
+
+			return;
+			auto pos = window.get_position();
+			std::cout << "[" << pos.x << "," << pos.y << "]" << std::endl;
+			auto widthplus = event.width / (float) windowSize.width;
+			for (auto & state : playBack.states) {
+				if (state.type == Draw::State::LETTER) {
+					auto const asTexture = glm::vec2 {1.0f, 0.0f};
+										auto key = state.as.letter.character;
+										// std::cout << key << std::endl;
+
+										auto yplus = (max_height - bitmap.height [key] - bitmap.hang [key]) / (float) bitmap.image_height;//(max_height / (float) bitm.height);//((bitm.hang [key]) / (float) bitm.height);
+										auto color = glm::vec3 {1.0f, 0.0f, 0.0f};
+										// auto width = bitmap.width [key] / (float) bitmap.image_width;
+										// width /= 2;
+										// auto height = bitmap.height [key] / (float) bitmap.image_height;
+										auto size = window.get_size();
+										auto width = (bitmap.width [key] / (float) windowSize.width);
+										auto height = bitmap.height [key] / (float) windowSize.height;
+										// height /= 2;
+										auto v0 = glm::vec3 {0.5f + state.as.letter.xoffset, 0.5f + state.as.letter.yoffset, 0.0f};
+										auto v1 = glm::vec3 {v0.x + width, v0.y, 0.0f};
+										auto v2 = glm::vec3 {v1.x, v1.y + height, 0.0f};
+										auto v3 = v2;
+										auto v4 = glm::vec3 {v0.x, v3.y, 0.0f};
+										auto v5 = v0;
+
+										auto f0 = glm::vec2 {bitmap.x0 [key] / (float) bitmap.image_width, bitmap.y0 [key] / (float) bitmap.image_height};
+										auto f1 = glm::vec2 {f0.x + (bitmap.width [key] / (float) bitmap.image_width), f0.y};
+										auto f2 = glm::vec2 {f1.x, f1.y + (bitmap.height [key] / (float) bitmap.image_height)};
+										auto f3 = f2;
+										auto f4 = glm::vec2 {f0.x, f3.y};
+										auto f5 = f0;
+
+									
+
+										
+										text_vertices.push_back ({v0, color, f0, asTexture});
+										text_vertices.push_back ({v1, color, f1, asTexture});
+										text_vertices.push_back ({v2, color, f2, asTexture});
+										text_vertices.push_back ({v3, color, f3, asTexture});
+										text_vertices.push_back ({v4, color, f4, asTexture});
+										text_vertices.push_back ({v5, color, f5, asTexture});
+
+										host_visible_vertex_buffer_memory.paste (text_vertices.data(), host_visible_vertex_buffer.get_memory_requirements ().size);
+										device_local_vertex_buffer.copy_from (host_visible_vertex_buffer);
+				}
+			}
 		}, 
 		[&](Window::Event::Scroll event){
 			pushConstants.model = glm::translate (pushConstants.model, glm::vec3 (event.x/10, event.y/10, 0.0f));//{{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}};//glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f),glm::vec3(0.0f, 0.0f, 1.0f));
@@ -890,10 +1240,47 @@ auto main (int argc, char** argv) -> int {
 			scrollOffset.y += event.y/10;
 		},
 		[&](Window::Event::MouseButton event){
-			
+			static constexpr auto START_DRAW_RECTANGLE = true;
+			if (event.button == GLFW_MOUSE_BUTTON_LEFT) {
+				if (event.action == GLFW_PRESS) {
+					auto pos = window.get_cursor_position ();
+					auto extent = window.get_size ();
+					std::cout << viewport.extent.width << std::endl;
+					auto xpos = ((pos.x / (float) windowSize.width) - 0.5) * 2 - scrollOffset.x;// + (viewport.offset.x / (float) extent.width);
+					auto ypos = ((pos.y / (float) windowSize.height) - 0.5) * 2 - scrollOffset.y;// - (viewport.offset.y / (float) windowSize.width);
+
+					auto color = glm::vec3 {1.0f, 1.0f, 1.0f};
+
+					auto v0 = glm::vec3 {xpos, ypos, 0.0f};
+
+
+					line_indices.push_back (line_vertices.size());
+					line_vertices.push_back ({.pos = v0, .color = color});
+
+					drawState.type |= Draw::State::BEGIN;
+
+					if constexpr (START_DRAW_RECTANGLE) {
+						drawState.type |= Draw::State::RECTANGLE;
+						// drawState.as.rectangle = {.x0 = (float) xpos, .y0 = (float) ypos};
+					} else {
+						drawState.type |= Draw::State::LINE;
+						// drawState.as.line = {.x = (float) xpos, .y = (float) ypos};
+					}
+
+				} else if (event.action == GLFW_RELEASE) {
+					if (drawState.type & (~Draw::State::BEGIN | Draw::State::RECTANGLE | Draw::State::LINE)) {
+						playBack.push (drawState.type);
+						drawState.type &= ~(Draw::State::RECTANGLE | Draw::State::LINE); // turn off
+
+						printit ();
+					}
+						
+					// drawState.type = Draw::State::NONE;
+				}
+			} 
 		}, 
 		[&](Window::Event::Key event){
-			std::cout << event.key << std::endl;
+			// std::cout << event.key << std::endl;
 
 			
 			if (event.action == GLFW_PRESS or event.action == GLFW_REPEAT) {
@@ -978,10 +1365,140 @@ auto main (int argc, char** argv) -> int {
 							// undos.pop_back();
 							// xoffset = new_xoffset;
 							// yoffset = new_yoffset;
-							host_visible_vertex_buffer_memory.paste (text_vertices.data(), host_visible_vertex_buffer.get_memory_requirements ().size);
-							device_local_vertex_buffer.copy_from (host_visible_vertex_buffer);
+							// host_visible_vertex_buffer_memory.paste (text_vertices.data(), host_visible_vertex_buffer.get_memory_requirements ().size);
+							// device_local_vertex_buffer.copy_from (host_visible_vertex_buffer);
+							if (event.mods & GLFW_MOD_SHIFT) { // REDO
+								// std::cout << "REDO" << std::endl;
+								if (not playBack.undos.empty()) {
+									auto & undo = playBack.undos.back();
+									if (undo.type == Draw::State::RECTANGLE) {
+										auto color = glm::vec3 {1.0f, 1.0f, 1.0f};
+										auto& v = undo.as.rectangle;
+										auto v0 = glm::vec3 {v.x0, v.y0, 0.0f};
+										auto v1 = glm::vec3 {v.x1, v.y0, 0.0f};
+										auto v2 = glm::vec3 {v.x1, v.y1, 0.0f};
+										auto v3 = glm::vec3 {v.x0, v.y1, 0.0f};
+										line_vertices.resize (line_vertices.size() + 4);
+										auto sv = line_vertices.size() - 1;
+										line_vertices [sv - 3] = {v0, color};
+										line_vertices [sv - 2] = {v1, color};
+										line_vertices [sv - 1] = {v2, color};
+										line_vertices [sv] = {v3, color};
+										line_indices.resize (line_indices.size() + 8);
+										auto si = line_indices.size() - 1;
+										line_indices [si - 7] = sv - 3;
+										line_indices [si - 6] = sv - 2;
+										line_indices [si - 5] = sv - 2;
+										line_indices [si - 4] = sv - 1;
+										line_indices [si - 3] = sv - 1;
+										line_indices [si - 2] = sv;
+										line_indices [si - 1] = sv;
+										line_indices [si] = sv - 3;
 
-						} 
+										if (line_vertices.size() >= (device_local_line_vertex_buffer.get_memory_requirements().size / sizeof (line_vertices [0]))) {
+											dublicate_line_vertex_buffers ();
+										}
+
+										if (line_indices.size() >= (device_local_line_index_buffer.get_memory_requirements().size / sizeof (line_indices [0]))) {
+											dublicate_line_index_buffers ();
+										}
+
+										host_visible_line_vertex_buffer_memory.paste (line_vertices.data(), host_visible_line_vertex_buffer.get_memory_requirements ().size);
+										device_local_line_vertex_buffer.copy_from (host_visible_line_vertex_buffer);
+
+										host_visible_line_index_buffer_memory.paste (line_indices.data(), host_visible_line_index_buffer.get_memory_requirements ().size);
+										device_local_line_index_buffer.copy_from (host_visible_line_index_buffer);
+
+										playBack.undos.pop_back ();
+									} else if (undo.type == Draw::State::LETTER) {
+										auto const asTexture = glm::vec2 {1.0f, 0.0f};
+										auto key = undo.as.letter.character;
+										// std::cout << key << std::endl;
+
+										auto color = glm::vec3 {1.0f, 0.0f, 0.0f};
+										
+										auto yplus = (max_height - bitmap.height [key] - bitmap.hang [key]) / (float) windowSize.height;//(max_height / (float) bitm.height);//((bitm.hang [event.key]) / (float) bitm.height);
+										auto width = bitmap.width [key] / (float) windowSize.width;
+										auto height = bitmap.height [key] / (float) windowSize.height;
+
+										auto v0 = glm::vec3 {undo.as.letter.xoffset, undo.as.letter.yoffset, 0.0f};
+										auto v1 = glm::vec3 {v0.x + width, v0.y, 0.0f};
+										auto v2 = glm::vec3 {v1.x, v1.y + height, 0.0f};
+										auto v3 = v2;
+										auto v4 = glm::vec3 {v0.x, v3.y, 0.0f};
+										auto v5 = v0;
+
+										auto f0 = glm::vec2 {bitmap.x0 [key] / (float) bitmap.image_width, bitmap.y0 [key] / (float) bitmap.image_height};
+										auto f1 = glm::vec2 {f0.x + (bitmap.width [key] / (float) bitmap.image_width), f0.y};
+										auto f2 = glm::vec2 {f1.x, f1.y + (bitmap.height [key] / (float) bitmap.image_height)};
+										auto f3 = f2;
+										auto f4 = glm::vec2 {f0.x, f3.y};
+										auto f5 = f0;
+
+									
+
+										
+										text_vertices.push_back ({v0, color, f0, asTexture});
+										text_vertices.push_back ({v1, color, f1, asTexture});
+										text_vertices.push_back ({v2, color, f2, asTexture});
+										text_vertices.push_back ({v3, color, f3, asTexture});
+										text_vertices.push_back ({v4, color, f4, asTexture});
+										text_vertices.push_back ({v5, color, f5, asTexture});
+
+										host_visible_vertex_buffer_memory.paste (text_vertices.data(), host_visible_vertex_buffer.get_memory_requirements ().size);
+										device_local_vertex_buffer.copy_from (host_visible_vertex_buffer);
+										playBack.states.push_back (playBack.undos.back ());
+										playBack.undos.pop_back ();
+									}
+								} else {
+									// std::cout << "empty" << std::endl;
+								}
+								
+							} else { // UNDO, save things so we can go back
+								// for (auto& i : playBack.states) {
+								// 	if (i.type & Draw::State::RECTANGLE) {
+								// 		auto& v = i.as.rectangle;
+								// 		std::cout << "rectangle >> " << v.x0 << "," << v.y0 << " : " << v.x1 << "," << v.y1 << std::endl; 
+								// 	}
+								// }
+								// std::cout << "UNDO" << std::endl;
+								auto& pb = playBack.top();
+								if (pb & Draw::State::RECTANGLE) {
+									// std::cout << "yay" << std::endl;	
+									auto v0 = line_vertices [line_vertices.size()-4].pos;
+									auto v1 = line_vertices [line_vertices.size()-2].pos;
+									playBack.undos.push_back ({.type = Draw::State::RECTANGLE, .as.rectangle = {.x0 = v0.x, .y0 = v0.y, .x1 = v1.x, .y1 = v1.y}});
+									line_indices.erase (line_indices.end() - 8, line_indices.end());
+									line_vertices.erase (line_vertices.end() - 4, line_vertices.end());
+									
+									// playBack.push (Draw::State::UNDO);
+									drawState.type = 0b0000'0000;
+
+									host_visible_line_vertex_buffer_memory.paste (line_vertices.data(), host_visible_line_vertex_buffer.get_memory_requirements ().size);
+									device_local_line_vertex_buffer.copy_from (host_visible_line_vertex_buffer);
+
+									host_visible_line_index_buffer_memory.paste (line_indices.data(), host_visible_line_index_buffer.get_memory_requirements ().size);
+									device_local_line_index_buffer.copy_from (host_visible_line_index_buffer);
+
+								} else if (pb | Draw::State::LETTER) {
+									auto v0 = text_vertices [text_vertices.size()-6].pos;
+									auto v1 = text_vertices [text_vertices.size()-2].pos;
+									playBack.undos.push_back ({.type = Draw::State::LETTER, .as.letter = {.character = playBack.states.back().as.letter.character, .xoffset = v0.x, .yoffset = v0.y}});
+									// line_indices.erase (line_indices.end() - 8, line_indices.end());
+									text_vertices.erase (text_vertices.end() - 6, text_vertices.end());
+									
+									// playBack.push (Draw::State::UNDO);
+									drawState.type = 0b0000'0000;
+
+									host_visible_vertex_buffer_memory.paste (text_vertices.data(), host_visible_vertex_buffer.get_memory_requirements ().size);
+									device_local_vertex_buffer.copy_from (host_visible_vertex_buffer);
+									playBack.states.pop_back ();
+								}
+							}
+
+							printit ();
+
+						}
 
 						
 						// std::cout << "super" << std::endl;
@@ -1035,12 +1552,20 @@ auto main (int argc, char** argv) -> int {
 
 				auto const asTexture = glm::vec2 {1.0f, 0.0f};
 
-				auto yplus = (max_height - bitmap.height [event.key] - bitmap.hang [event.key]) / (float) bitmap.image_height;//(max_height / (float) bitm.height);//((bitm.hang [event.key]) / (float) bitm.height);
 					auto color = glm::vec3 {1.0f, 0.0f, 0.0f};
-					auto width = bitmap.width [event.key] / (float) bitmap.image_width;
-					// width /= 2;
-					auto height = bitmap.height [event.key] / (float) bitmap.image_height;
-					// height /= 2;
+
+					// auto size = window.get_size();
+					// size.width *= 2;
+					// size.height *= 2;
+
+					auto yplus = (max_height - bitmap.height [event.key] - bitmap.hang [event.key]) / (float) windowSize.height;//(max_height / (float) bitm.height);//((bitm.hang [event.key]) / (float) bitm.height);
+					auto width = bitmap.width [event.key] / (float) windowSize.width;
+					auto height = bitmap.height [event.key] / (float) windowSize.height;
+					
+					// auto yplus = (max_height - bitmap.height [event.key] - bitmap.hang [event.key]) / (float) bitmap.image_height;//(max_height / (float) bitm.height);//((bitm.hang [event.key]) / (float) bitm.height);
+					// auto width = bitmap.width [event.key] / (float) bitmap.image_width;
+					// auto height = bitmap.height [event.key] / (float) bitmap.image_height;
+
 					auto v0 = glm::vec3 {xoffset, yoffset + yplus, 0.0f};
 					auto v1 = glm::vec3 {v0.x + width, v0.y, 0.0f};
 					auto v2 = glm::vec3 {v1.x, v1.y + height, 0.0f};
@@ -1069,57 +1594,120 @@ auto main (int argc, char** argv) -> int {
 					device_local_vertex_buffer.copy_from (host_visible_vertex_buffer);
 					
 					xoffset += width + xpad;
+					playBack.push (Draw::State::LETTER);
+					playBack.states.push_back ({.type = Draw::State::LETTER, .as.letter = {.character = (char) event.key, .xoffset = v0.x, .yoffset = v0.y}});
+					printit ();
 			}
 
 		END:;
 		},
 		[&](Window::Event::CursorPosition event){
-			if (window.get_left_mouse_button () == GLFW_PRESS) {
+
+			if (drawState.type & Draw::State::LINE/*window.get_left_mouse_button () == GLFW_PRESS*/) {
+				auto pos = window.get_cursor_position ();
+				auto extent = window.get_size ();
+				auto xpos = ((pos.x / (float) extent.width) - 0.5) * 2 - scrollOffset.x;
+				auto ypos = ((pos.y / (float) extent.height) - 0.5) * 2 - scrollOffset.y;	
+				auto color = glm::vec3 {1.0f, 1.0f, 1.0f};
+
+				auto v0 = glm::vec3 {xpos, ypos, 0.0f};
+				// auto v1 = glm::vec3 {v0.x + 0.002f, v0.y, 0.0f};
+				// auto v2 = glm::vec3 {v1.x, v1.y + 0.002f, 0.0f};
+				// auto v3 = v2;
+				// auto v4 = glm::vec3 {v0.x, v3.y, 0.0f};
+				// auto v5 = v0;
+				// line_vertices.push_back ({.pos = {drawState.as.line.x, drawState.as.line.y, 0.0f}, .color = color});
+				line_indices.push_back ((uint16_t) line_vertices.size()-1);
+				line_indices.push_back ((uint16_t) line_vertices.size());
+				
+				line_vertices.push_back ({.pos = v0, .color = color});
+				// drawState.as.line.x = v0.x;
+				// drawState.as.line.y = v0.y;
+				// std::cout << text_vertices.size() << std::endl;
+				if (line_vertices.size() >= (device_local_line_vertex_buffer.get_memory_requirements().size / sizeof (line_vertices [0]))) {
+					dublicate_line_vertex_buffers ();
+				}
+
+				if (line_indices.size() >= (device_local_line_index_buffer.get_memory_requirements().size / sizeof (line_indices [0]))) {
+					dublicate_line_index_buffers ();
+				}
+
+				host_visible_line_vertex_buffer_memory.paste (line_vertices.data(), host_visible_line_vertex_buffer.get_memory_requirements ().size);
+				device_local_line_vertex_buffer.copy_from (host_visible_line_vertex_buffer);
+
+				host_visible_line_index_buffer_memory.paste (line_indices.data(), host_visible_line_index_buffer.get_memory_requirements ().size);
+				device_local_line_index_buffer.copy_from (host_visible_line_index_buffer);
+
+			} else if (drawState.type & Draw::State::RECTANGLE) {
 				auto pos = window.get_cursor_position ();
 				auto extent = window.get_size ();
 				auto xpos = ((pos.x / (float) extent.width) - 0.5) * 2 - scrollOffset.x;
 				auto ypos = ((pos.y / (float) extent.height) - 0.5) * 2 - scrollOffset.y;
-
-				auto const asTexture = glm::vec2 {0.0f, 0.0f};
 				
 				auto color = glm::vec3 {1.0f, 1.0f, 1.0f};
-				auto width = bitmap.width ['a'] / (float) bitmap.image_width;
-						// width /= 2;
-				auto height = bitmap.height ['a'] / (float) bitmap.image_height;
-						// height /= 2;
-				auto v0 = glm::vec3 {xpos, ypos, 0.0f};
-				auto v1 = glm::vec3 {v0.x + 0.002f, v0.y, 0.0f};
-				auto v2 = glm::vec3 {v1.x, v1.y + 0.002f, 0.0f};
-				auto v3 = v2;
-				auto v4 = glm::vec3 {v0.x, v3.y, 0.0f};
-				auto v5 = v0;
 
-				text_vertices.push_back ({.pos = v0, .color = color, .tex_coord = {}, .as_texture = asTexture});
-				text_vertices.push_back ({v1, color, {}, asTexture});
-				text_vertices.push_back ({v2, color, {}, asTexture});
-				text_vertices.push_back ({v3, color, {}, asTexture});
-				text_vertices.push_back ({v4, color, {}, asTexture});
-				text_vertices.push_back ({v5, color, {}, asTexture});
+				if (drawState.type & Draw::State::BEGIN) {
+					
+					line_indices.resize (line_indices.size() + 7);
+					auto sv = line_vertices.size() - 1;
+					line_vertices.resize (line_vertices.size() + 3);
 
-				if (text_vertices.size() >= (device_local_vertex_buffer.get_memory_requirements().size / sizeof (text_vertices [0]))) {
-					dublicate_vertex_buffers ();
+					line_vertices [sv + 1].color = color;
+					line_vertices [sv + 2].color = color;
+					line_vertices [sv + 3].color = color;
+
+					auto const si = line_indices.size() - 1;
+					
+					drawState.type ^= Draw::State::BEGIN;
+
+
+					line_indices [si - 6] = sv + 1;
+
+					line_indices [si - 5] = sv + 1;
+					line_indices [si - 4] = sv + 2;
+
+					line_indices [si - 3] = sv + 2;
+					line_indices [si - 2] = sv + 3;
+
+					line_indices [si - 1] = sv + 3;
+					line_indices [si] = sv;
 				}
 
-				host_visible_vertex_buffer_memory.paste (text_vertices.data(), host_visible_vertex_buffer.get_memory_requirements ().size);
-				device_local_vertex_buffer.copy_from (host_visible_vertex_buffer);
 
-				// std::cout << text_vertices.size() << std::endl;
+
+				auto s = line_vertices.size() - 1;
+				auto const & v0 = line_vertices [s - 3];
+				line_vertices [s - 2].pos = {xpos, v0.pos.y, 0.0f};
+				line_vertices [s - 1].pos = {xpos, ypos, 0.0f};
+				line_vertices [s].pos = {v0.pos.x, ypos, 0.0f};
+
+				if (line_vertices.size() >= (device_local_line_vertex_buffer.get_memory_requirements().size / sizeof (line_vertices [0]))) {
+					dublicate_line_vertex_buffers ();
+				}
+
+				if (line_indices.size() >= (device_local_line_index_buffer.get_memory_requirements().size / sizeof (line_indices [0]))) {
+					dublicate_line_index_buffers ();
+				}
+
+				host_visible_line_vertex_buffer_memory.paste (line_vertices.data(), host_visible_line_vertex_buffer.get_memory_requirements ().size);
+				device_local_line_vertex_buffer.copy_from (host_visible_line_vertex_buffer);
+
+				host_visible_line_index_buffer_memory.paste (line_indices.data(), host_visible_line_index_buffer.get_memory_requirements ().size);
+				device_local_line_index_buffer.copy_from (host_visible_line_index_buffer);
+
 			}
+
+			
 			// if (inputState.current.type == Window::Event::Type::MOUSE_BUTTON and inputState.current.as.mouse_button.button == GLFW_MOUSE_BUTTON_LEFT and inputState.current.as.mouse_button.action == GLFW_PRESS) {
 
 			// 	std::cout << "yaay" << std::endl;
 			// }
 		}, 
 		[&](Window::Event::CursorEnter event){
-			std::cout << "scroll" << std::endl;
+
 		}, 
 		[&](Window::Event::Drop event){
-			std::cout << "scroll" << std::endl;
+
 		}
 	};
 
@@ -1127,6 +1715,10 @@ auto main (int argc, char** argv) -> int {
 
 
 	window.callbacks = {
+		.position = [] (GLFWwindow* window, int x, int y) noexcept -> void {	
+			// reinterpret_cast <EventHandler> (glfwGetWindowUserPointer (window)) -> operator () (Window::Event::Resize {width, height}, reinterpret_cast <EventHandler> (glfwGetWindowUserPointer (window)));
+			(*reinterpret_cast <EventHandler> (glfwGetWindowUserPointer (window))) (Window::Event::Position {x, y});
+		},
 		.resize = [] (GLFWwindow* window, int width, int height) noexcept -> void {	
 			// reinterpret_cast <EventHandler> (glfwGetWindowUserPointer (window)) -> operator () (Window::Event::Resize {width, height}, reinterpret_cast <EventHandler> (glfwGetWindowUserPointer (window)));
 			(*reinterpret_cast <EventHandler> (glfwGetWindowUserPointer (window))) (Window::Event::Resize {width, height});
@@ -1336,6 +1928,7 @@ auto main (int argc, char** argv) -> int {
 	destroy (image_finished_rendering);
 
 	destroy (graphics_pipeline);
+	destroy (graphics_pipeline_line);
 	// destroy (graphics_pipeline_layout);
 	destroy (render_pass);
 	// destroy (command_pools);
@@ -1345,6 +1938,18 @@ auto main (int argc, char** argv) -> int {
 	host_visible_vertex_buffer_memory.destroy ();
 	device_local_vertex_buffer.destroy ();
 	device_local_vertex_buffer_memory.destroy ();
+
+	host_visible_line_vertex_buffer.destroy ();
+	host_visible_line_vertex_buffer_memory.destroy ();
+	device_local_line_vertex_buffer.destroy ();
+	device_local_line_vertex_buffer_memory.destroy ();
+
+	host_visible_line_index_buffer.destroy ();
+	host_visible_line_index_buffer_memory.destroy ();
+	device_local_line_index_buffer.destroy ();
+	device_local_line_index_buffer_memory.destroy ();
+
+
 	texture_sampler.destroy ();
 	texture_image.destroy ();
 	descriptor_pool.destroy ();

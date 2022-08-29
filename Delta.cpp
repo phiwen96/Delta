@@ -18,6 +18,34 @@ auto operator << (std::ostream& os, std::vector <T> const& v) noexcept -> std::o
 	return os;
 }
 
+constexpr auto same (char const* lhs, char const* rhs) noexcept -> bool {
+	auto * l = lhs;
+	auto * r = rhs;
+	while (*l != '\0' or *r != '\0') {
+		if (*l != *r) {
+			return false;
+		}
+		++l;
+		++r;
+	}
+	return *l == '\0' and *r == '\0';
+}
+
+export template <typename... T>
+struct const_map {
+	std::tuple <std::tuple <T, char const*>...> tups;
+	constexpr const_map (auto... v) : tups {{{}, v}...} {
+
+	}
+
+	// constexpr auto operator [] (char const* a) noexcept {
+	// 	return [] <std::size_t... II> (auto& t, auto v, std::index_sequence <II...>) {
+	// 		auto & [value, key] = std::get <II>
+	// 		if (same ())
+	// 	} (tups, a, std::make_index_sequence <sizeof... (T)> {});
+	// }
+};
+
 // static_assert (Array <char[10]>);
 // static_assert (Range <char[10]>);
 // static_assert (AllOf <>);

@@ -183,7 +183,7 @@ HejHej.o: HejHej.cpp Delta.pcm
 Graphics.Test: Graphics.Test.o Delta.pcm Delta.Graphics.pcm
 	$(CXX) $(CXX_FLAGS) $^ -o $@ $(CXX_INCLUDES) $(CXX_LIBS)
 
-Graphics.Test.o: Graphics.Test.cpp Delta.pcm Delta.Graphics.pcm Graphics.Test.vert.spv Graphics.Test.frag.spv
+Graphics.Test.o: Graphics.Test.cpp Delta.pcm Delta.Graphics.pcm Graphics.Test.vert.spv Graphics.Test.frag.spv Graphics.Test.Line.vert.spv Graphics.Test.Line.frag.spv
 	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) -c $< -o $@ $(CXX_INCLUDES)
 
 
