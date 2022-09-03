@@ -235,20 +235,30 @@ tests:= Test.Yolo Test.Array Test.Range
 # Delta.Coro.Implementation.pcm: Delta.Coro.Implementation.cpp Delta.Coro.Interface.pcm
 # 	clang++ -std=c++2b -stdlib=libc++ -fmodules -fbuiltin-module-map -fmodule-file=Delta.Coro.Interface.pcm -c Delta.Coro.Implementation.cpp -o Delta.Coro.Implementation.o
 
-all: std_headers Delta.Coro.Interface.o Delta.Coro.Implementation.o Oj
+all: std_headers Oj
 
 std_headers:
 	$(GCC) -std=c++2b -fmodules-ts -x c++-system-header iostream
 	$(GCC) -std=c++2b -fmodules-ts -x c++-system-header coroutine
+	$(GCC) -std=c++2b -fmodules-ts -x c++-system-header utility
 
-Delta.Coro.Interface.o: Delta.Coro.Interface.cpp std_headers
-	$(GCC) -c -std=c++2b -fmodules-ts $< -o $@
+# Delta.Coro-Promise.o: Delta.Coro-Promise.cpp std_headers
+# 	$(GCC) -c -std=c++2b -fmodules-ts $< -o $@
 
-Delta.Coro.Implementation.o: Delta.Coro.Implementation.cpp std_headers
-	$(GCC) -c -std=c++2b -fmodules-ts $< -o $@
+Delta.Coro-Promise.o: Delta.Coro-Promise.cpp std_headers
+	$(GCC) -std=c++2b -fmodules-ts -c $<
 
-Oj: Oj.cpp Delta.Coro.Interface.o Delta.Coro.Implementation.o
-	$(GCC) $< *.o -o $@
+Delta.Coro-Promise.Impl.o: Delta.Coro-Promise.Impl.cpp std_headers Delta.Coro-Promise.o
+	$(GCC) -std=c++2b -fmodules-ts -c $<
+
+Delta.Coro.o: Delta.Coro.cpp std_headers Delta.Coro-Promise.o
+	$(GCC) -std=c++2b -fmodules-ts -c $<
+
+Delta.Coro.Impl.o: Delta.Coro.Impl.cpp Delta.Coro.o std_headers
+	$(GCC) -std=c++2b -fmodules-ts -c $< 
+
+Oj: Oj.cpp Delta.Coro.Impl.o
+	$(GCC) -std=c++2b -fmodules-ts $< *.o -o $@
 
 
 # App.Compiler: App.Compiler.o Delta.pcm 
