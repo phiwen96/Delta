@@ -245,20 +245,23 @@ std_headers:
 # Delta.Coro-Promise.o: Delta.Coro-Promise.cpp std_headers
 # 	$(GCC) -c -std=c++2b -fmodules-ts $< -o $@
 
-Delta.Coro-Promise.o: Delta.Coro-Promise.cpp std_headers
+Delta.Coro-Promise.o: Delta.Coro-Promise.cpp
 	$(GCC) -std=c++2b -fmodules-ts -c $<
 
-Delta.Coro-Promise.Impl.o: Delta.Coro-Promise.Impl.cpp std_headers Delta.Coro-Promise.o
+Delta.Coro-Promise.Impl.o: Delta.Coro-Promise.Impl.cpp Delta.Coro-Promise.o
 	$(GCC) -std=c++2b -fmodules-ts -c $<
 
 Delta.Coro.o: Delta.Coro.cpp std_headers Delta.Coro-Promise.o
 	$(GCC) -std=c++2b -fmodules-ts -c $<
 
-Delta.Coro.Impl.o: Delta.Coro.Impl.cpp Delta.Coro.o std_headers
+Delta.Coro.Impl.o: Delta.Coro.Impl.cpp Delta.Coro.o
 	$(GCC) -std=c++2b -fmodules-ts -c $< 
 
-Oj: Oj.cpp Delta.Coro.Impl.o
-	$(GCC) -std=c++2b -fmodules-ts $< *.o -o $@
+Delta: Delta.Coro.o Delta.Coro.Impl.o Delta.Coro-Promise.o
+	$(GCC) -shared $^ -o libDelta.so
+
+Oj: Oj.cpp Delta#Delta.Coro.Impl.o
+	$(GCC) -std=c++2b -fmodules-ts $< *.o -o $@ -Xlinker ./libDelta.so
 
 
 # App.Compiler: App.Compiler.o Delta.pcm 

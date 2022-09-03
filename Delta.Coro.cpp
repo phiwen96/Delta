@@ -4,7 +4,9 @@ import <coroutine>;
 
 export import :Promise;
 
-
+export struct Bajs {
+	auto print () -> void;
+};
 // export struct coro {
 // 	coro (coro && other) noexcept;
 // 	~coro ();

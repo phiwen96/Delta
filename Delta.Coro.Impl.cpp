@@ -7,6 +7,10 @@ import <utility>;
 
 import :Promise;
 
+auto Bajs::print() -> void {
+	std::cout << "tjooo" << std::endl;
+}
+
 
 struct coro {
 
