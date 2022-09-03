@@ -10,6 +10,7 @@
 // #define STB_IMAGE_IMPLEMENTATION
 // #include "stb_image.h"
 import Delta;
+import Coro;
 
 
 
@@ -77,7 +78,38 @@ struct overload : T... {
 // 	CHEESE_COOKING_BIT = 0b000'1000
 // };
 
+volatile auto sigint_activated = sig_atomic_t {0};
+
+auto sigint_handler (int sig) {
+	sigint_activated = 1;
+	kill (getpid (), SIGSTOP);
+}
+
+auto foo () -> coro {
+	co_return;
+}
+
+auto bar () -> coro {
+	co_await foo ();
+}
+
 auto main (int argc, char** argv) -> int {
+	auto bb = bar ();
+
+	return 0;
+	// {
+	// 	struct sigaction sa {
+	// 		.sa_handler = sigint_handler,
+	// 		.sa_flags = 0
+	// 	};
+
+	// 	sigemptyset (&sa.sa_mask);
+
+	// 	if (sigaction (SIGINT, &sa, NULL) == -1) {
+	// 		printNexit ("error >> sigaction");
+	// 	}
+	// }
+
 
 	// auto cooking_flag = MILK_COOKING_BIT | CHEESE_COOKING_BIT | EGG_COOKING_BIT; // set
 
@@ -288,6 +320,11 @@ auto main (int argc, char** argv) -> int {
 			// .height = resolution.height},
 		.hints = {
 			{GLFW_CLIENT_API, GLFW_NO_API}
+#ifdef MACOS 
+			, {GLFW_COCOA_RETINA_FRAMEBUFFER, GLFW_TRUE} 
+#endif
+			
+			
 			// {GLFW_RESIZABLE, GLFW_FALSE}
 		}
 	} ();
@@ -1155,27 +1192,114 @@ auto main (int argc, char** argv) -> int {
 
 	auto windowPos = window.get_position ();
 	auto windowSize = window.get_size ();
+	auto oldWindowSize = windowSize;
 	auto const startWindowSize = windowSize;
+
+	auto moveX = 0.0f;
+
+	auto mouseState = Mouse::State {.type = 0b0000'0000};
 	
+	auto inputEmulator = Input::emulator {};
+
+	auto inputChunk = Input::emulator::Chunk {};
+
+	std::map<MouseState, std::map<MouseTrigger, MouseState>> mouseRules;
+
+	mouseRules [MouseState::idle] = {
+		{MouseTrigger::press_left, MouseState::idle_press_left},
+		{MouseTrigger::press_right, MouseState::idle_press_right}
+	};
+
+	mouseRules [MouseState::idle_press_left] = {
+		{MouseTrigger::move, MouseState::moving_press_left},
+		{MouseTrigger::release_left, MouseState::idle},
+	};
+
+	mouseRules [MouseState::idle_press_right] = {
+		{MouseTrigger::move, MouseState::moving_press_right},
+		{MouseTrigger::release_right, MouseState::idle},
+	};
+
+	mouseRules [MouseState::moving_press_left] = {
+		{MouseTrigger::stop, MouseState::idle_press_left},
+		{MouseTrigger::release_left, MouseState::idle},
+	};
+
+	mouseRules [MouseState::moving_press_right] = {
+		{MouseTrigger::stop, MouseState::idle_press_right},
+		{MouseTrigger::release_right, MouseState::idle},
+	};
+
+	MouseState currentState {MouseState::idle};
+
 
 	auto inputEventHandler = overload {
 		[&](Window::Event::Position event){
+			// std::cout << "new pos" << std::endl;
+
+			// auto size = window.get_size();
+
+			// pushConstants.model = glm::translate (pushConstants.model, glm::vec3 ((event.x) / (float) resolution.width, (event.y) / (float) resolution.height, 0.0f));
+
+			// auto newWindowPos = window.get_position ();
+
+			// viewport.offset.x -= (newWindowPos.x - windowPos.x);
+			// viewport.offset.y -= (newWindowPos.y - windowPos.y);
+
+			// windowPos.x = event.x;
+			// windowPos.y = event.y;
 
 		}, 
 		[&](Window::Event::Resize event){
-			device.wait_idle ();
-			swapchain_details.image_extent = window.get_extent ();
-			swapchain_details.recreate (swapchain);
+
+			// std::cout << viewport.offset.x << " " << viewport.offset.y << std::endl;
+			
 			// auto s = window.get_size ();
 			auto newWindowPos = window.get_position ();
 			auto newWindowSize = window.get_size ();
 			// viewport.offset.x -= newWindowPos.x - windowPos.x;
 			// viewport.offset.y -= newWindowPos.y - windowPos.y;
 			// std::cout << "new " << newWindowPos.x << " old " << windowPos.x << std::endl;
-			viewport.offset.x -= (newWindowPos.x - windowPos.x) - (newWindowSize.width - windowSize.width);
-			viewport.offset.y -= (newWindowPos.y - windowPos.y) - (newWindowSize.height - windowSize.height);
+			
+
+			if (newWindowPos.x != windowPos.x) {
+				// viewport.offset.x += (newWindowSize.width - windowSize.width);
+				// viewport.offset.x -= (newWindowPos.x - windowPos.x);
+
+				// moveX = (newWindowSize.width - windowSize.width) - (newWindowPos.x - windowPos.x);
+				// moveX = (newWindowPos.x - windowPos.x);
+			} else {
+				// viewport.offset.x -= (newWindowSize.width - windowSize.width);
+				// moveX = (newWindowSize.width - windowSize.width);
+			}
+
+			
+
+			// moveX = viewport.offset.x / (float) windowSize.width;
+
+			// std::cout << "old window size >> " << "[" << windowSize.width << "," << windowSize.height << "]" << std::endl;
+			// std::cout << "new window size >> " << "[" << newWindowSize.width << "," << newWindowSize.height << "]" << std::endl;
+			// std::cout << "old window pos >> " << "[" << windowPos.x << "," << windowPos.y << "]" << std::endl;
+			// std::cout << "new window pos >> " << "[" << newWindowPos.x << "," << newWindowPos.y << "]" << std::endl;
+			
+			if (newWindowPos.y != windowPos.y) { 
+				// std::cout << "EHAT" << std::endl;
+				// viewport.offset.y += (newWindowSize.height - windowSize.height);
+				// viewport.offset.y -= (newWindowPos.y - windowPos.y);
+			} else {
+				// viewport.offset.y -= (newWindowSize.height - windowSize.height);
+			}
+
+
+			
 			windowPos = newWindowPos;
+			oldWindowSize = windowSize;
 			windowSize = newWindowSize;
+			// viewport.extä
+
+			device.wait_idle ();
+			swapchain_details.image_extent = window.get_extent ();
+			swapchain_details.recreate (swapchain);
 
 			// windowSize = window.get_size();
 			
@@ -1241,14 +1365,125 @@ auto main (int argc, char** argv) -> int {
 		},
 		[&](Window::Event::MouseButton event){
 			static constexpr auto START_DRAW_RECTANGLE = true;
+
 			if (event.button == GLFW_MOUSE_BUTTON_LEFT) {
 				if (event.action == GLFW_PRESS) {
-					auto pos = window.get_cursor_position ();
-					auto extent = window.get_size ();
-					std::cout << viewport.extent.width << std::endl;
-					auto xpos = ((pos.x / (float) windowSize.width) - 0.5) * 2 - scrollOffset.x;// + (viewport.offset.x / (float) extent.width);
+					currentState = mouseRules [currentState] [MouseTrigger::press_left];
+
+				} else if (event.action == GLFW_RELEASE) {
+					currentState = mouseRules [currentState] [MouseTrigger::release_left];
+				}
+			} else if (event.button == GLFW_MOUSE_BUTTON_RIGHT) {
+				if (event.action == GLFW_PRESS) {
+					currentState = mouseRules [currentState] [MouseTrigger::press_right];
+
+				} else if (event.action == GLFW_RELEASE) {
+					currentState = mouseRules [currentState] [MouseTrigger::release_right];
+				}
+			}
+
+			auto pos = window.get_cursor_position ();
+
+			switch (event.button)
+			{
+				case GLFW_MOUSE_BUTTON_LEFT: {
+					inputChunk.add_instruction (Input::emulator::OP_CONSTANT);
+					auto index = inputChunk.add_constant ({.as.mouseButton = {.left = true, .right = false}, .type = Input::emulator::value::VAL_MOUSE_BUTTON});
+					inputChunk.add_instruction (index);
+					mouseState.type |= Mouse::State::BUTTON_LEFT;
+					break;
+				}
+					
+				case GLFW_MOUSE_BUTTON_RIGHT: {
+					inputChunk.add_instruction (Input::emulator::OP_CONSTANT);
+					auto index = inputChunk.add_constant ({.as.mouseButton = {.left = false, .right = true}, .type = Input::emulator::value::VAL_MOUSE_BUTTON});
+					inputChunk.add_instruction (index);
+					mouseState.type |= Mouse::State::BUTTON_RIGHT;
+					break;
+				}
+					
+				default: {
+					break;
+				}
+			}
+			
+			switch (event.action)
+			{
+				case GLFW_PRESS: {
+					
+					inputChunk.add_instruction (Input::emulator::OP_PRESS);
+
+					mouseState.type |= Mouse::State::PRESS;
+					break;
+				}
+						
+				case GLFW_RELEASE: {
+					inputChunk.add_instruction (Input::emulator::OP_RELEASE);
+					mouseState.type |= Mouse::State::RELEASE;
+					break;
+				}
+					
+				default: {
+					break;
+				}
+			}
+
+			
+
+			switch (event.action)
+			{
+				case GLFW_PRESS: {
+					mouseState.type |= Mouse::State::PRESS;
+					break;
+				}
+						
+				case GLFW_RELEASE: {
+					mouseState.type |= Mouse::State::RELEASE;
+					break;
+				}
+					
+				default: {
+					break;
+				}
+			}
+
+			if (mouseState.type & Mouse::State::RELEASE) {
+				mouseState.type &= ~Mouse::State::PRESS;
+			} else if (mouseState.type & Mouse::State::PRESS) {
+				mouseState.type &= ~Mouse::State::RELEASE;
+			}
+
+			// if (mouseState.type == (Mouse::State::BUTTON_LEFT | Mouse::State::PRESS | Mouse::State::RELEASE)) {
+			// 	std::cout << "kjnfdjndf" << std::endl;
+			// }
+
+			if (event.button == GLFW_MOUSE_BUTTON_LEFT) {
+				if (event.action == GLFW_PRESS) {
+					
+					// std::cout << viewport.offset.x << " " << viewport.extent.width << std::endl;
+					
+					// std::cout << pos.x << " " << pos.y << std::endl;
+					// pos.x += (viewport.offset.x);
+					// if (viewport.offset.x > 0) {
+					// 	pos.x -= viewport.offset.x;
+					// } else if (viewport.offset.x < 0) {
+					// 	pos.x -= viewport.offset.x;
+					// }
+					
+					// auto extent = window.get_size ();
+					// std::cout << viewport.extent.width << std::endl;
+					
+					auto xpos = (((pos.x)/ ((float) oldWindowSize.width)) - 0.5) * 2 - scrollOffset.x;// + (viewport.offset.x / (float) extent.width);
 					auto ypos = ((pos.y / (float) windowSize.height) - 0.5) * 2 - scrollOffset.y;// - (viewport.offset.y / (float) windowSize.width);
 
+					// xpos -= (windowSize.width ) / viewport.offset.x;
+					// xpos += moveX;
+					// if (viewport.offset.x < 0) {
+						// xpos -= (viewport.offset.x / (float) oldWindowSize.width);
+					// } else {
+						// xpos += viewport.offset.x / (float) resolution.width;
+					// }
+					
 					auto color = glm::vec3 {1.0f, 1.0f, 1.0f};
 
 					auto v0 = glm::vec3 {xpos, ypos, 0.0f};
@@ -1269,10 +1504,13 @@ auto main (int argc, char** argv) -> int {
 
 				} else if (event.action == GLFW_RELEASE) {
 					if (drawState.type & (~Draw::State::BEGIN | Draw::State::RECTANGLE | Draw::State::LINE)) {
+						// std::cout << "WEHAAT" << std::endl;
 						playBack.push (drawState.type);
-						drawState.type &= ~(Draw::State::RECTANGLE | Draw::State::LINE); // turn off
+						drawState.type &= ~(Draw::State::RECTANGLE | Draw::State::LINE | Draw::State::RECTANGLE); // turn off
 
-						printit ();
+						// printit ();
+					} else { // maybe double click?
+						// drawState = 
 					}
 						
 					// drawState.type = Draw::State::NONE;
@@ -1282,8 +1520,15 @@ auto main (int argc, char** argv) -> int {
 		[&](Window::Event::Key event){
 			// std::cout << event.key << std::endl;
 
+			inputChunk.add_instruction (Input::emulator::OP_CONSTANT);
+			auto index = inputChunk.add_constant ({.as.key = event.key, .type = Input::emulator::value::VAL_KEY});
+			inputChunk.add_instruction (index);
+
 			
 			if (event.action == GLFW_PRESS or event.action == GLFW_REPEAT) {
+
+				inputChunk.add_instruction (Input::emulator::OP_PRESS);
+				// inputEmulator.
 				if (event.key == GLFW_KEY_ENTER) {
 					// undos.push_back ([](std::vector <Vertex> & v)->undo_return_t{return {v[v.size()-5].pos.x + xpad, yoffset-enter_height};});
 					yoffset += enter_height;
@@ -1496,7 +1741,7 @@ auto main (int argc, char** argv) -> int {
 								}
 							}
 
-							printit ();
+							// printit ();
 
 						}
 
@@ -1596,18 +1841,38 @@ auto main (int argc, char** argv) -> int {
 					xoffset += width + xpad;
 					playBack.push (Draw::State::LETTER);
 					playBack.states.push_back ({.type = Draw::State::LETTER, .as.letter = {.character = (char) event.key, .xoffset = v0.x, .yoffset = v0.y}});
-					printit ();
+					// printit ();
+			} else if (event.action == GLFW_RELEASE) {
+				inputChunk.add_instruction (Input::emulator::OP_RELEASE);
 			}
 
 		END:;
 		},
 		[&](Window::Event::CursorPosition event){
+			currentState = mouseRules [currentState] [MouseTrigger::move];
+
+			// if (inputChunk.)
+			inputChunk.add_instruction (Input::emulator::OP_CONSTANT);
+			auto index = inputChunk.add_constant ({.as.position {.x = (float) event.x, .y = (float) event.y}, .type = Input::emulator::value::VAL_POSITION});
+			inputChunk.add_instruction (index);
+			inputChunk.add_instruction (Input::emulator::OP_MOVE_CURSOR);
+
+			
+			if (mouseState.type & Mouse::State::PRESS) {
+					if (mouseState.type & Mouse::State::MOVE) {
+						
+					} else {
+
+						mouseState.type |= Mouse::State::MOVE;
+					}
+			}
 
 			if (drawState.type & Draw::State::LINE/*window.get_left_mouse_button () == GLFW_PRESS*/) {
 				auto pos = window.get_cursor_position ();
-				auto extent = window.get_size ();
-				auto xpos = ((pos.x / (float) extent.width) - 0.5) * 2 - scrollOffset.x;
-				auto ypos = ((pos.y / (float) extent.height) - 0.5) * 2 - scrollOffset.y;	
+				// pos.x -= viewport.offset.x;
+				// auto extent = window.get_size ();
+				auto xpos = (((pos.x) / (float) windowSize.width) - 0.5) * 2 - scrollOffset.x;
+				auto ypos = ((pos.y / (float) windowSize.height) - 0.5) * 2 - scrollOffset.y;	
 				auto color = glm::vec3 {1.0f, 1.0f, 1.0f};
 
 				auto v0 = glm::vec3 {xpos, ypos, 0.0f};
@@ -1755,10 +2020,28 @@ auto main (int argc, char** argv) -> int {
 	// aa.template operator () <int> ();
 	// // main loop
 
-
+	// {
+	// 	auto pos = window.get_cursor_position ();
+		
+	// 	inputChunk.add_instruction (Input::emulator::OP_CONSTANT);
+	// 	auto index = inputChunk.add_constant ({.as.position = {.x = (float) pos.x, .y = (float) pos.y}, .type = Input::emulator::value::VAL_POSITION});
+	// 	inputChunk.add_instruction (index);
+	// 	inputChunk.add_instruction (Input::emulator::OP_MOVE_CURSOR);
+	// 	// inputChunk.ip = inputChunk.code.begin();
+	// }	
 	
+	// inputChunk.ip = inputChunk.code.begin();
+
 	while (not window.should_close ()) {
+		// if (sigint_activated) {
+		// 	break;
+		// }
 		glfwPollEvents ();
+
+		inputEmulator.interpret (inputChunk);
+		inputChunk.code.clear();
+
+		// inputEmulator.interpret (inputChunk);
 		// auto image_index = AcquireNextImageIndex {
 		// 	.swapchain = swapchain,
 		// 	.signal_when_done = {
@@ -1849,75 +2132,107 @@ auto main (int argc, char** argv) -> int {
 		// ++i;
 		// if (i == 3) break;
 	}
-	device.wait_idle ();
+	inputChunk.add_instruction (Input::emulator::OP_DONE);
+	// for (auto i = inputChunk.code.begin (); i < inputChunk.code.end(); ++i) {
+	// 	switch (*i) {
+	// 		case Input::emulator::OP_CONSTANT:
+	// 			std::cout << "OP_CONSTANT";
+	// 			// auto constant = 
+	// 			break;
 
+	// 		case Input::emulator::OP_CURSOR:
+	// 			std::cout << "OP_CURSOR" << std::endl;
+	// 			break;
+			
+	// 		case Input::emulator::OP_PRESS:
+	// 			std::cout << "OP_PRESS" << std::endl;
+	// 			break;
+			
+	// 		case Input::emulator::OP_RELEASE:
+	// 			std::cout << "OP_RELEASE" << std::endl;
+	// 			break;
+			
+	// 		case Input::emulator::OP_MOVE_CURSOR:
+	// 			std::cout << "OP_MOVE_CURSOR" << std::endl;
+	// 			break;
+			
+	// 		case Input::emulator::OP_DONE:
+	// 			std::cout << "OP_DONE" << std::endl;
+	// 			break;
+	// 	}
+	// }
+	
+	// std::cout << "yoyoyo" << std::endl;
+	device.wait_idle ();
+	// inputEmulator.interpret (inputChunk);
+	// std::cout << "yoyoyo" << std::endl;
 	auto const destroy = [&] <typename T> (T a) noexcept -> void {
 		if constexpr (requires {a.destroy ();}) {
 			a.destroy ();
 		} else if constexpr (std::is_same_v <T, VkInstance>) {
-			std::cout << "cleanup >> instance" << std::endl;
+			// std::cout << "cleanup >> instance" << std::endl;
 			vkDestroyInstance (instance, nullptr);
 		} else if constexpr (std::is_same_v <T, LogicalDevice>) {
-			std::cout << "cleanup >> command pools" << std::endl;
+			// std::cout << "cleanup >> command pools" << std::endl;
 			for (auto & i : a.queue_families) {
 				vkDestroyCommandPool (device.handle, i.command_pool.handle, nullptr);
 			}
-			std::cout << "cleanup >> device" << std::endl;
+			// std::cout << "cleanup >> device" << std::endl;
 			vkDeviceWaitIdle (device.handle);
 			vkDestroyDevice (device.handle, nullptr);
 		} else if constexpr (std::is_same_v <T, std::vector <VkCommandPool>>) {
-			std::cout << "cleanup >> command pools" << std::endl;
+			// std::cout << "cleanup >> command pools" << std::endl;
 			for (auto const & i : a) {
 				vkDestroyCommandPool (device.handle, i, nullptr);
 			}
 		} else if constexpr (std::is_same_v <T, GLFWwindow*>) {
-			std::cout << "cleanup >> window" << std::endl;
+			// std::cout << "cleanup >> window" << std::endl;
 			glfwDestroyWindow (a);
 		} else if constexpr (std::is_same_v <T, VkSurfaceKHR>) {
-			std::cout << "cleanup >> window surface" << std::endl;
+			// std::cout << "cleanup >> window surface" << std::endl;
 			vkDestroySurfaceKHR (instance, a, nullptr);
 		} else if constexpr (std::is_same_v <T, Swapchain>) {
-			std::cout << "cleanup >> frame buffers" << std::endl;
-			std::cout << "cleanup >> image views" << std::endl;
+			// std::cout << "cleanup >> frame buffers" << std::endl;
+			// std::cout << "cleanup >> image views" << std::endl;
 
 			for (auto i = 0; i < a.framebuffers.size (); ++i) {
 				vkDestroyFramebuffer (device.handle, a.framebuffers [i], nullptr);
 				vkDestroyImageView (device.handle, a.views [i], nullptr);
 			}
-			std::cout << "cleanup >> swapchain" << std::endl;
+			// std::cout << "cleanup >> swapchain" << std::endl;
 			vkDestroySwapchainKHR (device.handle, a.handle, nullptr);
 		} else if constexpr (std::is_same_v <T, std::vector <VkImageView>>) {
-			std::cout << "cleanup >> image views" << std::endl;
+			// std::cout << "cleanup >> image views" << std::endl;
 			for (auto & i : a)
 			vkDestroyImageView (device.handle, i, nullptr);
 		} else if constexpr (std::is_same_v <T, VkRenderPass>) {
-			std::cout << "cleanup >> render pass" << std::endl;
+			// std::cout << "cleanup >> render pass" << std::endl;
 			vkDestroyRenderPass (device.handle, a, nullptr);
 		} else if constexpr (std::is_same_v <T, VkPipelineLayout>) {
-			std::cout << "cleanup >> pipeline layout" << std::endl;
+			// std::cout << "cleanup >> pipeline layout" << std::endl;
 			vkDestroyPipelineLayout (device.handle, a, nullptr);
 		} else if constexpr (std::is_same_v <T, VkPipeline>) {
-			std::cout << "cleanup >> pipeline" << std::endl;
+			// std::cout << "cleanup >> pipeline" << std::endl;
 			vkDestroyPipeline (device.handle, a, nullptr);
 		} else if constexpr (std::is_same_v <T, GraphicsPipeline>) {
-			std::cout << "cleanup >> pipeline layout" << std::endl;
+			// std::cout << "cleanup >> pipeline layout" << std::endl;
 			vkDestroyPipelineLayout (device.handle, a.layout, nullptr);
-			std::cout << "cleanup >> pipeline" << std::endl;
+			// std::cout << "cleanup >> pipeline" << std::endl;
 			vkDestroyPipeline (device.handle, a.handle, nullptr);
 		} else if constexpr (std::is_same_v <T, VkSemaphore>) {
-			std::cout << "cleanup >> semaphore" << std::endl;
+			// std::cout << "cleanup >> semaphore" << std::endl;
 			vkDestroySemaphore (device.handle, a, nullptr);
 		} else if constexpr (std::is_same_v <T, VkFence>) {
-			std::cout << "cleanup >> fence" << std::endl;
+			// std::cout << "cleanup >> fence" << std::endl;
 			vkDestroyFence (device.handle, a, nullptr);
 		} else if constexpr (std::is_same_v <T, std::vector <VkSemaphore>>) {
 			for (auto & sem : a) {
-				std::cout << "cleanup >> semaphore" << std::endl;
+				// std::cout << "cleanup >> semaphore" << std::endl;
 				vkDestroySemaphore (device.handle, sem, nullptr);
 			}
 		} else if constexpr (std::is_same_v <T, std::vector <VkFence>>) {
 			for (auto & fence : a) {
-				std::cout << "cleanup >> fence" << std::endl;
+				// std::cout << "cleanup >> fence" << std::endl;
 				vkDestroyFence (device.handle, fence, nullptr);
 			}
 		}

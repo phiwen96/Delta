@@ -14,6 +14,9 @@ export import Delta.Graphics.Font;
 import Delta.Range;
 import std;
 
+using std::experimental::coroutine_handle;
+using std::experimental::suspend_always;
+
 export auto printNexit (char const* txt) noexcept -> void {
 	std::cout << txt << std::endl;
 	exit (-1);
@@ -474,6 +477,207 @@ export struct Window {
 	}
 
 	
+};
+
+export enum class MouseState {
+	idle,
+	idle_press_left,
+	idle_press_right,
+	moving_press_left,	
+	moving_press_right
+};
+
+
+export enum class MouseTrigger {
+	press_left,
+	press_right,
+	release_left,
+	release_right,
+	move,
+	stop
+};
+
+export struct Mouse {
+	struct State {
+		union {
+
+		} as;
+
+		enum : std::uint8_t {
+			BUTTON_LEFT = 0b0000'0001,
+			BUTTON_RIGHT = 0b0000'0010,
+			PRESS = 0b0000'0100,
+			RELEASE = 0b0000'1000,
+			MOVE = 0b0001'0000
+		};
+
+		std::uint8_t type;
+	};
+
+	struct emulator {
+		using value = double;
+		constexpr static int max_stack = 128;
+		enum opcode : std::uint8_t {
+			OP_MOVE,
+			OP_PRESS, 
+			OP_RELEASE
+		};
+
+	private:
+		auto push (value v) noexcept -> void {
+			*top = v;
+			++top;
+		}
+
+		auto pop () noexcept -> value {
+			--top;
+			return *top;
+		}
+
+		value stack [max_stack];
+		value * top = stack;
+	};
+};
+
+export struct StateMachine {
+
+};
+
+
+export struct Input {
+	struct emulator {
+		struct value {
+			union {
+				int key;
+				struct {
+					float x, y;
+				} position;
+				struct {
+					bool left, right;
+				} mouseButton;
+			} as;
+			enum {
+				VAL_KEY,
+				VAL_POSITION,
+				VAL_MOUSE_BUTTON,
+			} type;
+		};
+		enum opcode : uint_fast8_t {
+			OP_CONSTANT = 0b0000'0001,
+			OP_CURSOR = 0b0000'0010,
+			OP_PRESS = 0b0000'0100,
+			OP_RELEASE = 0b0000'1000,
+			OP_MOVE_CURSOR = 0b0001'0000,
+			OP_DONE = 0b0010'0000,
+		};
+		using opcode_t = uint_fast8_t; //std::underlying_type_t <opcode>;
+		struct Chunk {
+			std::vector <opcode_t> code;
+			std::vector <value> values;
+			decltype (code.begin()) ip;
+
+			auto add_instruction (opcode_t o) noexcept -> auto & {
+				code.push_back (o);
+				return *this;
+			}
+
+			// returns the index of the constant in values array
+			auto add_constant (value v) noexcept -> opcode_t {
+				values.push_back (v);
+				return values.size() - 1;
+			}
+		};
+
+		auto interpret (Chunk& chunk) noexcept -> void {
+
+			static auto mouseValues = std::vector <value> {};
+
+			static auto mouseState = uint_fast8_t {0b0000'0000};
+
+			auto ip = chunk.code.begin();
+			
+			for (;ip < chunk.code.end();) {
+				// std::cout << "tjo" << std::endl;
+
+				auto instruction = *ip++;
+
+				switch (instruction) {
+					
+					// case OP_DONE : {
+					// 	return;
+					// }
+
+					case OP_CONSTANT : {
+						push (chunk.values [*ip++]);
+						break;
+					}
+					
+					case OP_PRESS : {
+						// state |= OP_PRESS;
+
+						auto constant = pop ();
+						if (constant.type == value::VAL_KEY) {
+							std::cout << "press " << constant.as.key << std::endl;
+							// push (constant);
+						} else if (constant.type == value::VAL_MOUSE_BUTTON) {
+							mouseState |= OP_PRESS;
+							auto m = constant.as.mouseButton;
+							if (m.left) std::cout << "left mouse press" << std::endl;
+							else if (m.right) std::cout << "right mouse press" << std::endl;
+							mouseValues.push_back (constant);
+							// std::cout << "press [" <<  pos.x << "," << pos.y << "]" << std::endl;
+							// push (constant);
+						}
+						
+						break;
+					}
+
+					case OP_RELEASE : {
+						auto constant = pop ();
+						if (constant.type == value::VAL_KEY) {
+							std::cout << "release " << constant.as.key << std::endl;
+						} else if (constant.type == value::VAL_MOUSE_BUTTON) {
+							auto m = constant.as.mouseButton;
+							if (m.left) std::cout << "left mouse release" << std::endl;
+							else if (m.right) std::cout << "right mouse release" << std::endl;
+						}
+						break;
+					}
+					
+					case OP_MOVE_CURSOR: {
+						if (mouseState & OP_MOVE_CURSOR) {
+							// auto & val = mouseValues.back();
+							// val.as.position 
+						} else {
+							mouseState |= OP_MOVE_CURSOR;
+						}
+						
+						auto pos = pop();
+						std::cout << "mouse [" <<  pos.as.position.x << "," << pos.as.position.y << "]" << std::endl;
+						// mouse.as.mouse.x += offset;
+						// std::cout <<  mouse.as.mouse.x << "," << mouse.as.mouse.y << "]" << std::endl;
+						// push (mouse);		
+						break;
+					}
+				}
+			}
+		}
+
+	private:
+
+		auto push (value v) noexcept -> void {
+			*top = v;
+			++top;
+		}
+
+		auto pop () noexcept -> value {
+			--top;
+			return *top;
+		}
+
+		value stack [Mouse::emulator::max_stack];
+		value * top = stack;
+	};
 };
 
 export struct Draw {

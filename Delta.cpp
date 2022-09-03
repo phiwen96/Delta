@@ -1,6 +1,7 @@
 export module Delta;
 
 // export import Delta.String;
+// export import Delta.Coro;
 export import Delta.Range;
 export import Delta.Graphics;
 
@@ -8,6 +9,11 @@ export import std;
 #ifdef MACOS
 export import Darwin;
 #endif
+
+export auto absolute (auto v) noexcept -> auto {
+	if (v < 0) return -v;
+	else return v;
+}
 
 export template <typename T>
 auto operator << (std::ostream& os, std::vector <T> const& v) noexcept -> std::ostream& requires requires (T const & t) {

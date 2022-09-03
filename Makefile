@@ -1,5 +1,5 @@
 
-
+GCC = /opt/homebrew/Cellar/gcc/12.2.0/bin/g++-12
 # GCC=g++-12 -std=gnu++2a -fcoroutines -fmodules-ts -fconcepts-diagnostics-depth=1
 CXX = clang++
 CXX_FLAGS = -D DEBUG -std=c++2b 
@@ -37,24 +37,64 @@ endif
 
 
 APP=main
-apps:= App.Server App.FileNotifier Graphics.Triangle App.Graphics.Info#App.Client
+apps:= Oj App.Server App.FileNotifier Graphics.Triangle App.Graphics.Info#App.Client
 tests:= Test.Yolo Test.Array Test.Range
 # all: $(apps) $(tests)
-all: HejHej Graphics.Test
+# all: HejHej Graphics.Test
 
 # std_headers:
 # 	$(GCC) -xc++-system-header iostream
 
 # Delta.Concepts: 
 
-Delta.pcm: Delta.cpp Delta.Graphics.pcm #Delta.String.pcm 
-	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@ 
+# Delta.pcm: Delta.cpp Delta.Graphics.pcm #Delta.String.pcm 
+# 	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@
 
-Delta.Graphics.pcm: Delta.Graphics.cpp Delta.Graphics.Font.pcm Delta.Range.pcm
-	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@ $(CXX_INCLUDES)
+# Delta.Graphics.pcm: Delta.Graphics.cpp Delta.Graphics.Font.pcm Delta.Range.pcm
+# 	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@ $(CXX_INCLUDES)
 
-Delta.Graphics.Font.pcm: Delta.Graphics.Font.cpp
-	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@ $(CXX_INCLUDES)
+# Delta.Graphics.Font.pcm: Delta.Graphics.Font.cpp
+# 	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@ $(CXX_INCLUDES)
+
+
+# Delta.Coro.Implementation.o: Delta.Coro.Implementation.cpp Delta.Coro.Interface.pcm
+# 	$(CXX) $(CXX_FLAGS) -fmodules -fbuiltin-module-map $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -o $@ $(CXX_INCLUDES)
+
+# Delta.Coro.Implementation.pcm: Delta.Coro.Implementation.cpp 
+	# $(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< $(CXX_INCLUDES)
+
+# Delta.Coro.Interface.o: Delta.Coro.Interface.cpp Delta.Coro.Implementation.pcm
+# 	clang++ -std=c++2b -fmodules-ts -fmodules -fbuiltin-module-map -fimplicit-modules -fimplicit-module-maps -fprebuilt-module-path=. -Xclang -emit-module-interface -o Delta.Coro.Implementation.o -fmodule-file=Delta.Coro.Implementation.pcm -c Delta.Coro.Interface.cpp
+
+# Delta.Coro.Interface.pcm: Delta.Coro.Interface.cpp
+	# $(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@ $(CXX_INCLUDES)
+
+
+# Delta.Coro.Implementation.o: Delta.Coro.Implementation.cpp Delta.Coro.Interface.pcm
+	# $(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -o $@ $(CXX_INCLUDES)
+
+# Delta.Coro.Implementation.pcm: Delta.Coro.Implementation.cpp
+# 	clang++ -fmodules-ts -fmodules -fbuiltin-module-map -fimplicit-modules -fimplicit-module-maps -fprebuilt-module-path=. --precompile -x c++-module Delta.Coro.Implementation.cpp -o Delta.Coro.Implementation.pcm
+
+# Delta.Coro.Implementation.pcm: Delta.Coro.Implementation.cpp 
+# 	clang++ -std=c++2b -fmodules-ts -fmodules -fbuiltin-module-map -fimplicit-modules -fimplicit-module-maps -fprebuilt-module-path=. --precompile -c Delta.Coro.Implementation.cpp -o Delta.Coro.Implementation.pcm -x c++-module -Xclang -fmodules-embed-all-files
+
+
+# Delta.Coro.Interface.pcm: Delta.Coro.Interface.cpp Delta.Coro.Implementation.pcm
+	# $(CXX) $(CXX_FLAGS) $(CXX_MODULES) -c $< -Xclang -emit-module-interface -o $@ $(CXX_INCLUDES)
+
+# Delta.Coro.Interface.pcm: Delta.Coro.Interface.cpp Delta.Coro.Implementation.pcm
+# 	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< $(CXX_INCLUDES)
+# Delta.Coro.Implementation.pcm.o: Delta.Coro.Implementation.pcm
+# 	clang++ -std=c++2b -fmodules-ts -fmodules -fbuiltin-module-map -fimplicit-modules -fimplicit-module-maps -fprebuilt-module-path=. -o Delta.Coro.Implementation.pcm.o -c Delta.Coro.Implementation.pcm
+
+# Delta.Coro.Interface.o: Delta.Coro.Interface.cpp Delta.Coro.Implementation.pcm
+# 	clang++ -std=c++2b -fmodules-ts -x c++ -o Delta.Coro.Interface.o  -fmodule-file=Delta.Coro.Implementation.pcm -c Delta.Coro.Interface.cpp
+# Delta.Coro.Interface.pcm: Delta.Coro.Interface.cpp
+# 	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@ $(CXX_INCLUDES)
+
+# Delta.Coro.pcm: Delta.Coro.cpp
+# 	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@ 
 
 #Delta.String.pcm: Delta.String.cpp Delta.Array.pcm
 #	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@
@@ -62,8 +102,8 @@ Delta.Graphics.Font.pcm: Delta.Graphics.Font.cpp
 #Delta.Array.pcm: Delta.Array.cpp Delta.Range.pcm
 #	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@
 
-Delta.Range.pcm: Delta.Range.cpp #Delta.Iterator.pcm
-	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@
+# Delta.Range.pcm: Delta.Range.cpp #Delta.Iterator.pcm
+# 	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@
 
 #Delta.Iterator.pcm: Delta.Iterator.cpp Delta.Common.pcm
 #	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) $(addprefix -fmodule-file=, $(filter-out $<, $^)) -c $< -Xclang -emit-module-interface -o $@
@@ -174,18 +214,41 @@ Delta.Range.pcm: Delta.Range.cpp #Delta.Iterator.pcm
 # App.Graphics.Info.o: App.Graphics.Info.cpp Delta.pcm Delta.Graphics.pcm App.Graphics.Info.vert.spv App.Graphics.Info.frag.spv
 # 	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) -c $< -o $@ $(CXX_INCLUDES)
 
-HejHej: HejHej.o Delta.pcm
-	$(CXX) $(CXX_FLAGS) $^ -o $@ $(CXX_INCLUDES) $(CXX_LIBS)
+# HejHej: HejHej.o Delta.pcm
+# 	$(CXX) $(CXX_FLAGS) $^ -o $@ $(CXX_INCLUDES) $(CXX_LIBS)
 
-HejHej.o: HejHej.cpp Delta.pcm
-	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) -c $< -o $@ $(CXX_INCLUDES)
+# HejHej.o: HejHej.cpp Delta.pcm
+# 	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) -c $< -o $@ $(CXX_INCLUDES)
 
-Graphics.Test: Graphics.Test.o Delta.pcm Delta.Graphics.pcm
-	$(CXX) $(CXX_FLAGS) $^ -o $@ $(CXX_INCLUDES) $(CXX_LIBS)
+# Graphics.Test: Graphics.Test.o Delta.pcm Delta.Graphics.pcm
+# 	$(CXX) $(CXX_FLAGS) $^ -o $@ $(CXX_INCLUDES) $(CXX_LIBS)
 
-Graphics.Test.o: Graphics.Test.cpp Delta.pcm Delta.Graphics.pcm Graphics.Test.vert.spv Graphics.Test.frag.spv Graphics.Test.Line.vert.spv Graphics.Test.Line.frag.spv
-	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) -c $< -o $@ $(CXX_INCLUDES)
+# Graphics.Test.o: Graphics.Test.cpp Delta.pcm Delta.Graphics.pcm Graphics.Test.vert.spv Graphics.Test.frag.spv Graphics.Test.Line.vert.spv Graphics.Test.Line.frag.spv 
+# 	$(CXX) $(CXX_FLAGS) $(CXX_MODULES) -c $< -o $@ $(CXX_INCLUDES)
 
+# Delta.Coro.Interface.pcm: Delta.Coro.Interface.cpp
+# 	clang++ -std=c++2b -stdlib=libc++ -fmodules -fmodules-ts -fbuiltin-module-map -Xclang -emit-module-interface -c Delta.Coro.Interface.cpp -o Delta.Coro.Interface.pcm
+
+# Delta.Coro.Interface.o: Delta.Coro.Interface.cpp
+# 	clang++ -std=c++2b -stdlib=libc++ -fmodules -fbuiltin-module-map -c Delta.Coro.Interface.cpp -o Delta.Coro.Interface.o
+
+# Delta.Coro.Implementation.pcm: Delta.Coro.Implementation.cpp Delta.Coro.Interface.pcm
+# 	clang++ -std=c++2b -stdlib=libc++ -fmodules -fbuiltin-module-map -fmodule-file=Delta.Coro.Interface.pcm -c Delta.Coro.Implementation.cpp -o Delta.Coro.Implementation.o
+
+all: std_headers Delta.Coro.Interface.o Delta.Coro.Implementation.o Oj
+
+std_headers:
+	$(GCC) -std=c++2b -fmodules-ts -x c++-system-header iostream
+	$(GCC) -std=c++2b -fmodules-ts -x c++-system-header coroutine
+
+Delta.Coro.Interface.o: Delta.Coro.Interface.cpp std_headers
+	$(GCC) -c -std=c++2b -fmodules-ts $< -o $@
+
+Delta.Coro.Implementation.o: Delta.Coro.Implementation.cpp std_headers
+	$(GCC) -c -std=c++2b -fmodules-ts $< -o $@
+
+Oj: Oj.cpp Delta.Coro.Interface.o Delta.Coro.Implementation.o
+	$(GCC) $< *.o -o $@
 
 
 # App.Compiler: App.Compiler.o Delta.pcm 
@@ -214,7 +277,7 @@ GLSLC_COMPILER = /Users/philipwenkel/VulkanSDK/1.2.182.0/macOS/bin/glslc
 	
 
 clean:
-	@rm -rf gcm.cache/
+	@rm -rf gcm.cache
 	@rm -f *.o
 	@rm -f *.pcm 
 	@rm -f *.spv
