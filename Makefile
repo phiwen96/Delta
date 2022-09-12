@@ -25,7 +25,7 @@ ifeq ($(detected_OS),Darwin)
 	# CXX_INCLUDES += -I/opt/homebrew/Cellar/glfw/3.3.7/include
 	# CXX_LIBS = -L/opt/homebrew/Cellar/glfw/3.3.7/lib -lglfw3
 	# CXX_LIBS = -lglfw3
-	CXX_LIBS = -L/opt/homebrew/Cellar/glfw/3.3.7/lib -lglfw -lvulkan.1.3.216 -L/opt/homebrew/Cellar/freetype/2.12.1/lib -lfreetype -L/Users/philipwenkel/VulkanSDK/1.3.216.0/macOS/lib -lsdl2
+	CXX_LIBS = -L/opt/homebrew/Cellar/glfw/3.3.8/lib -lglfw -lvulkan.1.3.216 -L/opt/homebrew/Cellar/freetype/2.12.1/lib -lfreetype -L/Users/philipwenkel/VulkanSDK/1.3.216.0/macOS/lib
 	# FONTS_DIR = /System/Library/Fonts/Supplemental
 endif
 ifeq ($(detected_OS),Linux)
@@ -37,7 +37,7 @@ endif
 
 
 APP=main
-apps:= Oj App.Server App.FileNotifier Graphics.Triangle App.Graphics.Info#App.Client
+apps:= Graphics.Test Oj #App.Server App.FileNotifier Graphics.Triangle App.Graphics.Info#App.Client
 tests:= Test.Yolo Test.Array Test.Range
 # all: $(apps) $(tests)
 # all: HejHej Graphics.Test
@@ -235,33 +235,113 @@ tests:= Test.Yolo Test.Array Test.Range
 # Delta.Coro.Implementation.pcm: Delta.Coro.Implementation.cpp Delta.Coro.Interface.pcm
 # 	clang++ -std=c++2b -stdlib=libc++ -fmodules -fbuiltin-module-map -fmodule-file=Delta.Coro.Interface.pcm -c Delta.Coro.Implementation.cpp -o Delta.Coro.Implementation.o
 
-all: std_headers Oj
+# all: std_headers Oj
+all: Oj
 
-std_headers:
-	$(GCC) -std=c++2b -fmodules-ts -x c++-system-header iostream
-	$(GCC) -std=c++2b -fmodules-ts -x c++-system-header coroutine
-	$(GCC) -std=c++2b -fmodules-ts -x c++-system-header utility
+# std_headers:
+	# $(GCC) -std=c++2b -fmodules-ts -x c++-system-header iostream
+	# $(GCC) -std=c++2b -fmodules-ts -x c++-system-header coroutine
+	# $(GCC) -std=c++2b -fmodules-ts -x c++-system-header utility
+	# $(GCC) -std=c++2b -fmodules-ts -x c++-system-header vector
+	# $(GCC) -std=c++2b -fmodules-ts -x c++-system-header array 
+	# $(GCC) -std=c++2b -fmodules-ts -x c++-system-header string
+	# $(GCC) -std=c++2b -fmodules-ts -x c++-system-header tuple
+	# $(GCC) -std=c++2b -fmodules-ts -x c++-system-header fstream
 
 # Delta.Coro-Promise.o: Delta.Coro-Promise.cpp std_headers
 # 	$(GCC) -c -std=c++2b -fmodules-ts $< -o $@
 
-Delta.Coro-Promise.o: Delta.Coro-Promise.cpp
+# Promise.o: Promise.cpp
+# 	$(GCC) -std=c++2b -fmodules-ts -c $<
+
+# _Promise.o: _Promise.cpp Promise.o
+# 	$(GCC) -std=c++2b -fmodules-ts -c $<
+
+# first partition unit then the module interface
+# Coro.o: Coro.cpp _Promise.o
+# 	$(GCC) -std=c++2b -fmodules-ts -c $<
+
+# then the partition implemention
+# _Promise.o: _Promise.cpp Co
+
+# then the module implementation
+# _Coro.o: _Coro.cpp Coro.o
+# 	$(GCC) -std=c++2b -fmodules-ts -c $<
+
+# _Promise.o: _Promise.cpp Coro.o
+# 	$(GCC) -std=c++2b -fmodules-ts -c $<
+
+# _Promise.o: _Promise.cpp _Promise.o
+# 	$(GCC) -std=c++2b -fmodules-ts -c $<
+
+# Delta: _Promise.o Promise.o _Coro.o Coro.o 
+# 	$(GCC) -shared $^ -o libDelta.so
+
+# Oj: Oj.cpp Delta#Delta.Coro.Impl.o
+# 	$(GCC) -std=c++2b -fmodules-ts $< -o $@ -Xlinker ./libDelta.so
+
+Promise.Type.Interface.o: Promise.Type.Interface.cpp
 	$(GCC) -std=c++2b -fmodules-ts -c $<
 
-Delta.Coro-Promise.Impl.o: Delta.Coro-Promise.Impl.cpp Delta.Coro-Promise.o
+Promise.Type.Implementation.o: Promise.Type.Implementation.cpp Promise.Type.Interface.o
 	$(GCC) -std=c++2b -fmodules-ts -c $<
 
-Delta.Coro.o: Delta.Coro.cpp std_headers Delta.Coro-Promise.o
+Promise.Type.o: Promise.Type.cpp Promise.Type.Implementation.o
 	$(GCC) -std=c++2b -fmodules-ts -c $<
 
-Delta.Coro.Impl.o: Delta.Coro.Impl.cpp Delta.Coro.o
-	$(GCC) -std=c++2b -fmodules-ts -c $< 
+Promise.o: Promise.cpp Promise.Type.o
+	$(GCC) -std=c++2b -fmodules-ts -c $<
 
-Delta: Delta.Coro.o Delta.Coro.Impl.o Delta.Coro-Promise.o
+Coro.Type.Interface.o: Coro.Type.Interface.cpp Promise.o
+	$(GCC) -std=c++2b -fmodules-ts -c $<
+
+Coro.Type.Implementation.o: Coro.Type.Implementation.cpp Coro.Type.Interface.o
+	$(GCC) -std=c++2b -fmodules-ts -c $<
+
+Coro.Type.o: Coro.Type.cpp Coro.Type.Implementation.o
+	$(GCC) -std=c++2b -fmodules-ts -c $<
+
+Coro.o: Coro.cpp Coro.Type.o
+	$(GCC) -std=c++2b -fmodules-ts -c $<
+
+# -laio -pthread
+
+# Delta.Graphics.o: Delta.Graphics.cpp
+# 	$(GCC) $(CXX_FLAGS) -std=c++2b -fmodules-ts -c $< $(CXX_INCLUDES)
+
+Delta: Coro.o Coro.Type.o Coro.Type.Interface.o Coro.Type.Implementation.o Promise.o Promise.Type.o Promise.Type.Interface.o Promise.Type.Implementation.o 
 	$(GCC) -shared $^ -o libDelta.so
 
-Oj: Oj.cpp Delta#Delta.Coro.Impl.o
-	$(GCC) -std=c++2b -fmodules-ts $< *.o -o $@ -Xlinker ./libDelta.so
+# Delta: Coro.o Coro.Type.o Coro.Type.Interface.o Coro.Type.Implementation.o Promise.o Promise.Type.o Promise.Type.Interface.o Promise.Type.Implementation.o
+# 	ar -cr libDelta.a $^
+
+# Oj.o: Oj.cpp Delta
+# 	$(GCC) -std=c++2b -fmodules-ts -c $<
+
+Oj: Oj.cpp Delta
+	$(GCC) -std=c++2b -fmodules-ts -o $@ $< -L. -lDelta $(CXX_LIBS) $(CXX_INCLUDES) -pthread
+
+# Graphics.Test: Graphics.Test.cpp Delta
+# 	$(GCC) -std=c++2b -fmodules-ts -o $@ $< -L. -lDelta $(CXX_INCLUDES) $(CXX_LIBS)
+
+
+
+# Delta2: _Promise.o Promise.o _Coro.o Coro.o 
+# 	ar -cr libDelta2.a $^
+
+# Oj.o: Oj.cpp Delta2
+# 	$(GCC) -std=c++2b -fmodules-ts $< -o $@ 
+
+
+
+# Oj: Oj.cpp Delta2
+# 	$(GCC) -std=c++2b -fmodules-ts -o $@ $< -L. -lDelta2
+
+
+
+
+
+#-Xlinker #./libDelta.so
 
 
 # App.Compiler: App.Compiler.o Delta.pcm 
@@ -290,6 +370,7 @@ GLSLC_COMPILER = /Users/philipwenkel/VulkanSDK/1.2.182.0/macOS/bin/glslc
 	
 
 clean:
+	@rm -f libDelta.so
 	@rm -rf gcm.cache
 	@rm -f *.o
 	@rm -f *.pcm 
