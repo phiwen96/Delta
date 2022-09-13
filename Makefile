@@ -1,5 +1,5 @@
 
-GCC = /opt/homebrew/Cellar/gcc/12.2.0/bin/g++-12
+
 # GCC=g++-12 -std=gnu++2a -fcoroutines -fmodules-ts -fconcepts-diagnostics-depth=1
 CXX = clang++
 CXX_FLAGS = -D DEBUG -std=c++2b 
@@ -19,6 +19,7 @@ ifeq ($(detected_OS),Windows)
 	# exit
 endif
 ifeq ($(detected_OS),Darwin)
+	GCC = /opt/homebrew/Cellar/gcc/12.2.0/bin/g++-12
 	CXX_FLAGS += -D MACOS -D FONTS_DIR=\"/System/Library/Fonts/Supplemental\"
 	#CXX_GRAPHICS_LIBS += -l/opt/homebrew/Cellar/glfw/3.3.7/lib/libglfw.3.3.dylib -I/opt/homebrew/Cellar/glfw/3.3.7/include
 	# CXX_GRAPHICS_LIBS += -lglfw
@@ -29,6 +30,7 @@ ifeq ($(detected_OS),Darwin)
 	# FONTS_DIR = /System/Library/Fonts/Supplemental
 endif
 ifeq ($(detected_OS),Linux)
+	GCC = /usr/bin/g++-12
 	CXX_FLAGS += -D LINUX
 	# CXX_LIBS += -lglfw
     CXX_APP_FLAGS += -lrt

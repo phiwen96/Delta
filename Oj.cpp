@@ -91,7 +91,7 @@ auto spawn_future () -> future {
 void async_signal_handler (int signo, siginfo_t *info, void *context) {  
 	auto ptr =(struct aiocb *)(info->si_value.sival_ptr); 
 
-	std::cout << ((char const*) ptr->aio_buf)[0] << std::endl;
+	// std::cout << ((char const*) ptr->aio_buf)[0] << std::endl;
 	
 	if (auto err = aio_error (ptr); err == -1) {
 
@@ -127,8 +127,9 @@ void async_signal_handler (int signo, siginfo_t *info, void *context) {
 	}
 
 	auto txt = (const char*) ptr->aio_buf;
+	std::cout << txt << std::endl;
 	// printf("read=%s", (char *)ptr->aio_buf);  
-	std::cout << "yo" << std::endl;
+	// std::cout << "yo" << std::endl;
 }  
 
 void aio_completion_handler(sigval sigval) {
@@ -182,17 +183,17 @@ auto main (int argc, char** argv) -> int {
 		exit (-1);
 	}
 
-	// auto fd = open ("/Users/philipwenkel/Downloads/hej.txt", O_RDONLY);
-	// if (fd == -1) {
-	// 	perror ("open");
-	// 	exit(-1);
-	// }
-	// struct stat st;
-	// if (fstat (fd, &st) == -1) {
-	// 	perror ("fstat");
-	// 	exit (-1);
-	// }
-	// long long filesize = st.st_size;
+	auto fd = open (current_file.c_str(), O_RDONLY);
+	if (fd == -1) {
+		perror ("open");
+		exit(-1);
+	}
+	struct stat st;
+	if (fstat (fd, &st) == -1) {
+		perror ("fstat");
+		exit (-1);
+	}
+	long long filesize = st.st_size;
 	
 	// int flags = fcntl(fd, F_GETFL, 0);
     // if (flags == -1) {
@@ -203,10 +204,10 @@ auto main (int argc, char** argv) -> int {
 
 	auto my_aiocb = (struct aiocb*) malloc (sizeof (struct aiocb));
 	
-	my_aiocb->aio_fildes = open ("/Users/philipwenkel/Downloads/hej.txt", O_RDONLY);
+	my_aiocb->aio_fildes = fd;
 	my_aiocb->aio_offset = 0;
-	my_aiocb->aio_buf = malloc (20 * sizeof (char));
-	my_aiocb->aio_nbytes = 20;
+	my_aiocb->aio_buf = malloc (filesize * sizeof (char));
+	my_aiocb->aio_nbytes = filesize;
 	my_aiocb->aio_reqprio = 0;
 	// my_aiocb->aio_sigevent->sigev_value->sival_int = 0;
 	// my_aiocb->aio_sigevent->sigev_notify_function
@@ -248,7 +249,6 @@ auto main (int argc, char** argv) -> int {
 	// 	/* code */
 	// }
 	
-
 
 
 	// return 0;
