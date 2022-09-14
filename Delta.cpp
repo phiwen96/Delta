@@ -4,6 +4,7 @@ export module Delta;
 // export import Delta.Coro;
 export import Delta.Range;
 export import Delta.Graphics;
+export import Async;
 
 export import std;
 #ifdef MACOS

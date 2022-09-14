@@ -306,12 +306,30 @@ Coro.Type.o: Coro.Type.cpp Coro.Type.Implementation.o
 Coro.o: Coro.cpp Coro.Type.o
 	$(GCC) -std=c++2b -fmodules-ts -c $<
 
+Async.IO.SubmissionQueue.Interface.o: Async.IO.SubmissionQueue.Interface.cpp
+	$(GCC) -std=c++2b -fmodules-ts -c $<
+
+Async.IO.CompletionQueue.Implementation.o: Async.IO.CompletionQueue.Implementation.cpp Async.IO.SubmissionQueue.Interface.o
+	$(GCC) -std=c++2b -fmodules-ts -c $<
+
+Async.IO.SubmissionQueue.o: Async.IO.SubmissionQueue.cpp Async.IO.SubmissionQueue.Implementation.cpp
+	$(GCC) -std=c++2b -fmodules-ts -c $<
+
+Async.IO.CompletionQueue.o: Async.IO.CompletionQueue.cpp Async.IO.CompletionQueue.Implementation.cpp
+	$(GCC) -std=c++2b -fmodules-ts -c $<
+
+Async.IO.o: Async.IO.cpp Async.IO.SubmissionQueue.o Async.IO.CompletionQueue.o
+	$(GCC) -std=c++2b -fmodules-ts -c $<
+
+Async.o: Async.cpp Async.IO.o
+	$(GCC) -std=c++2b -fmodules-ts -c $<
+
 # -laio -pthread
 
 # Delta.Graphics.o: Delta.Graphics.cpp
 # 	$(GCC) $(CXX_FLAGS) -std=c++2b -fmodules-ts -c $< $(CXX_INCLUDES)
 
-Delta: Coro.o Coro.Type.o Coro.Type.Interface.o Coro.Type.Implementation.o Promise.o Promise.Type.o Promise.Type.Interface.o Promise.Type.Implementation.o 
+Delta: Async.o Async.IO.o Async.IO.CompletionQueue.o Async.IO.SubmissionQueue.o Async.IO.CompletionQueue.Implementation.o Async.IO.SubmissionQueue.Interface.o Async.IO.CompletionQueue.Implementation.o Async.IO.SubmissionQueue.Interface.o Coro.o Coro.Type.o Coro.Type.Interface.o Coro.Type.Implementation.o Promise.o Promise.Type.o Promise.Type.Interface.o Promise.Type.Implementation.o 
 	$(GCC) -shared $^ -o libDelta.so
 
 # Delta: Coro.o Coro.Type.o Coro.Type.Interface.o Coro.Type.Implementation.o Promise.o Promise.Type.o Promise.Type.Interface.o Promise.Type.Implementation.o

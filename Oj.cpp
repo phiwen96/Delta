@@ -19,7 +19,7 @@
 #include <thread>
 #include <utility>
 #include <cstring>
-
+#include <linux/io_uring.h>
 // import Coro;
 // import Graphics;
 // import <iostream>;
@@ -234,8 +234,8 @@ private:
 // 	co_return;
 // }
 
-void aio_completion_handler (sigval sigval) {
-	auto coro_handle = std::coroutine_handle <future_io::promise_type>::from_address (sigval.sival_ptr);
+void aio_completion_handler (sigval s) {
+	auto coro_handle = std::coroutine_handle <future_io::promise_type>::from_address (s.sival_ptr);
 	coro_handle.resume();
 	// auto my_aiocb = (struct aiocb *)sigval.sival_ptr;
 	// std::cout << std::this_thread::get_id() << std::endl;
@@ -351,14 +351,42 @@ auto do_some_work () -> future <> {
 
 
 
-
+auto sigg (int i) noexcept {
+	std::cout << "ALARM!!!!" << std::endl;
+	std::cout << std::this_thread::get_id() << std::endl;
+}
 
 auto main (int argc, char** argv) -> int {
+
+
+	return 0;
+
 	// auto f = spawn_future ();
 	// return 0;
 	// std::cout << std::filesystem::current_path().string() + '/' + std::source_location::current().file_name() << std::endl;
 	
 	// auto future_txt = async_read (current_file_path().c_str());
+
+	{
+		struct sigaction sa;
+		sa.sa_flags = 0;
+		sa.sa_handler = sigg;
+		if (sigaction (SIGALRM, &sa, nullptr) == -1) {
+			perror ("sigaction");
+			exit (-1);
+		}
+	}
+
+	alarm (3);
+	std::cout << std::this_thread::get_id() << std::endl;
+
+	while (true)
+	{
+		/* code */
+	}
+	
+
+	return 0;
 
 	auto do_some_work2 = [] mutable -> future <> {
 		co_await async_write ("hello world", (current_path () + "/test.txt").c_str());
