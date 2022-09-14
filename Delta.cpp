@@ -2,11 +2,11 @@ export module Delta;
 
 // export import Delta.String;
 // export import Delta.Coro;
-export import Delta.Range;
-export import Delta.Graphics;
-export import Async;
+// export import Delta.Range;
+// export import Delta.Graphics;
+// export import Async;
 
-export import std;
+// export import std;
 #ifdef MACOS
 export import Darwin;
 #endif

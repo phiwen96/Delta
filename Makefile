@@ -309,13 +309,19 @@ Coro.o: Coro.cpp Coro.Type.o
 Async.IO.SubmissionQueue.Interface.o: Async.IO.SubmissionQueue.Interface.cpp
 	$(GCC) -std=c++2b -fmodules-ts -c $<
 
-Async.IO.CompletionQueue.Implementation.o: Async.IO.CompletionQueue.Implementation.cpp Async.IO.SubmissionQueue.Interface.o
+Async.IO.SubmissionQueue.Implementation.o: Async.IO.SubmissionQueue.Implementation.cpp Async.IO.SubmissionQueue.Interface.o
 	$(GCC) -std=c++2b -fmodules-ts -c $<
 
-Async.IO.SubmissionQueue.o: Async.IO.SubmissionQueue.cpp Async.IO.SubmissionQueue.Implementation.cpp
+Async.IO.CompletionQueue.Interface.o: Async.IO.CompletionQueue.Interface.cpp
 	$(GCC) -std=c++2b -fmodules-ts -c $<
 
-Async.IO.CompletionQueue.o: Async.IO.CompletionQueue.cpp Async.IO.CompletionQueue.Implementation.cpp
+Async.IO.CompletionQueue.Implementation.o: Async.IO.CompletionQueue.Implementation.cpp Async.IO.CompletionQueue.Interface.o
+	$(GCC) -std=c++2b -fmodules-ts -c $<
+
+Async.IO.SubmissionQueue.o: Async.IO.SubmissionQueue.cpp Async.IO.SubmissionQueue.Implementation.o
+	$(GCC) -std=c++2b -fmodules-ts -c $<
+
+Async.IO.CompletionQueue.o: Async.IO.CompletionQueue.cpp Async.IO.CompletionQueue.Implementation.o
 	$(GCC) -std=c++2b -fmodules-ts -c $<
 
 Async.IO.o: Async.IO.cpp Async.IO.SubmissionQueue.o Async.IO.CompletionQueue.o
@@ -329,17 +335,19 @@ Async.o: Async.cpp Async.IO.o
 # Delta.Graphics.o: Delta.Graphics.cpp
 # 	$(GCC) $(CXX_FLAGS) -std=c++2b -fmodules-ts -c $< $(CXX_INCLUDES)
 
-Delta: Async.o Async.IO.o Async.IO.CompletionQueue.o Async.IO.SubmissionQueue.o Async.IO.CompletionQueue.Implementation.o Async.IO.SubmissionQueue.Interface.o Async.IO.CompletionQueue.Implementation.o Async.IO.SubmissionQueue.Interface.o Coro.o Coro.Type.o Coro.Type.Interface.o Coro.Type.Implementation.o Promise.o Promise.Type.o Promise.Type.Interface.o Promise.Type.Implementation.o 
-	$(GCC) -shared $^ -o libDelta.so
+# Async: Async.o Async.IO.o Async.IO.CompletionQueue.o Async.IO.SubmissionQueue.o Async.IO.CompletionQueue.Implementation.o Async.IO.CompletionQueue.Interface.o Async.IO.SubmissionQueue.Implementation.o Async.IO.SubmissionQueue.Interface.o
 
-# Delta: Coro.o Coro.Type.o Coro.Type.Interface.o Coro.Type.Implementation.o Promise.o Promise.Type.o Promise.Type.Interface.o Promise.Type.Implementation.o
-# 	ar -cr libDelta.a $^
+# Delta: Coro.o Coro.Type.o Coro.Type.Interface.o Coro.Type.Implementation.o Promise.o Promise.Type.o Promise.Type.Interface.o Promise.Type.Implementation.o 
+# 	$(GCC) -shared $^ -o libDelta.so
+
+Delta: Async.o Async.IO.o Async.IO.CompletionQueue.o Async.IO.SubmissionQueue.o Async.IO.CompletionQueue.Implementation.o Async.IO.CompletionQueue.Interface.o Async.IO.SubmissionQueue.Implementation.o Async.IO.SubmissionQueue.Interface.o Coro.o Coro.Type.o Coro.Type.Interface.o Coro.Type.Implementation.o Promise.o Promise.Type.o Promise.Type.Interface.o Promise.Type.Implementation.o
+	ar -cr libDelta.a $^
 
 # Oj.o: Oj.cpp Delta
 # 	$(GCC) -std=c++2b -fmodules-ts -c $<
 
 Oj: Oj.cpp Delta
-	$(GCC) -std=c++2b -fmodules-ts -Werror=unused-result -o $@ $< -L. -lDelta $(CXX_LIBS) $(CXX_INCLUDES) -pthread
+	$(GCC) -std=c++2b -fmodules-ts -Werror=unused-result -o $@ $< -L. -lDelta $(CXX_LIBS) $(CXX_INCLUDES)
 
 # Graphics.Test: Graphics.Test.cpp Delta
 # 	$(GCC) -std=c++2b -fmodules-ts -o $@ $< -L. -lDelta $(CXX_INCLUDES) $(CXX_LIBS)
@@ -390,7 +398,7 @@ GLSLC_COMPILER = /Users/philipwenkel/VulkanSDK/1.2.182.0/macOS/bin/glslc
 	
 
 clean:
-	@rm -f libDelta.so
+	@rm -f libDelta.a
 	@rm -rf gcm.cache
 	@rm -f *.o
 	@rm -f *.pcm 
