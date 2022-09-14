@@ -1,4 +1,5 @@
 
+# sudo apt -y install liburing-dev
 
 # GCC=g++-12 -std=gnu++2a -fcoroutines -fmodules-ts -fconcepts-diagnostics-depth=1
 CXX = clang++
@@ -34,7 +35,7 @@ ifeq ($(detected_OS),Linux)
 	CXX_FLAGS += -D LINUX
 	# CXX_LIBS += -lglfw
     CXX_APP_FLAGS += -lrt
-	CXX_LIBS = -lrt -lglfw -lvulkan
+	CXX_LIBS = -lrt -lglfw -lvulkan -luring
 endif
 
 
