@@ -321,7 +321,7 @@ Delta: Coro.o Coro.Type.o Coro.Type.Interface.o Coro.Type.Implementation.o Promi
 # 	$(GCC) -std=c++2b -fmodules-ts -c $<
 
 Oj: Oj.cpp Delta
-	$(GCC) -std=c++2b -fmodules-ts -o $@ $< -L. -lDelta $(CXX_LIBS) $(CXX_INCLUDES) -pthread
+	$(GCC) -std=c++2b -fmodules-ts -Werror=unused-result -o $@ $< -L. -lDelta $(CXX_LIBS) $(CXX_INCLUDES) -pthread
 
 # Graphics.Test: Graphics.Test.cpp Delta
 # 	$(GCC) -std=c++2b -fmodules-ts -o $@ $< -L. -lDelta $(CXX_INCLUDES) $(CXX_LIBS)
