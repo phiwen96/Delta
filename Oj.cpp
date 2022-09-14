@@ -16,6 +16,7 @@
 #include <filesystem>
 #include <fcntl.h>
 #include <sys/stat.h>
+#include <thread>
 // import Coro;
 // import Graphics;
 // import <iostream>;
@@ -88,57 +89,15 @@ auto spawn_future () -> future {
 	co_return;
 }
 
-void async_signal_handler (int signo, siginfo_t *info, void *context) {  
-	auto ptr =(struct aiocb *)(info->si_value.sival_ptr); 
 
-	// std::cout << ((char const*) ptr->aio_buf)[0] << std::endl;
-	
-	if (auto err = aio_error (ptr); err == -1) {
-
-		perror ("error >> aio_error");
-		switch (err)
-		{
-			case EINPROGRESS:
-				std::cout << "error >> aio_error (EINPROGRESS)" << std::endl;
-				break;
-			
-			case ECANCELED:
-				std::cout << "error >> aio_error (ECANCELED)" << std::endl;
-				break;
-
-			case EINVAL:
-				std::cout << "error >> aio_error (EINVAL)" << std::endl;
-				break;
-
-			case ENOSYS:
-				std::cout << "error >> aio_error (ENOSYS)" << std::endl;
-				break;
-
-			case EOVERFLOW:
-				std::cout << "error >> aio_error (EOVERFLOW)" << std::endl;
-				break;
-		
-			default:
-				std::cout << "error >> aio_error (unknown)" << std::endl;
-				break;
-		}
-		
+void aio_completion_handler (sigval sigval) {
+	auto my_aiocb = (struct aiocb *)sigval.sival_ptr;
+	std::cout << std::this_thread::get_id() << std::endl;
+	// std::cout << (char const*) my_aiocb->aio_buf << std::endl;
+	if (aio_error (my_aiocb) == -1) {
+		perror ("aio_error");
 		exit (-1);
 	}
-
-	auto txt = (const char*) ptr->aio_buf;
-	std::cout << txt << std::endl;
-	// printf("read=%s", (char *)ptr->aio_buf);  
-	// std::cout << "yo" << std::endl;
-}  
-
-void aio_completion_handler(sigval sigval) {
-	auto my_aiocb = (struct aiocb *)sigval.sival_ptr;
-	std::cout << (char const*) my_aiocb->aio_buf << std::endl;
-	// if (aio_error (my_aiocb) == -1) {
-	// 	perror ("aio_error");
-	// 	exit (-1);
-	// }
 }
 
 auto main (int argc, char** argv) -> int {
@@ -146,42 +105,7 @@ auto main (int argc, char** argv) -> int {
 	// return 0;
 	std::cout << std::filesystem::current_path().string() + '/' + std::source_location::current().file_name() << std::endl;
 	auto current_file = std::filesystem::current_path().string() + '/' + std::source_location::current().file_name();
-	// auto * fp = fopen (current_file.c_str(), "r");
-	// if (fp == nullptr) {
-	// 	std::cout << "error" << std::endl;
-	// 	exit (-1);
-	// }
-	// if (fseek(fp, 0, SEEK_END) == -1) {
-	// 	std::cout << "error" << std::endl;
-	// 	exit (-1);
-	// }
-	// auto filelen = ftell(fp);
-	// rewind(fp);
-	
-	// malloc(sizeof(char) * (bufsize + 1));
-	// auto buffer = new char [10000];
-	// auto * buffer = malloc (20);
-	// if (buffer == NULL) {
-	// 	perror ("malloc");
-	// 	exit (-1);
-	// }
-	// std::cout << filelen << std::endl;
-	// size_t newLen = fread (buffer, sizeof(char), filelen, fp);
-	// std::cout << buffer << std::endl;
-	// std::cout << newLen << std::endl;
-	
-	struct sigaction siga {};
 
-	
-	
-	siga.sa_flags = SA_RESTART | SA_SIGINFO;
-	sigemptyset(&siga.sa_mask);  
-	siga.sa_sigaction = async_signal_handler;
-	
-	if (sigaction(SIGUSR1, &siga, nullptr) == -1) {
-		std::cout << "error" << std::endl;
-		exit (-1);
-	}
 
 	auto fd = open (current_file.c_str(), O_RDONLY);
 	if (fd == -1) {
@@ -195,47 +119,22 @@ auto main (int argc, char** argv) -> int {
 	}
 	long long filesize = st.st_size;
 	
-	// int flags = fcntl(fd, F_GETFL, 0);
-    // if (flags == -1) {
-	// 	perror ("fcntl");
-	// 	exit (-1);
-	// }
-    // int r = fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+	struct aiocb my_aiocb {
+		
+		
+		// .aio_lio_opcode = LIO_READ
+	};
 
-	auto my_aiocb = (struct aiocb*) malloc (sizeof (struct aiocb));
-	
-	my_aiocb->aio_fildes = fd;
-	my_aiocb->aio_offset = 0;
-	my_aiocb->aio_buf = malloc (filesize * sizeof (char));
-	my_aiocb->aio_nbytes = filesize;
-	my_aiocb->aio_reqprio = 0;
-	// my_aiocb->aio_sigevent->sigev_value->sival_int = 0;
-	// my_aiocb->aio_sigevent->sigev_notify_function
-	my_aiocb->aio_sigevent.sigev_notify = SIGEV_SIGNAL;
-	my_aiocb->aio_sigevent.sigev_signo = SIGUSR1;
-	// my_aiocb->aio_sigevent->sigev_notify_attributes = NULL;
-	my_aiocb->aio_sigevent.sigev_value.sival_ptr = my_aiocb;
-	// my_aiocb.aio_sigevent.sigev_value = sigval {
-	// 	.sival_ptr = & my_aiocb,
-	// };
-	// fclose (fp);
-	// struct aiocb aiocb {
-	// 	.aio_fildes = fileno (fp),
-	// 	.aio_buf = buffer,
-	// 	.aio_nbytes = (size_t) filelen,
-	// 	.aio_sigevent = sigevent {
-	// 		.sigev_notify = SIGEV_THREAD,
-	// 		.sigev_notify_function = async_signal_handler,
-	// 		.sigev_notify_attributes = NULL
-	// 	},
-	// 	.aio_lio_opcode = LIO_READ
-	// };
+	my_aiocb.aio_fildes = fd;//fileno (fp),
+		my_aiocb.aio_buf = malloc (filesize * sizeof (char));
+		my_aiocb.aio_nbytes = (size_t) filesize;
 
-	// aiocb.aio_sigevent.sigev_value = sigval {
-	// 	.sival_ptr = & aiocb
-	// };
+	my_aiocb.aio_sigevent.sigev_notify = SIGEV_THREAD;
+			my_aiocb.aio_sigevent.sigev_notify_function = aio_completion_handler;
+			my_aiocb.aio_sigevent.sigev_notify_attributes = NULL;
+			my_aiocb.aio_sigevent.sigev_value.sival_ptr = & my_aiocb;
 
-	 if (auto res = aio_read(my_aiocb); res == -1) {
+	 if (auto res = aio_read(&my_aiocb); res == -1) {
 		perror ("aio_read");
 		if (res == ECANCELED) {
 			std::cout << "EAGAIN" << std::endl;
@@ -243,6 +142,8 @@ auto main (int argc, char** argv) -> int {
 
 		exit (-1);
 	 }
+
+	std::cout << std::this_thread::get_id() << std::endl;
 	
 	// while (true)
 	// {
