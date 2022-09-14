@@ -24,8 +24,12 @@
 // import Graphics;
 // import <iostream>;
 
+auto current_path () noexcept -> std::string {
+	return std::filesystem::current_path().string();
+}
+
 auto current_file_path () noexcept -> std::string {
-	return std::filesystem::current_path().string() + '/' + std::source_location::current().file_name();
+	return current_path () + '/' + std::source_location::current().file_name();
 }
 
 template <typename... T>
@@ -144,7 +148,7 @@ struct my_coro_handle {
 	std::coroutine_handle <> handle;
 };
 
-struct [[nodiscard]] future_io {
+struct /*[[nodiscard]]*/ future_io {
 	struct promise_type {
 		std::coroutine_handle <> continuation;
 		char* txt;
@@ -289,7 +293,7 @@ auto async_read (char const* path) -> future_io {
 }
 
 auto async_write (char const* txt, char const* path) -> future_io {
-	auto fd = open (path, O_WRONLY);
+	auto fd = open (path, O_WRONLY | O_CREAT);
 	if (fd == -1) {
 		perror ("open");
 		exit(-1);
@@ -309,7 +313,7 @@ auto async_write (char const* txt, char const* path) -> future_io {
 	auto h = co_await my_coro_handle {};
 	my_aiocb.aio_sigevent.sigev_value.sival_ptr = h.address ();
 
-	if (auto res = aio_read (&my_aiocb); res == -1) {
+	if (auto res = aio_write (&my_aiocb); res == -1) {
 		perror ("aio_read");
 		exit (-1);
 	}
@@ -347,12 +351,24 @@ auto do_some_work () -> future <> {
 
 
 
+
+
 auto main (int argc, char** argv) -> int {
 	// auto f = spawn_future ();
 	// return 0;
 	// std::cout << std::filesystem::current_path().string() + '/' + std::source_location::current().file_name() << std::endl;
 	
-	auto future_txt = async_read (current_file_path().c_str());
+	// auto future_txt = async_read (current_file_path().c_str());
+
+	auto do_some_work2 = [] mutable -> future <> {
+		co_await async_write ("hello world", (current_path () + "/test.txt").c_str());
+		auto txt = co_await async_read ((current_path () + "/test.txt").c_str());
+		std::cout << txt << std::endl;
+	};
+
+	auto work = do_some_work2 ();
+
+	// auto write_txt = async_write ("hello world", (current_path () + "/test.txt").c_str());
 	// auto dd = do_some_work ();
 	// auto dd = do_some_work ();
 	if (!glfwInit()) return -1;
