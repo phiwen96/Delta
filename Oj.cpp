@@ -18,6 +18,7 @@
 #include <sys/stat.h>
 #include <thread>
 #include <utility>
+#include <cstring>
 
 // import Coro;
 // import Graphics;
@@ -79,77 +80,125 @@ struct future;
 template <>
 struct future <> {
 	struct promise_type {
-		auto get_return_object () {
+		std::coroutine_handle <> continuation;
+		auto get_return_object () -> future {
 			return future {*this};
 		}
 		auto initial_suspend () -> std::suspend_never {
 			return {};
 		}
-		auto final_suspend () noexcept -> std::suspend_never {
-			return {};
+		auto final_suspend () noexcept -> auto {
+			struct awaitable {
+				auto await_ready () noexcept -> bool {
+					
+					return false;
+				}
+				auto await_suspend (std::coroutine_handle <promise_type> h) noexcept -> std::coroutine_handle <> {
+					// return h.promise().continuation;
+					std::cout << "future::final_suspend::await_suspend" << std::endl;
+					return h.promise().continuation ? h.promise().continuation : std::noop_coroutine ();
+				}
+				auto await_resume () noexcept -> void {
+					std::cout << "future::final_suspend::await_resume" << std::endl;
+					// std::cout << "final_suspend::await_resume" << std::endl;
+				}
+			};
+			return awaitable {};
 		}
 		void unhandled_exception() {std::cout << "error >> unhandled_exception" << std::endl; exit (-1);}
 		auto return_void () -> void {}
 	};
+	auto await_ready () noexcept -> bool {
+		return false;
+	}
+	auto await_suspend (std::coroutine_handle <> c, auto from = __builtin_FUNCTION()) noexcept -> std::coroutine_handle <promise_type> {
+		std::cout << "future::await_suspend called from " << from << std::endl;
+		// std::cout << "await_suspend" << std::endl;
+		handle.promise().continuation = c;
+		return handle;
+	}
+	auto await_resume () noexcept -> void {
+		std::cout << "future::await_resume" << std::endl;
+	}
 	explicit future (promise_type& p) noexcept : handle {std::coroutine_handle <promise_type>::from_promise (p)} {}
 	future (future&& o) noexcept : handle {std::exchange (o.handle, {})} {} 
 	future (future const&) = delete;
 	~future () {if (handle) handle.destroy();}
+private:
 	std::coroutine_handle <promise_type> handle;
 };
 
-struct [[nodiscard]] future_read {
+struct my_coro_handle {
+	auto await_ready () noexcept {
+		return false;
+	}
+	auto await_suspend (std::coroutine_handle <> h) noexcept {
+		// return h;
+		handle = h;
+		return false;
+		
+	}
+	auto await_resume () noexcept {
+		return handle;
+	}
+	std::coroutine_handle <> handle;
+};
+
+struct [[nodiscard]] future_io {
 	struct promise_type {
 		std::coroutine_handle <> continuation;
 		char* txt;
-		auto get_return_object () {
-			return future_read {*this};
+		auto get_return_object () -> future_io {
+			return future_io {*this};
 		}
 		auto initial_suspend () -> std::suspend_never {
 			return {};
 		}
 		auto final_suspend () noexcept -> auto {
-			std::cout << "final_suspend" << std::endl;
+			// std::cout << "final_suspend" << std::endl;
 			struct awaitable {
 				auto await_ready () noexcept -> bool {
 					return false;
 				}
 				auto await_suspend (std::coroutine_handle <promise_type> h) noexcept -> std::coroutine_handle <> {
-					// return h.promise().continuation;
+					std::cout << "future_io::final_suspend::await_suspend" << std::endl;
 					return h.promise().continuation ? h.promise().continuation : std::noop_coroutine ();
 				}
 				auto await_resume () noexcept -> void {
-					std::cout << "final_suspend::await_resume" << std::endl;
+					std::cout << "future_io::final_suspend::await_resume" << std::endl;
 				}
 			};
 			return awaitable {};
+			// return std::suspend_never {};
+			// return std::suspend_always {};
 		}
 		void unhandled_exception() {std::cout << "error >> unhandled_exception" << std::endl; exit (-1);}
 		auto return_value (char* t) -> void {
 			txt = t;
 		}
-		auto await_transform (struct aiocb& a) noexcept -> decltype (auto) {
-			struct awaitable {
-				auto await_ready () noexcept -> bool {
-					return false;
-				}
-				auto await_suspend (std::coroutine_handle <promise_type> h) noexcept -> void {
-					std::cout << "await_suspend" << std::endl;
-				}
-				auto await_resume () noexcept -> void {
-					std::cout << "await_resume" << std::endl;
-				}
-			};
-			// a.aio_sigevent.sigev_value.sival_ptr = & my_aiocb;
-			a.aio_sigevent.sigev_value.sival_ptr = std::coroutine_handle <promise_type>::from_promise (*this).address ();
+		// auto await_transform (struct aiocb& a) noexcept -> auto {
+		// 	struct awaitable {
+		// 		auto await_ready () noexcept -> bool {
+		// 			return false;
+		// 		}
+		// 		auto await_suspend (std::coroutine_handle <> h, char const* from = __builtin_FUNCTION(), int line = __builtin_LINE()) noexcept -> void {
+		// 			std::cout << "future_io::await_transform::await_suspend called from " << from << line << std::endl;
+		// 			// std::cout << "await_suspend" << std::endl;
+		// 		}
+		// 		auto await_resume () noexcept -> void {
+		// 			std::cout << "future_io::await_transform::await_resume" << std::endl;
+		// 		}
+		// 	};
+		// 	// a.aio_sigevent.sigev_value.sival_ptr = & my_aiocb;
+		// 	a.aio_sigevent.sigev_value.sival_ptr = std::coroutine_handle <promise_type>::from_promise (*this).address ();
 
-			if (auto res = aio_read (&a); res == -1) {
-				perror ("aio_read");
-				exit (-1);
-			}
+		// 	if (auto res = aio_read (&a); res == -1) {
+		// 		perror ("aio_read");
+		// 		exit (-1);
+		// 	}
 
-			return awaitable {};
-		}
+		// 	return awaitable {};
+		// }
 	};
 	auto get () noexcept -> char* {
 		return handle.promise().txt;
@@ -157,19 +206,21 @@ struct [[nodiscard]] future_read {
 	auto await_ready () noexcept -> bool {
 		return false;
 	}
-	auto await_suspend (std::coroutine_handle <> c) noexcept -> std::coroutine_handle <promise_type> {
-		std::cout << "await_suspend" << std::endl;
+	auto await_suspend (std::coroutine_handle <> c, char const* from = __builtin_FUNCTION(), int line = __builtin_LINE()) noexcept//std::coroutine_handle <promise_type> 
+	{
+		std::cout << "future_io::await_suspend called from " << from << line << std::endl;
+		// std::cout << "await_suspend" << std::endl;
 		handle.promise().continuation = c;
-		return handle;
+		// return handle;
 	}
 	auto await_resume () noexcept -> char* {
-		std::cout << "await_resume" << std::endl;
+		std::cout << "future_io::await_resume" << std::endl;
 		return handle.promise().txt;
 	}
-	explicit future_read (promise_type& p) noexcept : handle {std::coroutine_handle <promise_type>::from_promise (p)} {}
-	future_read (future_read&& o) noexcept : handle {std::exchange (o.handle, {})} {} 
-	future_read (future_read const&) = delete;
-	~future_read () {if (handle) handle.destroy();}
+	explicit future_io (promise_type& p) noexcept : handle {std::coroutine_handle <promise_type>::from_promise (p)} {}
+	future_io (future_io&& o) noexcept : handle {std::exchange (o.handle, {})} {} 
+	future_io (future_io const&) = delete;
+	~future_io () {if (handle) handle.destroy();}
 private:
 	std::coroutine_handle <promise_type> handle;
 };
@@ -180,7 +231,7 @@ private:
 // }
 
 void aio_completion_handler (sigval sigval) {
-	auto coro_handle = std::coroutine_handle <future_read::promise_type>::from_address (sigval.sival_ptr);
+	auto coro_handle = std::coroutine_handle <future_io::promise_type>::from_address (sigval.sival_ptr);
 	coro_handle.resume();
 	// auto my_aiocb = (struct aiocb *)sigval.sival_ptr;
 	// std::cout << std::this_thread::get_id() << std::endl;
@@ -191,7 +242,7 @@ void aio_completion_handler (sigval sigval) {
 	// }
 }
 
-auto async_read (char const* path) -> future_read {
+auto async_read (char const* path) -> future_io {
 	auto fd = open (path, O_RDONLY);
 	if (fd == -1) {
 		perror ("open");
@@ -212,11 +263,23 @@ auto async_read (char const* path) -> future_read {
 	my_aiocb.aio_sigevent.sigev_notify = SIGEV_THREAD;
 	my_aiocb.aio_sigevent.sigev_notify_function = aio_completion_handler;
 	my_aiocb.aio_sigevent.sigev_notify_attributes = NULL;
-	std::cout << "co_await my_aiocb" << std::endl;
-	co_await my_aiocb;
-	std::cout << "co_await my_aiocb" << std::endl;
+	// std::cout << "co_await my_aiocb" << std::endl;
+	auto h = co_await my_coro_handle {};
+	my_aiocb.aio_sigevent.sigev_value.sival_ptr = h.address ();
+
+	if (auto res = aio_read (&my_aiocb); res == -1) {
+		perror ("aio_read");
+		exit (-1);
+	}
+	co_await std::suspend_always {};
+	// std::cout << "co_await my_aiocb" << std::endl;
 	if (aio_error (&my_aiocb) == -1) {
 		perror ("aio_error");
+		exit (-1);
+	}
+
+	if (close (fd) == -1) {
+		perror ("close");
 		exit (-1);
 	}
 
@@ -225,12 +288,60 @@ auto async_read (char const* path) -> future_read {
 	co_return (char*) my_aiocb.aio_buf;
 }
 
+auto async_write (char const* txt, char const* path) -> future_io {
+	auto fd = open (path, O_WRONLY);
+	if (fd == -1) {
+		perror ("open");
+		exit(-1);
+	}
+	
+	struct aiocb my_aiocb {};
+
+	my_aiocb.aio_fildes = fd;//fileno (fp),
+	my_aiocb.aio_buf = (volatile void*) txt;
+	my_aiocb.aio_nbytes = strlen (txt);
+	my_aiocb.aio_sigevent.sigev_notify = SIGEV_THREAD;
+	my_aiocb.aio_sigevent.sigev_notify_function = aio_completion_handler;
+	my_aiocb.aio_sigevent.sigev_notify_attributes = NULL;
+	// std::cout << "co_await my_aiocb" << std::endl;
+	
+	// co_await my_aiocb;
+	auto h = co_await my_coro_handle {};
+	my_aiocb.aio_sigevent.sigev_value.sival_ptr = h.address ();
+
+	if (auto res = aio_read (&my_aiocb); res == -1) {
+		perror ("aio_read");
+		exit (-1);
+	}
+
+	co_await std::suspend_always {};
+
+	// std::cout << "co_await my_aiocb" << std::endl;
+	if (aio_error (&my_aiocb) == -1) {
+		perror ("aio_error");
+		exit (-1);
+	}
+
+	if (close (fd) == -1) {
+		perror ("close");
+		exit (-1);
+	}
+
+	// std::cout << "yay" << std::endl;
+
+	co_return nullptr;
+}
+
 auto do_some_work () -> future <> {
-	std::cout << "doing some work..." << std::endl;
-	auto txt = co_await async_read (current_file_path().c_str());
+	// std::cout << "doing some work..." << std::endl;
+	// auto txt = co_await async_read (current_file_path().c_str());
+	
 	std::cout << "oui" << std::endl;
+	// std::cout << txt << std::endl;
+	// co_await std::suspend_always {};
+	auto txt = co_await async_read (current_file_path().c_str());
+	std::cout << "done some work" << std::endl;
 	std::cout << txt << std::endl;
-	co_return;
 }
 
 
@@ -241,9 +352,9 @@ auto main (int argc, char** argv) -> int {
 	// return 0;
 	// std::cout << std::filesystem::current_path().string() + '/' + std::source_location::current().file_name() << std::endl;
 	
-	// auto future_txt = async_read (current_file_path().c_str());
+	auto future_txt = async_read (current_file_path().c_str());
 	// auto dd = do_some_work ();
-	async_read (current_file_path().c_str());
+	// auto dd = do_some_work ();
 	if (!glfwInit()) return -1;
 	auto window = Window {640, 480};
 
@@ -272,6 +383,8 @@ auto main (int argc, char** argv) -> int {
 		glfwPollEvents ();
 		/* code */
 	}
+
+	// std::cout << future_txt.get() << std::endl;
 	
 	// auto current_file = current_file_path ();
 
