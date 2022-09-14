@@ -238,7 +238,8 @@ tests:= Test.Yolo Test.Array Test.Range
 # 	clang++ -std=c++2b -stdlib=libc++ -fmodules -fbuiltin-module-map -fmodule-file=Delta.Coro.Interface.pcm -c Delta.Coro.Implementation.cpp -o Delta.Coro.Implementation.o
 
 # all: std_headers Oj
-all: Oj
+tests:= Test.Async
+all: Oj $(tests)
 
 # std_headers:
 	# $(GCC) -std=c++2b -fmodules-ts -x c++-system-header iostream
@@ -306,6 +307,8 @@ Coro.Type.o: Coro.Type.cpp Coro.Type.Implementation.o
 Coro.o: Coro.cpp Coro.Type.o
 	$(GCC) -std=c++2b -fmodules-ts -c $<
 
+Coro:= Coro.o Coro.Type.o Coro.Type.Interface.o Coro.Type.Implementation.o Promise.o Promise.Type.o Promise.Type.Interface.o Promise.Type.Implementation.o
+
 Async.IO.SubmissionQueue.Interface.o: Async.IO.SubmissionQueue.Interface.cpp
 	$(GCC) -std=c++2b -fmodules-ts -c $<
 
@@ -330,6 +333,8 @@ Async.IO.o: Async.IO.cpp Async.IO.SubmissionQueue.o Async.IO.CompletionQueue.o
 Async.o: Async.cpp Async.IO.o
 	$(GCC) -std=c++2b -fmodules-ts -c $<
 
+Async:= Async.o Async.IO.o Async.IO.CompletionQueue.o Async.IO.SubmissionQueue.o Async.IO.CompletionQueue.Implementation.o Async.IO.CompletionQueue.Interface.o Async.IO.SubmissionQueue.Implementation.o Async.IO.SubmissionQueue.Interface.o
+
 # -laio -pthread
 
 # Delta.Graphics.o: Delta.Graphics.cpp
@@ -340,7 +345,7 @@ Async.o: Async.cpp Async.IO.o
 # Delta: Coro.o Coro.Type.o Coro.Type.Interface.o Coro.Type.Implementation.o Promise.o Promise.Type.o Promise.Type.Interface.o Promise.Type.Implementation.o 
 # 	$(GCC) -shared $^ -o libDelta.so
 
-Delta: Async.o Async.IO.o Async.IO.CompletionQueue.o Async.IO.SubmissionQueue.o Async.IO.CompletionQueue.Implementation.o Async.IO.CompletionQueue.Interface.o Async.IO.SubmissionQueue.Implementation.o Async.IO.SubmissionQueue.Interface.o Coro.o Coro.Type.o Coro.Type.Interface.o Coro.Type.Implementation.o Promise.o Promise.Type.o Promise.Type.Interface.o Promise.Type.Implementation.o
+Delta: $(Async) $(Coro)
 	ar -cr libDelta.a $^
 
 # Oj.o: Oj.cpp Delta
@@ -351,6 +356,12 @@ Oj: Oj.cpp Delta
 
 # Graphics.Test: Graphics.Test.cpp Delta
 # 	$(GCC) -std=c++2b -fmodules-ts -o $@ $< -L. -lDelta $(CXX_INCLUDES) $(CXX_LIBS)
+
+
+
+#### TESTS ####
+Test.Async: Test.Async.cpp $(Async)
+	$(GCC) -std=c++2b -fmodules-ts -Werror=unused-result -o $@ $^ $(CXX_LIBS) $(CXX_INCLUDES)
 
 
 
