@@ -6,17 +6,21 @@ CXX = clang++
 CXX_FLAGS = -D DEBUG -std=c++2b 
 CXX_MODULES = -fmodules-ts -fmodules -fbuiltin-module-map -fimplicit-modules -fimplicit-module-maps -fprebuilt-module-path=.
 
-CXX_INCLUDES = -I/usr/local/include -I/opt/homebrew/Cellar/glm/0.9.9.8/include -I/opt/homebrew/Cellar/freetype/2.12.1/include/freetype2 #-I/Users/philipwenkel/VulkanSDK/1.3.216.0/macOS/include
 CXX_APP_FLAGS = -lpthread 
 
 ifeq ($(OS),Windows_NT) 
     detected_OS := Windows
 else
     detected_OS := $(shell sh -c 'uname 2>/dev/null || echo Unknown')
+	CXX_INCLUDES = -I/usr/local/include -I/opt/homebrew/Cellar/glm/0.9.9.8/include -I/opt/homebrew/Cellar/freetype/2.12.1/include/freetype2 #-I/Users/philipwenkel/VulkanSDK/1.3.216.0/macOS/include
 endif
 
 ifeq ($(detected_OS),Windows)
+	GCC = g++
 	CXX_FLAGS += -D WINDOWS
+	VULKAN_DIR = C:\VulkanSDK\1.3.224.1
+	CXX_LIBS = -I$(VULKAN_DIR)\Include
+	CXX_INCLUDES += -L$(VULKAN_DIR)\Lib -lvulkan
 	# exit
 endif
 ifeq ($(detected_OS),Darwin)
@@ -37,7 +41,6 @@ ifeq ($(detected_OS),Linux)
     CXX_APP_FLAGS += -lrt
 	CXX_LIBS = -lrt -lglfw -lvulkan -luring
 endif
-
 
 APP=main
 apps:= Graphics.Test Oj #App.Server App.FileNotifier Graphics.Triangle App.Graphics.Info#App.Client
