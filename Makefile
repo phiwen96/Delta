@@ -3,7 +3,7 @@
 
 # GCC=g++-12 -std=gnu++2a -fcoroutines -fmodules-ts -fconcepts-diagnostics-depth=1
 CXX = clang++
-CXX_FLAGS = -D DEBUG -std=c++2b 
+CXX_FLAGS = -D DEBUG -std=c++2b -fmodules-ts 
 CXX_MODULES = -fmodules-ts -fmodules -fbuiltin-module-map -fimplicit-modules -fimplicit-module-maps -fprebuilt-module-path=.
 
 CXX_APP_FLAGS = -lpthread 
@@ -20,7 +20,7 @@ ifeq ($(detected_OS),Windows)
 	CXX_FLAGS += -D WINDOWS
 	VULKAN_DIR = C:\VulkanSDK\1.3.224.1
 	CXX_LIBS = -I$(VULKAN_DIR)\Include
-	CXX_INCLUDES += -L$(VULKAN_DIR)\Lib -lvulkan
+	CXX_INCLUDES += -L$(VULKAN_DIR)\Lib #-lvulkan
 	# exit
 endif
 ifeq ($(detected_OS),Darwin)
@@ -288,54 +288,54 @@ all: Oj $(tests)
 # 	$(GCC) -std=c++2b -fmodules-ts $< -o $@ -Xlinker ./libDelta.so
 
 Promise.Type.Interface.o: Promise.Type.Interface.cpp
-	$(GCC) -std=c++2b -fmodules-ts -c $<
+	$(GCC) $(CXX_FLAGS) -c $<
 
 Promise.Type.Implementation.o: Promise.Type.Implementation.cpp Promise.Type.Interface.o
-	$(GCC) -std=c++2b -fmodules-ts -c $<
+	$(GCC) $(CXX_FLAGS) -c $<
 
 Promise.Type.o: Promise.Type.cpp Promise.Type.Implementation.o
-	$(GCC) -std=c++2b -fmodules-ts -c $<
+	$(GCC) $(CXX_FLAGS) -c $<
 
 Promise.o: Promise.cpp Promise.Type.o
-	$(GCC) -std=c++2b -fmodules-ts -c $<
+	$(GCC) $(CXX_FLAGS) -c $<
 
 Coro.Type.Interface.o: Coro.Type.Interface.cpp Promise.o
-	$(GCC) -std=c++2b -fmodules-ts -c $<
+	$(GCC) $(CXX_FLAGS) -c $<
 
 Coro.Type.Implementation.o: Coro.Type.Implementation.cpp Coro.Type.Interface.o
-	$(GCC) -std=c++2b -fmodules-ts -c $<
+	$(GCC) $(CXX_FLAGS) -c $<
 
 Coro.Type.o: Coro.Type.cpp Coro.Type.Implementation.o
-	$(GCC) -std=c++2b -fmodules-ts -c $<
+	$(GCC) $(CXX_FLAGS) -c $<
 
 Coro.o: Coro.cpp Coro.Type.o
-	$(GCC) -std=c++2b -fmodules-ts -c $<
+	$(GCC) $(CXX_FLAGS) -c $<
 
 Coro:= Coro.o Coro.Type.o Coro.Type.Interface.o Coro.Type.Implementation.o Promise.o Promise.Type.o Promise.Type.Interface.o Promise.Type.Implementation.o
 
 Async.IO.SubmissionQueue.Interface.o: Async.IO.SubmissionQueue.Interface.cpp
-	$(GCC) -std=c++2b -fmodules-ts -c $<
+	$(GCC) $(CXX_FLAGS) -c $<
 
 Async.IO.SubmissionQueue.Implementation.o: Async.IO.SubmissionQueue.Implementation.cpp Async.IO.SubmissionQueue.Interface.o
-	$(GCC) -std=c++2b -fmodules-ts -c $<
+	$(GCC) $(CXX_FLAGS) -c $<
 
 Async.IO.CompletionQueue.Interface.o: Async.IO.CompletionQueue.Interface.cpp
-	$(GCC) -std=c++2b -fmodules-ts -c $<
+	$(GCC) $(CXX_FLAGS) -c $<
 
 Async.IO.CompletionQueue.Implementation.o: Async.IO.CompletionQueue.Implementation.cpp Async.IO.CompletionQueue.Interface.o
-	$(GCC) -std=c++2b -fmodules-ts -c $<
+	$(GCC) $(CXX_FLAGS) -c $<
 
 Async.IO.SubmissionQueue.o: Async.IO.SubmissionQueue.cpp Async.IO.SubmissionQueue.Implementation.o
-	$(GCC) -std=c++2b -fmodules-ts -c $<
+	$(GCC) $(CXX_FLAGS) -c $<
 
 Async.IO.CompletionQueue.o: Async.IO.CompletionQueue.cpp Async.IO.CompletionQueue.Implementation.o
-	$(GCC) -std=c++2b -fmodules-ts -c $<
+	$(GCC) $(CXX_FLAGS) -c $<
 
 Async.IO.o: Async.IO.cpp Async.IO.SubmissionQueue.o Async.IO.CompletionQueue.o
-	$(GCC) -std=c++2b -fmodules-ts -c $<
+	$(GCC) $(CXX_FLAGS) -c $<
 
 Async.o: Async.cpp Async.IO.o
-	$(GCC) -std=c++2b -fmodules-ts -c $<
+	$(GCC) $(CXX_FLAGS) -c $<
 
 Async:= Async.o Async.IO.o Async.IO.CompletionQueue.o Async.IO.SubmissionQueue.o Async.IO.CompletionQueue.Implementation.o Async.IO.CompletionQueue.Interface.o Async.IO.SubmissionQueue.Implementation.o Async.IO.SubmissionQueue.Interface.o
 
@@ -356,7 +356,7 @@ Delta: $(Async) $(Coro)
 # 	$(GCC) -std=c++2b -fmodules-ts -c $<
 
 Oj: Oj.cpp Delta
-	$(GCC) -std=c++2b -fmodules-ts -Werror=unused-result -o $@ $< -L. -lDelta $(CXX_LIBS) $(CXX_INCLUDES)
+	$(GCC) $(CXX_FLAGS) -Werror=unused-result -o $@ $< -L. -lDelta $(CXX_LIBS) $(CXX_INCLUDES)
 
 # Graphics.Test: Graphics.Test.cpp Delta
 # 	$(GCC) -std=c++2b -fmodules-ts -o $@ $< -L. -lDelta $(CXX_INCLUDES) $(CXX_LIBS)
@@ -365,7 +365,7 @@ Oj: Oj.cpp Delta
 
 #### TESTS ####
 Test.Async: Test.Async.cpp $(Async)
-	$(GCC) -std=c++2b -fmodules-ts -Werror=unused-result -o $@ $^ $(CXX_LIBS) $(CXX_INCLUDES)
+	$(GCC) $(CXX_FLAGS) -Werror=unused-result -o $@ $^ $(CXX_LIBS) $(CXX_INCLUDES)
 
 
 

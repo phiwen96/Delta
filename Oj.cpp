@@ -7,7 +7,10 @@
 #include <GLFW/glfw3.h>
 #include <coroutine>
 #include <iostream>
+#ifndef WINDOWS
 #include <aio.h>
+#include <linux/io_uring.h>
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -20,7 +23,6 @@
 #include <thread>
 #include <utility>
 #include <cstring>
-#include <linux/io_uring.h>
 import Async;
 import Coro;
 // import Coro;
@@ -240,16 +242,10 @@ private:
 // 	co_return;
 // }
 
+#ifndef WINDOWS
 void aio_completion_handler (sigval s) {
 	auto coro_handle = std::coroutine_handle <future_io::promise_type>::from_address (s.sival_ptr);
 	coro_handle.resume();
-	// auto my_aiocb = (struct aiocb *)sigval.sival_ptr;
-	// std::cout << std::this_thread::get_id() << std::endl;
-	// std::cout << (char const*) my_aiocb->aio_buf << std::endl;
-	// if (aio_error (my_aiocb) == -1) {
-	// 	perror ("aio_error");
-	// 	exit (-1);
-	// }
 }
 
 auto async_read (char const* path) -> future_io {
@@ -362,6 +358,8 @@ auto sigg (int i) noexcept {
 	std::cout << std::this_thread::get_id() << std::endl;
 }
 
+#endif
+
 auto main (int argc, char** argv) -> int {
 
 
@@ -372,7 +370,7 @@ auto main (int argc, char** argv) -> int {
 	// std::cout << std::filesystem::current_path().string() + '/' + std::source_location::current().file_name() << std::endl;
 	
 	// auto future_txt = async_read (current_file_path().c_str());
-
+#ifndef WINDOWS
 	{
 		struct sigaction sa;
 		sa.sa_flags = 0;
@@ -383,17 +381,6 @@ auto main (int argc, char** argv) -> int {
 		}
 	}
 
-	alarm (3);
-	std::cout << std::this_thread::get_id() << std::endl;
-
-	while (true)
-	{
-		/* code */
-	}
-	
-
-	return 0;
-
 	auto do_some_work2 = [] mutable -> future <> {
 		co_await async_write ("hello world", (current_path () + "/test.txt").c_str());
 		auto txt = co_await async_read ((current_path () + "/test.txt").c_str());
@@ -401,6 +388,16 @@ auto main (int argc, char** argv) -> int {
 	};
 
 	auto work = do_some_work2 ();
+
+	alarm (3);
+#endif
+	std::cout << std::this_thread::get_id() << std::endl;
+
+	
+
+	return 0;
+
+	
 
 	// auto write_txt = async_write ("hello world", (current_path () + "/test.txt").c_str());
 	// auto dd = do_some_work ();
