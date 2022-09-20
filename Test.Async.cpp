@@ -8,7 +8,14 @@ import Async;
 #include <sys/stat.h>
 #include <sys/eventfd.h>
 #include <fcntl.h>
+#include <stdio.h>
 // #include <stdlib.h>
+/*
+	copy stdin to stdout. Using shell redirection, you should be able to copy files with this example
+
+	STDIN_FILENO
+	STDOUT_FILENO
+*/
 
 constexpr auto filepath = "/home/ph/Coding/Delta/Test.Async.cpp";
 
@@ -50,6 +57,10 @@ auto listener_thread (void * data) noexcept -> void * {
 	return nullptr;
 }
 
+struct io_data {
+
+};
+
 auto main (int argc, char** argv) -> int {
 	auto fd = open (filepath, O_RDONLY);
 	auto size = get_file_size (fd);
@@ -60,27 +71,63 @@ auto main (int argc, char** argv) -> int {
 	// }
 	// std::cout << (char const*) io.iov_base << std::endl;
 
-	auto info = thread_info {.ring = {}, .efd = eventfd (0, 0)};
+	// auto info = thread_info {.ring = {}, .efd = eventfd (0, 0)};
 
-	if (io_uring_queue_init (1, &info.ring, 0) == -1) {
+	struct io_uring ring;
+
+	if (io_uring_queue_init (10, &ring, 0) == -1) {
 		perror ("io_uring_queue_init");
 		exit (-1);
 	}
-	io_uring_register_eventfd(&info.ring, info.efd);
+	// io_uring_register_eventfd(&info.ring, info.efd);
 
-	auto * sqe = io_uring_get_sqe (&info.ring);
-	if (not sqe) {
+	struct io_uring_sqe * sqe;
+
+	// if (not (sqe = io_uring_get_sqe (&info.ring))) {
+	// 	perror ("io_uring_get_sqe");
+	// 	exit (-1);
+	// }
+	// io_uring_prep_readv (sqe, fd, &io, 1, 0);
+	// io_uring_sqe_set_data (sqe, &io);
+	// io_uring_submit (&info.ring);
+
+	if (not (sqe = io_uring_get_sqe (&ring))) {
 		perror ("io_uring_get_sqe");
 		exit (-1);
 	}
-	io_uring_prep_readv (sqe, fd, &io, 1, 0); 
+	io_uring_prep_readv (sqe, STDIN_FILENO, &io, 1, 0);
 	io_uring_sqe_set_data (sqe, &io);
-	io_uring_submit (&info.ring);
-	auto t = pthread_t {};
-	pthread_create (&t, nullptr, listener_thread, (void*) &info);
+	io_uring_submit (&ring);
+	
+
+	// auto t = pthread_t {};
+	// pthread_create (&t, nullptr, listener_thread, (void*) &info);
 	// sleep (2);
-	pthread_join (t, nullptr);
-	io_uring_queue_exit (&info.ring);
+	// pthread_join (t, nullptr);
+
+	struct io_uring_cqe* cqe;
+	while (true) {
+		if (io_uring_peek_cqe (&ring, &cqe) == 0) {
+			if (cqe -> res == -1) {
+				perror ("async error");
+				exit (-1);
+			}
+			io_uring_cqe_seen (&ring, cqe);
+			std::cout << "yay " << (char const*) ((struct iovec*) cqe -> user_data)->iov_base << std::endl;
+
+			if (not (sqe = io_uring_get_sqe (&ring))) {
+				perror ("io_uring_get_sqe");
+				exit (-1);
+			}
+
+			io_uring_prep_writev (sqe, STDOUT_FILENO, &io, 1, 0);
+			io_uring_sqe_set_data (sqe, &io);
+			io_uring_submit (&ring);
+		}
+	}
+	
+
+	io_uring_queue_exit (&ring);
 
 	// io_uring_enter ();
 	return 0;
