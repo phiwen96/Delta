@@ -108,6 +108,9 @@ struct future <> {
 	auto await_resume () noexcept -> void {
 		std::cout << "future::await_resume" << std::endl;
 	}
+	auto done () const noexcept -> bool {
+		return handle.done ();
+	}
 	explicit future (promise_type& p) noexcept : handle {std::coroutine_handle <promise_type>::from_promise (p)} {}
 	future (future&& o) noexcept : handle {std::exchange (o.handle, {})} {} 
 	future (future const&) = delete;
@@ -175,6 +178,9 @@ struct /*[[nodiscard]]*/ future_io {
 	auto get () noexcept -> char* {
 		return handle.promise().txt;
 	}
+	auto done () const noexcept -> bool {
+		return handle.done ();
+	}
 	auto await_ready () noexcept -> bool {
 		return false;
 	}
@@ -207,9 +213,6 @@ auto async_read_file (char const* path) noexcept -> future_io {
 	}
 	auto size = get_file_size (fd);
 	struct iovec io {.iov_base = malloc (size), .iov_len = size};
-	// auto io = (iovec*) malloc (sizeof (iovec));
-	// io -> iov_base = malloc (size);
-	// io -> iov_len = size;
 	struct io_uring_sqe * sqe;
 	if (not (sqe = io_uring_get_sqe (&ring))) {
 		perror ("io_uring_get_sqe");
@@ -230,9 +233,6 @@ auto async_read_file (char const* path) noexcept -> future_io {
 
 auto async_in () noexcept -> future_io {
 	struct iovec io {.iov_base = malloc (20), .iov_len = 20};
-	// auto io = (iovec*) malloc (sizeof (iovec));
-	// io -> iov_base = malloc (size);
-	// io -> iov_len = size;
 	struct io_uring_sqe * sqe;
 	if (not (sqe = io_uring_get_sqe (&ring))) {
 		perror ("io_uring_get_sqe");
@@ -242,10 +242,7 @@ auto async_in () noexcept -> future_io {
 	auto h = co_await my_coro_handle {};
 	io_uring_sqe_set_data (sqe, h.address ());
 	io_uring_submit (&ring);
-	// std::cout << "waiting for read" << std::endl;
 	co_await std::suspend_always {};
-	// std::cout << "read" << std::endl;
-	// std::cout << "read: " << (char const*) io.iov_base << std::endl;
 	co_return (char*) io.iov_base;
 }
 
@@ -270,6 +267,19 @@ auto listener_thread (void * data) noexcept -> void * {
 	std::cout << (char const*) ((struct iovec*) cqe -> user_data)->iov_base << std::endl;
 	return nullptr;
 }
+
+auto run_app () noexcept -> future <> {
+	// co_await std::suspend_always {};
+	while (true) {
+		std::cout << "waiting for input on thread " << std::this_thread::get_id () << std::endl;
+		auto txt = co_await async_in ();
+		std::cout << "got input on thread " << std::this_thread::get_id () << std::endl;
+		std::cout << "yay" << std::endl;
+	}
+	
+
+}
+
 
 auto main (int argc, char** argv) -> int {
 
@@ -299,8 +309,12 @@ auto main (int argc, char** argv) -> int {
 		exit (-1);
 	}
 
-	auto in = async_in ();
-
+	// auto in = async_in ();
+	// std::cout << in.done () << std::endl;
+	// std::thread {app}.detach ();
+	std::cout << "starting app from main" << std::endl;
+	auto app = run_app ();
+	std::cout << "continuing main" << std::endl;
 	// auto out 
 
 	// io_uring_register_eventfd(&info.ring, info.efd);
@@ -315,15 +329,6 @@ auto main (int argc, char** argv) -> int {
 	// io_uring_sqe_set_data (sqe, &io);
 	// io_uring_submit (&info.ring);
 
-	auto io = iovec {
-		.iov_base = malloc (20),
-		.iov_len = 20
-	};
-	struct io_uring_sqe * sqe;
-	if (not (sqe = io_uring_get_sqe (&ring))) {
-		perror ("io_uring_get_sqe");
-		exit (-1);
-	}
 	// io_uring_prep_readv (sqe, STDIN_FILENO, &io, 1, 0);
 	// io_uring_sqe_set_data (sqe, &io);
 	// io_uring_submit (&ring);
@@ -335,13 +340,14 @@ auto main (int argc, char** argv) -> int {
 	// pthread_join (t, nullptr);
 
 	struct io_uring_cqe* cqe;
-	while (true) {
+	while (not app.done ()) {
 		if (io_uring_peek_cqe (&ring, &cqe) == 0) {
 			if (cqe -> res == -1) {
 				perror ("async error");
 				exit (-1);
 			}
 			std::coroutine_handle <future_io::promise_type>::from_address ((void*) cqe -> user_data).resume ();
+			// std::cout << in.done () << std::endl;
 			// auto coro_handle = std::coroutine_handle <future_io::promise_type>::from_address (io_uring_cqe_get_data (cqe));
 			// coro_handle.resume ();
 			// std::cout << coro_handle.done () << std::endl;
