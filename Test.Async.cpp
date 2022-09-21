@@ -119,7 +119,7 @@ auto main (int argc, char** argv) -> int {
 				perror ("io_uring_get_sqe");
 				exit (-1);
 			}
-
+			
 			io_uring_prep_writev (sqe, STDOUT_FILENO, &io, 1, 0);
 			io_uring_sqe_set_data (sqe, &io);
 			io_uring_submit (&ring);
