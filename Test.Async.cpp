@@ -340,18 +340,24 @@ auto main (int argc, char** argv) -> int {
 	// pthread_join (t, nullptr);
 
 	struct io_uring_cqe* cqe;
-	while (not app.done ()) {
-		if (io_uring_peek_cqe (&ring, &cqe) == 0) {
+	while (true) {
+		// if (io_uring_peek_cqe (&ring, &cqe) == 0) {
+		if (io_uring_wait_cqe (&ring, &cqe) == 0) {
 			if (cqe -> res == -1) {
 				perror ("async error");
 				exit (-1);
 			}
-			std::coroutine_handle <future_io::promise_type>::from_address ((void*) cqe -> user_data).resume ();
+			std::thread {[cqe]{
+				std::coroutine_handle <future_io::promise_type>::from_address ((void*) cqe -> user_data).resume ();
+				// io_uring_cqe_seen (&ring, cqe);
+			}}.detach ();
+			io_uring_cqe_seen (&ring, cqe);
+			// std::coroutine_handle <future_io::promise_type>::from_address ((void*) cqe -> user_data).resume ();
 			// std::cout << in.done () << std::endl;
 			// auto coro_handle = std::coroutine_handle <future_io::promise_type>::from_address (io_uring_cqe_get_data (cqe));
 			// coro_handle.resume ();
 			// std::cout << coro_handle.done () << std::endl;
-			io_uring_cqe_seen (&ring, cqe);
+			
 			// std::cout << "yay " << (char const*) ((struct iovec*) cqe -> user_data)->iov_base << std::endl;
 			// struct io_uring_sqe* sqe;
 
