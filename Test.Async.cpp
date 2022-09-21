@@ -21,7 +21,7 @@ import Async;
 	STDOUT_FILENO
 */
 
-constexpr auto filepath = "/home/ph/Coding/Delta/Test.Async.cpp";
+constexpr auto thisfile = "/home/ph/Coding/Delta/Test.Async.cpp";
 
 auto get_file_size (int fd) noexcept -> size_t {
 	struct stat r {};
@@ -133,7 +133,7 @@ struct /*[[nodiscard]]*/ future_io {
 					return false;
 				}
 				auto await_suspend (std::coroutine_handle <promise_type> h) noexcept -> std::coroutine_handle <> {
-					std::cout << "future_io::final_suspend::await_suspend" << std::endl;
+					// std::cout << "future_io::final_suspend::await_suspend" << std::endl;
 					return h.promise().continuation ? h.promise().continuation : std::noop_coroutine ();
 				}
 				auto await_resume () noexcept -> void {
@@ -199,8 +199,8 @@ private:
 
 struct io_uring ring;
 
-auto async_read (char const* path, char const* txt) noexcept -> future_io {
-	auto fd = open (filepath, O_RDONLY);
+auto async_read_file (char const* path) noexcept -> future_io {
+	auto fd = open (path, O_RDONLY);
 	if (fd == -1) {
 		perror ("open");
 		exit (-1);
@@ -220,10 +220,32 @@ auto async_read (char const* path, char const* txt) noexcept -> future_io {
 	io_uring_sqe_set_data (sqe, h.address ());
 	io_uring_submit (&ring);
 	co_await std::suspend_always {};
+	std::cout << "read: " << (char const*) io.iov_base << std::endl;
 	if (close (fd) == -1) {
 		perror ("close");
 		exit (-1);
 	}
+	co_return (char*) io.iov_base;
+}
+
+auto async_in () noexcept -> future_io {
+	struct iovec io {.iov_base = malloc (20), .iov_len = 20};
+	// auto io = (iovec*) malloc (sizeof (iovec));
+	// io -> iov_base = malloc (size);
+	// io -> iov_len = size;
+	struct io_uring_sqe * sqe;
+	if (not (sqe = io_uring_get_sqe (&ring))) {
+		perror ("io_uring_get_sqe");
+		exit (-1);
+	}
+	io_uring_prep_readv (sqe, STDIN_FILENO, &io, 1, 0);
+	auto h = co_await my_coro_handle {};
+	io_uring_sqe_set_data (sqe, h.address ());
+	io_uring_submit (&ring);
+	// std::cout << "waiting for read" << std::endl;
+	co_await std::suspend_always {};
+	// std::cout << "read" << std::endl;
+	// std::cout << "read: " << (char const*) io.iov_base << std::endl;
 	co_return (char*) io.iov_base;
 }
 
@@ -276,6 +298,11 @@ auto main (int argc, char** argv) -> int {
 		perror ("io_uring_queue_init");
 		exit (-1);
 	}
+
+	auto in = async_in ();
+
+	// auto out 
+
 	// io_uring_register_eventfd(&info.ring, info.efd);
 
 	// struct io_uring_sqe * sqe;
@@ -288,10 +315,15 @@ auto main (int argc, char** argv) -> int {
 	// io_uring_sqe_set_data (sqe, &io);
 	// io_uring_submit (&info.ring);
 
-	// if (not (sqe = io_uring_get_sqe (&ring))) {
-	// 	perror ("io_uring_get_sqe");
-	// 	exit (-1);
-	// }
+	auto io = iovec {
+		.iov_base = malloc (20),
+		.iov_len = 20
+	};
+	struct io_uring_sqe * sqe;
+	if (not (sqe = io_uring_get_sqe (&ring))) {
+		perror ("io_uring_get_sqe");
+		exit (-1);
+	}
 	// io_uring_prep_readv (sqe, STDIN_FILENO, &io, 1, 0);
 	// io_uring_sqe_set_data (sqe, &io);
 	// io_uring_submit (&ring);
@@ -310,6 +342,9 @@ auto main (int argc, char** argv) -> int {
 				exit (-1);
 			}
 			std::coroutine_handle <future_io::promise_type>::from_address ((void*) cqe -> user_data).resume ();
+			// auto coro_handle = std::coroutine_handle <future_io::promise_type>::from_address (io_uring_cqe_get_data (cqe));
+			// coro_handle.resume ();
+			// std::cout << coro_handle.done () << std::endl;
 			io_uring_cqe_seen (&ring, cqe);
 			// std::cout << "yay " << (char const*) ((struct iovec*) cqe -> user_data)->iov_base << std::endl;
 			// struct io_uring_sqe* sqe;
