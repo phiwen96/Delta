@@ -13,6 +13,7 @@ import Async;
 #include <thread>
 #include <coroutine>
 #include <utility>
+#include <cstring>
 // #include <stdlib.h>
 /*
 	copy stdin to stdout. Using shell redirection, you should be able to copy files with this example
@@ -186,24 +187,30 @@ struct /*[[nodiscard]]*/ future_io {
 	}
 	auto await_suspend (std::coroutine_handle <> c, char const* from = __builtin_FUNCTION(), int line = __builtin_LINE()) noexcept//std::coroutine_handle <promise_type> 
 	{
-		std::cout << "future_io::await_suspend called from " << from << line << std::endl;
+		// std::cout << "future_io::await_suspend called from " << from << line << std::endl;
 		// std::cout << "await_suspend" << std::endl;
 		handle.promise().continuation = c;
 		// return handle;
 	}
 	auto await_resume () noexcept -> char* {
-		std::cout << "future_io::await_resume" << std::endl;
+		// std::cout << "future_io::await_resume" << std::endl;
 		return handle.promise().txt;
 	}
 	explicit future_io (promise_type& p) noexcept : handle {std::coroutine_handle <promise_type>::from_promise (p)} {}
 	future_io (future_io&& o) noexcept : handle {std::exchange (o.handle, {})} {} 
 	future_io (future_io const&) = delete;
-	~future_io () {if (handle) handle.destroy();}
+	~future_io () {std::cout << "~future_io ()" << std::endl; if (handle) handle.destroy();}
 private:
 	std::coroutine_handle <promise_type> handle;
 };
 
 struct io_uring ring;
+
+struct UserData {
+	void * coro_address;
+	int res;
+};
+
 
 auto async_read_file (char const* path) noexcept -> future_io {
 	auto fd = open (path, O_RDONLY);
@@ -220,7 +227,8 @@ auto async_read_file (char const* path) noexcept -> future_io {
 	}
 	io_uring_prep_readv (sqe, fd, &io, 1, 0);
 	auto h = co_await my_coro_handle {};
-	io_uring_sqe_set_data (sqe, h.address ());
+	auto userdata = UserData {.coro_address = h.address ()};
+	io_uring_sqe_set_data (sqe, &userdata);
 	io_uring_submit (&ring);
 	co_await std::suspend_always {};
 	std::cout << "read: " << (char const*) io.iov_base << std::endl;
@@ -232,6 +240,7 @@ auto async_read_file (char const* path) noexcept -> future_io {
 }
 
 auto async_in () noexcept -> future_io {
+	std::cout << "async_in ()" << std::endl;
 	struct iovec io {.iov_base = malloc (20), .iov_len = 20};
 	struct io_uring_sqe * sqe;
 	if (not (sqe = io_uring_get_sqe (&ring))) {
@@ -240,45 +249,87 @@ auto async_in () noexcept -> future_io {
 	}
 	io_uring_prep_readv (sqe, STDIN_FILENO, &io, 1, 0);
 	auto h = co_await my_coro_handle {};
-	io_uring_sqe_set_data (sqe, h.address ());
+	auto userdata = UserData {.coro_address = h.address ()};
+	io_uring_sqe_set_data (sqe, &userdata);
 	io_uring_submit (&ring);
 	co_await std::suspend_always {};
+	std::cout << userdata.res << std::endl;
+	((char*) io.iov_base) [userdata.res - 1] = '\0';
 	co_return (char*) io.iov_base;
 }
 
-auto listener_thread (void * data) noexcept -> void * {
-	auto * info = (thread_info *) data;
-	auto v = eventfd_t {};
-	if (eventfd_read (info -> efd, &v) == -1) {
-		perror ("eventfd_read");
+auto async_out (char const * txt) noexcept -> future_io {
+	struct iovec io {.iov_base = (void*) txt, .iov_len = strlen (txt)};
+	struct io_uring_sqe * sqe;
+	if (not (sqe = io_uring_get_sqe (&ring))) {
+		perror ("io_uring_get_sqe");
 		exit (-1);
 	}
-	struct io_uring_cqe * cqe;
-	if (io_uring_wait_cqe (&info -> ring, &cqe) == -1) {
-		perror ("io_uring_wait_cqe");
-		exit (-1);
-	}
-	if (cqe -> res == -1) {
-		perror ("async error");
-		exit (-1);
-	}
-	io_uring_cqe_seen (&info -> ring, cqe);
+	io_uring_prep_writev (sqe, STDOUT_FILENO, &io, 1, 0);
+	auto h = co_await my_coro_handle {};
+	auto userdata = UserData {.coro_address = h.address ()};
+	io_uring_sqe_set_data (sqe, &userdata);
+	io_uring_submit (&ring);
+	// std::cout << "async_out::suspending" << std::endl;
+	co_await std::suspend_always {};
+	// std::cout << "async_out::resuming" << std::endl;
+	// co_return (char*) io.iov_base;
+}
 
-	std::cout << (char const*) ((struct iovec*) cqe -> user_data)->iov_base << std::endl;
+auto listener_thread (void * data) noexcept -> void * {
+	auto * userdata = (UserData*) data;
+	auto res = userdata -> res;
+			if (res < 0) {
+				fprintf(stderr, "Async request failed: %s\n", strerror(-res));
+				exit (-1);
+			}
+	std::coroutine_handle <future_io::promise_type>::from_address ((void*) userdata -> coro_address).resume ();
+		
+	// auto * info = (thread_info *) data;
+	// auto v = eventfd_t {};
+	// if (eventfd_read (info -> efd, &v) == -1) {
+	// 	perror ("eventfd_read");
+	// 	exit (-1);
+	// }
+	// struct io_uring_cqe * cqe;
+	// if (io_uring_wait_cqe (&info -> ring, &cqe) == -1) {
+	// 	perror ("io_uring_wait_cqe");
+	// 	exit (-1);
+	// }
+	// if (cqe -> res == -1) {
+	// 	perror ("async error");
+	// 	exit (-1);
+	// }
+	// io_uring_cqe_seen (&info -> ring, cqe);
+
+	// std::cout << (char const*) ((struct iovec*) cqe -> user_data)->iov_base << std::endl;
 	return nullptr;
 }
 
 auto run_app () noexcept -> future <> {
 	// co_await std::suspend_always {};
-	while (true) {
-		std::cout << "waiting for input on thread " << std::this_thread::get_id () << std::endl;
+	// while (true) {
+		// std::cout << "waiting for input on thread " << std::this_thread::get_id () << std::endl;
 		auto txt = co_await async_in ();
-		std::cout << "got input on thread " << std::this_thread::get_id () << std::endl;
-		std::cout << "yay" << std::endl;
-	}
+		std::cout << "txt {" << txt << "}" << std::endl;
+		
+		auto txt2 = co_await async_in ();
+		std::cout << "txt2 {" << txt2 << "}" << std::endl;
+
+		auto txt3 = co_await async_in ();
+		std::cout << "txt3 {" << txt3 << "}" << std::endl;
+
+		auto txt4 = co_await async_in ();
+		std::cout << "txt4 {" << txt4 << "}" << std::endl;
+		// co_await async_out (txt);
+		// std::cout << "got input on thread " << std::this_thread::get_id () << std::endl;
+		// std::cout << "yay" << std::endl;
+	// }
 	
 
 }
+
+
 
 
 auto main (int argc, char** argv) -> int {
@@ -293,11 +344,34 @@ auto main (int argc, char** argv) -> int {
 
 	// auto fd = open (filepath, O_RDONLY);
 	// auto size = get_file_size (fd);
-	// auto io = iovec {.iov_base = malloc (size), .iov_len = size};
-	// if (readv (fd, &io, 1) == -1) {
-	// 	perror ("readv");
-	// 	exit (-1);
-	// }
+	auto io = iovec {.iov_base = malloc (10), .iov_len = 10};
+	auto len = 0;
+	if ((len = readv (STDIN_FILENO, &io, 1)) == -1) {
+		perror ("readv");
+		exit (-1);
+	}
+	((char*) io.iov_base) [len - 1] = '\0';
+
+	std::cout << (char const*) io.iov_base << std::endl;
+
+	if ((len = readv (STDIN_FILENO, &io, 1)) == -1) {
+		perror ("readv");
+		exit (-1);
+	}
+	((char*) io.iov_base) [len - 1] = '\0';
+
+	std::cout << (char const*) io.iov_base << std::endl;
+
+	if ((len = readv (STDIN_FILENO, &io, 1)) == -1) {
+		perror ("readv");
+		exit (-1);
+	}
+	((char*) io.iov_base) [len - 1] = '\0';
+
+	std::cout << (char const*) io.iov_base << std::endl;
+
+	return 0;
+
 	// std::cout << (char const*) io.iov_base << std::endl;
 
 	// auto info = thread_info {.ring = {}, .efd = eventfd (0, 0)};
@@ -312,9 +386,9 @@ auto main (int argc, char** argv) -> int {
 	// auto in = async_in ();
 	// std::cout << in.done () << std::endl;
 	// std::thread {app}.detach ();
-	std::cout << "starting app from main" << std::endl;
+	// std::cout << "starting app from main" << std::endl;
 	auto app = run_app ();
-	std::cout << "continuing main" << std::endl;
+	// std::cout << "continuing main" << std::endl;
 	// auto out 
 
 	// io_uring_register_eventfd(&info.ring, info.efd);
@@ -334,10 +408,7 @@ auto main (int argc, char** argv) -> int {
 	// io_uring_submit (&ring);
 	
 
-	// auto t = pthread_t {};
-	// pthread_create (&t, nullptr, listener_thread, (void*) &info);
-	// sleep (2);
-	// pthread_join (t, nullptr);
+	
 
 	struct io_uring_cqe* cqe;
 	while (true) {
@@ -347,10 +418,23 @@ auto main (int argc, char** argv) -> int {
 				perror ("async error");
 				exit (-1);
 			}
-			std::thread {[cqe]{
-				std::coroutine_handle <future_io::promise_type>::from_address ((void*) cqe -> user_data).resume ();
+			// std::cout << cqe->res << std::endl;
+			auto * userdata = ((UserData*) cqe -> user_data);
+			auto res = cqe -> res;
+			if (res < 0) {
+				fprintf(stderr, "Async request failed: %s\n", strerror(-res));
+				exit (-1);
+			}
+			userdata -> res = cqe->res;
+			// std::coroutine_handle <future_io::promise_type>::from_address ((void*) userdata.coro_address).resume ();
+		
+			std::thread {[userdata] mutable {
+				
+				std::coroutine_handle <future_io::promise_type>::from_address ((void*) userdata->coro_address).resume ();
+				// std::coroutine_handle <future_io::promise_type>::from_address ((void*) cqe -> user_data).resume ();
 				// io_uring_cqe_seen (&ring, cqe);
-			}}.detach ();
+			}}.join ();
+			
 			io_uring_cqe_seen (&ring, cqe);
 			// std::coroutine_handle <future_io::promise_type>::from_address ((void*) cqe -> user_data).resume ();
 			// std::cout << in.done () << std::endl;
