@@ -5,18 +5,20 @@
 
 #include <vulkan/vulkan_core.h>
 #include <GLFW/glfw3.h>
-#include <coroutine>
+// #include <coroutine>
 #include <iostream>
 #ifndef WINDOWS
 #include <aio.h>
+#if defined (LINUX)
 #include <linux/io_uring.h>
+#endif
 #endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <errno.h>
 #include <signal.h>
-#include <source_location>
+// #include <source_location>
 #include <filesystem>
 #include <fcntl.h>
 #include <sys/stat.h>

@@ -1,12 +1,15 @@
 import Async;
 #if not defined (WINDOWS)
 // #include <linux/io_uring.h>
+#if defined (LINUX)
 #include <liburing.h>
+#include <sys/eventfd.h>
+#endif
 #endif
 #include <iostream>
 // #include <sys/uio.h>
 #include <sys/stat.h>
-#include <sys/eventfd.h>
+
 #include <fcntl.h>
 #include <stdio.h>
 #include <semaphore>
@@ -33,12 +36,12 @@ auto get_file_size (int fd) noexcept -> size_t {
 	return r.st_size;
 } 
 
-
+#if defined (LINUX)
 struct thread_info {
 	struct io_uring ring;
 	int efd;
 };
-
+#endi
 
 
 struct io_data {
@@ -462,3 +465,20 @@ auto main (int argc, char** argv) -> int {
 	// io_uring_enter ();
 	return 0;
 }
+#endif // linux
+
+#if defined (WINDOWS) 
+
+#endif
+
+// #if defined (MACOS)
+#include <iostream>
+#include <coroutine>
+
+
+auto main () -> int {
+	
+	std::cout << "hello" << std::endl;
+	return 0;
+}
+// #endif

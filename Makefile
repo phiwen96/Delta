@@ -34,16 +34,16 @@ ifeq ($(detected_OS),Linux)
 	CXX_LIBS = -lrt -lglfw -lvulkan -luring
 endif
 
+
+
 APP=main
 apps:= Graphics.Test Oj #App.Server App.FileNotifier Graphics.Triangle App.Graphics.Info#App.Client
-tests:= Test.Yolo Test.Array Test.Range
+tests:= Test.Async Test.App
+all: $(tests)
 
-tests:= Test.Async
-all: Oj $(tests)
-
-# std_headers:
-	# $(GCC) -std=c++2b -fmodules-ts -x c++-system-header iostream
-	# $(GCC) -std=c++2b -fmodules-ts -x c++-system-header coroutine
+std_headers:
+	$(GCC) -std=c++2b -fmodules-ts -x c++-system-header iostream
+	$(GCC) -std=c++2b -fmodules-ts -x c++-system-header coroutine
 
 Promise.Type.Interface.o: Promise.Type.Interface.cpp
 	$(GCC) $(CXX_FLAGS) -c $<
@@ -97,15 +97,47 @@ Async.o: Async.cpp Async.IO.o
 
 Async:= Async.o Async.IO.o Async.IO.CompletionQueue.o Async.IO.SubmissionQueue.o Async.IO.CompletionQueue.Implementation.o Async.IO.CompletionQueue.Interface.o Async.IO.SubmissionQueue.Implementation.o Async.IO.SubmissionQueue.Interface.o
 
-Delta: $(Async) $(Coro)
+Bool.o: Bool.cpp 
+	$(GCC) $(CXX_FLAGS) -c $<
+
+Window.Interface.o: Window.Interface.cpp Bool.o
+	$(GCC) $(CXX_FLAGS) -c $<
+
+Window.Implementation.o: Window.Implementation.cpp Window.Interface.o
+	$(GCC) $(CXX_FLAGS) -c $< $(CXX_INCLUDES)
+
+Window.o: Window.cpp Window.Implementation.o Window.Interface.o
+	$(GCC) $(CXX_FLAGS) -c $<
+
+Window:= Window.o Window.Implementation.o Window.Interface.o
+
+App.Interface.o: App.Interface.cpp Window.o
+	$(GCC) $(CXX_FLAGS) -c $<
+
+App.Implementation.o: App.Implementation.cpp App.Interface.o
+	$(GCC) $(CXX_FLAGS) -c $< $(CXX_INCLUDES)
+
+App.o: App.cpp App.Implementation.o App.Interface.o
+	$(GCC) $(CXX_FLAGS) -c $<
+
+App:= App.o App.Implementation.o App.Interface.o
+
+Delta: $(App) $(Window) $(Async) $(Coro) 
 	ar -cr libDelta.a $^
 
-Oj: Oj.cpp Delta
-	$(GCC) $(CXX_FLAGS) -Werror=unused-result -o $@ $< -L. -lDelta $(CXX_LIBS) $(CXX_INCLUDES)
+
+
+
+# Oj: Oj.cpp Delta
+# 	$(GCC) $(CXX_FLAGS) -Werror=unused-result -o $@ $< -L. -lDelta $(CXX_LIBS) $(CXX_INCLUDES)
 
 #### TESTS ####
 Test.Async: Test.Async.cpp $(Async)
-	$(GCC) $(CXX_FLAGS) -Werror=unused-result -o $@ $^ $(CXX_LIBS) $(CXX_INCLUDES)
+	$(GCC) $(CXX_FLAGS) -Werror=unused-result -o $@ Test.Async.cpp $(Async) $(CXX_LIBS) $(CXX_INCLUDES)
+
+Test.App: Test.App.cpp $(App) $(Window) Bool.o
+	$(GCC) $(CXX_FLAGS) -Werror=unused-result -o $@ Test.App.cpp $(App) $(Window) Bool.o $(CXX_LIBS) $(CXX_INCLUDES)
+
 
 GLSLC_COMPILER = /Users/philipwenkel/VulkanSDK/1.2.182.0/macOS/bin/glslc
 

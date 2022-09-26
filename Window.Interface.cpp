@@ -1,0 +1,1 @@
+export module Window:Interface;
