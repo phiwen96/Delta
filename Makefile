@@ -18,8 +18,8 @@ ifeq ($(detected_OS),Windows)
 	GCC = g++
 	CXX_FLAGS += -D WINDOWS
 	VULKAN_DIR = C:\VulkanSDK\1.3.224.1
-	CXX_LIBS = -I$(VULKAN_DIR)\Include
-	CXX_INCLUDES += -L$(VULKAN_DIR)\Lib #-lvulkan
+	CXX_LIBS = -L$(VULKAN_DIR)\Lib #-lvulkan
+	CXX_INCLUDES += -I$(VULKAN_DIR)\Include
 endif
 ifeq ($(detected_OS),Darwin)
 	GCC = /opt/homebrew/Cellar/gcc/12.2.0/bin/g++-12
@@ -31,7 +31,8 @@ ifeq ($(detected_OS),Linux)
 	CXX_FLAGS += -D LINUX
 	# CXX_LIBS += -lglfw
     CXX_APP_FLAGS += -lrt
-	CXX_LIBS = -lrt -lglfw -lvulkan -luring
+	CXX_LIBS = -lrt -lglfw -lvulkan -luring -lfreetype
+	CXX_INCLUDES += -I/usr/include/freetype2
 endif
 
 

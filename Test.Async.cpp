@@ -1,11 +1,11 @@
 import Async;
 #if not defined (WINDOWS)
+#endif
 // #include <linux/io_uring.h>
 #if defined (LINUX)
 #include <liburing.h>
 #include <sys/eventfd.h>
-#endif
-#endif
+
 #include <iostream>
 // #include <sys/uio.h>
 #include <sys/stat.h>
@@ -41,7 +41,7 @@ struct thread_info {
 	struct io_uring ring;
 	int efd;
 };
-#endi
+#endif
 
 
 struct io_data {
@@ -471,7 +471,7 @@ auto main (int argc, char** argv) -> int {
 
 #endif
 
-// #if defined (MACOS)
+#if defined (MACOS)
 #include <iostream>
 #include <coroutine>
 
@@ -481,4 +481,4 @@ auto main () -> int {
 	std::cout << "hello" << std::endl;
 	return 0;
 }
-// #endif
+#endif
