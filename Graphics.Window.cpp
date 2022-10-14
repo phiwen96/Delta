@@ -236,7 +236,7 @@ export auto read_byte_file (char const * path) noexcept -> std::vector <char> {
 		exit (-1);
 	}
 	fseek(fileptr, 0, SEEK_END);  
-	printf ("lol\n");
+	
 	auto filelen = ftell(fileptr);
 	rewind(fileptr);     
 	auto buffer = std::vector <char> {}; 
@@ -1930,12 +1930,6 @@ export struct window {
 
 		render_pass = render_pass_details ();
 
-		// auto swapchain_details = Details <Swapchain> {
-		// 	.device = device.handle,
-		// 	.surface = surface,
-		// 	.render_pass = render_pass.handle
-		// };
-
 		auto swapchain_details = Details <Swapchain> {
 			.device = device.handle,
 			.surface = surface,
@@ -1965,7 +1959,7 @@ export struct window {
 		};
 
 		swapchain = swapchain_details ();
-		// printf("yo\n");
+
 		auto graphics_pipeline_details = Details <GraphicsPipeline> {
 			.device = device,
 			.render_pass = render_pass.handle,
@@ -2080,11 +2074,7 @@ export struct window {
 				}}
 		};
 
-		// printf ("dildo\n");
-
 		graphics_pipeline = graphics_pipeline_details ();
-
-		// printf ("dildo\n");
 
 		auto presentation_queue = [&] -> Queue {
 			for (auto const & queue_family : device.queue_families) {
@@ -2097,416 +2087,349 @@ export struct window {
 			exit (-1);
 		} ();
 
-	auto graphics_queue = [&] -> Queue {
+		auto graphics_queue = [&] -> Queue {
+				for (auto const & queue_family : device.queue_families) {
+					if (queue_family.supports_graphics_operations ()) {
+						return queue_family.handles.front ();
+					}
+				}
+				// std::cout << "error >> failed to find a graphics queue" << std::endl;
+				printf ("error >> failed to find a graphics queue\n");
+				exit (-1);
+			} ();
+
+		auto transfer_queue = [&] -> Queue {
+				for (auto i = device.queue_families.size () - 1; i >= 0; --i){
+					if (device.queue_families[i].supports_graphics_operations ()) {
+						return device.queue_families[i].handles.front ();
+					}
+				}
+				// std::cout << "error >> failed to find a graphics queue" << std::endl;
+				printf ("error >> failed to find a graphics queue\n");
+				exit (-1);
+			} ();
+
+		auto const max_frames_in_flight = swapchain.images.size ();
+
+		auto current_frame = 0;
+
+		auto draw_command_buffer = [&] -> std::vector <CommandBuffer> {
+			auto buffers = std::vector <CommandBuffer> {max_frames_in_flight};
+
 			for (auto const & queue_family : device.queue_families) {
 				if (queue_family.supports_graphics_operations ()) {
-					return queue_family.handles.front ();
+					for (auto & buffer : buffers) {
+						buffer = queue_family.command_pool.make_command_buffer (VK_COMMAND_BUFFER_LEVEL_PRIMARY, device.handle);
+					}
+					return buffers;
 				}
 			}
 			// std::cout << "error >> failed to find a graphics queue" << std::endl;
 			printf ("error >> failed to find a graphics queue\n");
 			exit (-1);
 		} ();
+		
+		// device.make_graphics_command_buffer (VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
-	auto transfer_queue = [&] -> Queue {
-			for (auto i = device.queue_families.size () - 1; i >= 0; --i){
-				if (device.queue_families[i].supports_graphics_operations ()) {
-					return device.queue_families[i].handles.front ();
-				}
-			}
-			// std::cout << "error >> failed to find a graphics queue" << std::endl;
-			printf ("error >> failed to find a graphics queue\n");
-			exit (-1);
-		} ();
+		auto pushConstants = mvp_push_constants {
+			.model = {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}},//glm::rotate (glm::mat4 (1.0f), time * glm::radians (90.0f), glm::vec3 (0.0f, 0.0f, 1.0f)),
+			.view = {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}},//glm::lookAt (glm::vec3 (2.0f, 2.0f, 2.0f), glm::vec3 (0.0f,0.0f, 0.0f), glm::vec3 (0.0f, 0.0f, 1.0f)),
+			.proj = {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}},//glm::perspective (glm::radians (45.0f), surfaceExtent.width / (float) surfaceExtent.height, 0.1f, 10.0f)
+		};
 
-	auto const max_frames_in_flight = swapchain.images.size ();
+		auto texturePushConstants = texture_push_constants {
 
-	auto current_frame = 0;
-
-	auto draw_command_buffer = [&] -> std::vector <CommandBuffer> {
-		auto buffers = std::vector <CommandBuffer> {max_frames_in_flight};
-
-		for (auto const & queue_family : device.queue_families) {
-			if (queue_family.supports_graphics_operations ()) {
-				for (auto & buffer : buffers) {
-					buffer = queue_family.command_pool.make_command_buffer (VK_COMMAND_BUFFER_LEVEL_PRIMARY, device.handle);
-				}
-				return buffers;
-			}
-		}
-		// std::cout << "error >> failed to find a graphics queue" << std::endl;
-		printf ("error >> failed to find a graphics queue\n");
-		exit (-1);
-	} ();
-	
-	// device.make_graphics_command_buffer (VK_COMMAND_BUFFER_LEVEL_PRIMARY);
-
-	auto pushConstants = mvp_push_constants {
-		.model = {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}},//glm::rotate (glm::mat4 (1.0f), time * glm::radians (90.0f), glm::vec3 (0.0f, 0.0f, 1.0f)),
-		.view = {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}},//glm::lookAt (glm::vec3 (2.0f, 2.0f, 2.0f), glm::vec3 (0.0f,0.0f, 0.0f), glm::vec3 (0.0f, 0.0f, 1.0f)),
-		.proj = {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}},//glm::perspective (glm::radians (45.0f), surfaceExtent.width / (float) surfaceExtent.height, 0.1f, 10.0f)
-	};
-
-	auto texturePushConstants = texture_push_constants {
-
-	};
+		};
 	
 
 
 
-	auto device_local_vertex_buffer_details = Details <Buffer> {
-		.device = device,
-		.size = sizeof (text_vertices) * 2048,
-		.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-		.sharing_mode = VK_SHARING_MODE_EXCLUSIVE
-	};
+		auto device_local_vertex_buffer_details = Details <Buffer> {
+			.device = device,
+			.size = sizeof (text_vertices) * 2048,
+			.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+			.sharing_mode = VK_SHARING_MODE_EXCLUSIVE
+		};
 
-	auto device_local_vertex_buffer = device_local_vertex_buffer_details ();
+		auto device_local_vertex_buffer = device_local_vertex_buffer_details ();
 
-	auto device_local_vertex_buffer_memory_details = Details <DeviceMemory> {
-		.physical_device = physical_device,
-		.device = device,
-		.size = device_local_vertex_buffer.get_memory_requirements ().size,
-		.flags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
-	};
+		auto device_local_vertex_buffer_memory_details = Details <DeviceMemory> {
+			.physical_device = physical_device,
+			.device = device,
+			.size = device_local_vertex_buffer.get_memory_requirements ().size,
+			.flags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
+		};
 
-	auto device_local_vertex_buffer_memory = device_local_vertex_buffer_memory_details ();
+		auto device_local_vertex_buffer_memory = device_local_vertex_buffer_memory_details ();
 
-	device_local_vertex_buffer_memory.bind (device_local_vertex_buffer);
-
-	auto host_visible_vertex_buffer_details = Details <Buffer> {
-		.device = device,
-		.size = sizeof (text_vertices) * 2048,
-		.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-		.sharing_mode = VK_SHARING_MODE_EXCLUSIVE
-	};
-
-	auto host_visible_vertex_buffer = host_visible_vertex_buffer_details ();
-
-	auto host_visible_vertex_buffer_memory_details = Details <DeviceMemory> {
-		.physical_device = physical_device,
-		.device = device,
-		.size = host_visible_vertex_buffer.get_memory_requirements ().size,
-		.flags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
-	};
-
-	auto host_visible_vertex_buffer_memory = host_visible_vertex_buffer_memory_details ();
-
-	host_visible_vertex_buffer_memory.bind (host_visible_vertex_buffer);
-
-	auto const dublicate_vertex_buffers = [&] {
-		device.wait_idle ();
-		host_visible_vertex_buffer.destroy ();
-		host_visible_vertex_buffer_memory.destroy ();
-		device_local_vertex_buffer.destroy ();
-		device_local_vertex_buffer_memory.destroy ();
-
-		device_local_vertex_buffer_details.size *= 2;
-		device_local_vertex_buffer = device_local_vertex_buffer_details ();
-
-		device_local_vertex_buffer_memory_details.size *= 2;
-		device_local_vertex_buffer_memory = device_local_vertex_buffer_memory_details ();
 		device_local_vertex_buffer_memory.bind (device_local_vertex_buffer);
 
-		host_visible_vertex_buffer_details.size *= 2;
-		host_visible_vertex_buffer = host_visible_vertex_buffer_details ();
+		auto host_visible_vertex_buffer_details = Details <Buffer> {
+			.device = device,
+			.size = sizeof (text_vertices) * 2048,
+			.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+			.sharing_mode = VK_SHARING_MODE_EXCLUSIVE
+		};
 
-		host_visible_vertex_buffer_memory_details.size *= 2;
-		host_visible_vertex_buffer_memory = host_visible_vertex_buffer_memory_details ();
+		auto host_visible_vertex_buffer = host_visible_vertex_buffer_details ();
+
+		auto host_visible_vertex_buffer_memory_details = Details <DeviceMemory> {
+			.physical_device = physical_device,
+			.device = device,
+			.size = host_visible_vertex_buffer.get_memory_requirements ().size,
+			.flags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
+		};
+
+		auto host_visible_vertex_buffer_memory = host_visible_vertex_buffer_memory_details ();
+
 		host_visible_vertex_buffer_memory.bind (host_visible_vertex_buffer);
-	};
+
+		auto const dublicate_vertex_buffers = [&] {
+			device.wait_idle ();
+			host_visible_vertex_buffer.destroy ();
+			host_visible_vertex_buffer_memory.destroy ();
+			device_local_vertex_buffer.destroy ();
+			device_local_vertex_buffer_memory.destroy ();
+
+			device_local_vertex_buffer_details.size *= 2;
+			device_local_vertex_buffer = device_local_vertex_buffer_details ();
+
+			device_local_vertex_buffer_memory_details.size *= 2;
+			device_local_vertex_buffer_memory = device_local_vertex_buffer_memory_details ();
+			device_local_vertex_buffer_memory.bind (device_local_vertex_buffer);
+
+			host_visible_vertex_buffer_details.size *= 2;
+			host_visible_vertex_buffer = host_visible_vertex_buffer_details ();
+
+			host_visible_vertex_buffer_memory_details.size *= 2;
+			host_visible_vertex_buffer_memory = host_visible_vertex_buffer_memory_details ();
+			host_visible_vertex_buffer_memory.bind (host_visible_vertex_buffer);
+		};
 
 
 
 
 
 
-	auto device_local_line_vertex_buffer_details = Details <Buffer> {
-		.device = device,
-		.size = sizeof (line_vertices) * 2048,
-		.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-		.sharing_mode = VK_SHARING_MODE_EXCLUSIVE
-	};
+		auto device_local_line_vertex_buffer_details = Details <Buffer> {
+			.device = device,
+			.size = sizeof (line_vertices) * 2048,
+			.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+			.sharing_mode = VK_SHARING_MODE_EXCLUSIVE
+		};
 
-	auto device_local_line_vertex_buffer = device_local_line_vertex_buffer_details ();
+		auto device_local_line_vertex_buffer = device_local_line_vertex_buffer_details ();
 
-	auto device_local_line_vertex_buffer_memory_details = Details <DeviceMemory> {
-		.physical_device = physical_device,
-		.device = device,
-		.size = device_local_line_vertex_buffer.get_memory_requirements ().size,
-		.flags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
-	};
+		auto device_local_line_vertex_buffer_memory_details = Details <DeviceMemory> {
+			.physical_device = physical_device,
+			.device = device,
+			.size = device_local_line_vertex_buffer.get_memory_requirements ().size,
+			.flags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
+		};
 
-	auto device_local_line_vertex_buffer_memory = device_local_line_vertex_buffer_memory_details ();
+		auto device_local_line_vertex_buffer_memory = device_local_line_vertex_buffer_memory_details ();
 
-	device_local_line_vertex_buffer_memory.bind (device_local_line_vertex_buffer);
-
-	auto host_visible_line_vertex_buffer_details = Details <Buffer> {
-		.device = device,
-		.size = sizeof (line_vertices) * 2048,
-		.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-		.sharing_mode = VK_SHARING_MODE_EXCLUSIVE
-	};
-
-	auto host_visible_line_vertex_buffer = host_visible_line_vertex_buffer_details ();
-
-	auto host_visible_line_vertex_buffer_memory_details = Details <DeviceMemory> {
-		.physical_device = physical_device,
-		.device = device,
-		.size = host_visible_line_vertex_buffer.get_memory_requirements ().size,
-		.flags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
-	};
-
-	auto host_visible_line_vertex_buffer_memory = host_visible_line_vertex_buffer_memory_details ();
-
-	host_visible_line_vertex_buffer_memory.bind (host_visible_line_vertex_buffer);
-
-	auto const dublicate_line_vertex_buffers = [&] {
-		device.wait_idle ();
-		host_visible_line_vertex_buffer.destroy ();
-		host_visible_line_vertex_buffer_memory.destroy ();
-		device_local_line_vertex_buffer.destroy ();
-		device_local_line_vertex_buffer_memory.destroy ();
-
-		device_local_line_vertex_buffer_details.size *= 2;
-		device_local_line_vertex_buffer = device_local_line_vertex_buffer_details ();
-
-		device_local_line_vertex_buffer_memory_details.size *= 2;
-		device_local_line_vertex_buffer_memory = device_local_line_vertex_buffer_memory_details ();
 		device_local_line_vertex_buffer_memory.bind (device_local_line_vertex_buffer);
 
-		host_visible_line_vertex_buffer_details.size *= 2;
-		host_visible_line_vertex_buffer = host_visible_line_vertex_buffer_details ();
+		auto host_visible_line_vertex_buffer_details = Details <Buffer> {
+			.device = device,
+			.size = sizeof (line_vertices) * 2048,
+			.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+			.sharing_mode = VK_SHARING_MODE_EXCLUSIVE
+		};
 
-		host_visible_line_vertex_buffer_memory_details.size *= 2;
-		host_visible_line_vertex_buffer_memory = host_visible_line_vertex_buffer_memory_details ();
+		auto host_visible_line_vertex_buffer = host_visible_line_vertex_buffer_details ();
+
+		auto host_visible_line_vertex_buffer_memory_details = Details <DeviceMemory> {
+			.physical_device = physical_device,
+			.device = device,
+			.size = host_visible_line_vertex_buffer.get_memory_requirements ().size,
+			.flags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
+		};
+
+		auto host_visible_line_vertex_buffer_memory = host_visible_line_vertex_buffer_memory_details ();
+
 		host_visible_line_vertex_buffer_memory.bind (host_visible_line_vertex_buffer);
-	};
+
+		auto const dublicate_line_vertex_buffers = [&] {
+			device.wait_idle ();
+			host_visible_line_vertex_buffer.destroy ();
+			host_visible_line_vertex_buffer_memory.destroy ();
+			device_local_line_vertex_buffer.destroy ();
+			device_local_line_vertex_buffer_memory.destroy ();
+
+			device_local_line_vertex_buffer_details.size *= 2;
+			device_local_line_vertex_buffer = device_local_line_vertex_buffer_details ();
+
+			device_local_line_vertex_buffer_memory_details.size *= 2;
+			device_local_line_vertex_buffer_memory = device_local_line_vertex_buffer_memory_details ();
+			device_local_line_vertex_buffer_memory.bind (device_local_line_vertex_buffer);
+
+			host_visible_line_vertex_buffer_details.size *= 2;
+			host_visible_line_vertex_buffer = host_visible_line_vertex_buffer_details ();
+
+			host_visible_line_vertex_buffer_memory_details.size *= 2;
+			host_visible_line_vertex_buffer_memory = host_visible_line_vertex_buffer_memory_details ();
+			host_visible_line_vertex_buffer_memory.bind (host_visible_line_vertex_buffer);
+		};
 
 
 
 
 
 
-	auto device_local_line_index_buffer_details = Details <Buffer> {
-		.device = device,
-		.size = sizeof (uint16_t) * 2048,
-		.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-		.sharing_mode = VK_SHARING_MODE_EXCLUSIVE
-	};
+		auto device_local_line_index_buffer_details = Details <Buffer> {
+			.device = device,
+			.size = sizeof (uint16_t) * 2048,
+			.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+			.sharing_mode = VK_SHARING_MODE_EXCLUSIVE
+		};
 
-	auto device_local_line_index_buffer = device_local_line_index_buffer_details ();
+		auto device_local_line_index_buffer = device_local_line_index_buffer_details ();
 
-	auto device_local_line_index_buffer_memory_details = Details <DeviceMemory> {
-		.physical_device = physical_device,
-		.device = device,
-		.size = device_local_line_index_buffer.get_memory_requirements ().size,
-		.flags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
-	};
+		auto device_local_line_index_buffer_memory_details = Details <DeviceMemory> {
+			.physical_device = physical_device,
+			.device = device,
+			.size = device_local_line_index_buffer.get_memory_requirements ().size,
+			.flags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
+		};
 
-	auto device_local_line_index_buffer_memory = device_local_line_index_buffer_memory_details ();
+		auto device_local_line_index_buffer_memory = device_local_line_index_buffer_memory_details ();
 
-	device_local_line_index_buffer_memory.bind (device_local_line_index_buffer);
-
-	auto host_visible_line_index_buffer_details = Details <Buffer> {
-		.device = device,
-		.size = sizeof (uint16_t) * 2048,
-		.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-		.sharing_mode = VK_SHARING_MODE_EXCLUSIVE
-	};
-
-	auto host_visible_line_index_buffer = host_visible_line_index_buffer_details ();
-
-	auto host_visible_line_index_buffer_memory_details = Details <DeviceMemory> {
-		.physical_device = physical_device,
-		.device = device,
-		.size = host_visible_line_index_buffer.get_memory_requirements ().size,
-		.flags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
-	};
-
-	auto host_visible_line_index_buffer_memory = host_visible_line_index_buffer_memory_details ();
-
-	host_visible_line_index_buffer_memory.bind (host_visible_line_index_buffer);
-
-	auto const dublicate_line_index_buffers = [&] {
-		device.wait_idle ();
-		host_visible_line_index_buffer.destroy ();
-		host_visible_line_index_buffer_memory.destroy ();
-		device_local_line_index_buffer.destroy ();
-		device_local_line_index_buffer_memory.destroy ();
-
-		device_local_line_index_buffer_details.size *= 2;
-		device_local_line_index_buffer = device_local_line_index_buffer_details ();
-
-		device_local_line_index_buffer_memory_details.size *= 2;
-		device_local_line_index_buffer_memory = device_local_line_index_buffer_memory_details ();
 		device_local_line_index_buffer_memory.bind (device_local_line_index_buffer);
 
-		host_visible_line_index_buffer_details.size *= 2;
-		host_visible_line_index_buffer = host_visible_line_index_buffer_details ();
+		auto host_visible_line_index_buffer_details = Details <Buffer> {
+			.device = device,
+			.size = sizeof (uint16_t) * 2048,
+			.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+			.sharing_mode = VK_SHARING_MODE_EXCLUSIVE
+		};
 
-		host_visible_line_index_buffer_memory_details.size *= 2;
-		host_visible_line_index_buffer_memory = host_visible_line_index_buffer_memory_details ();
+		auto host_visible_line_index_buffer = host_visible_line_index_buffer_details ();
+
+		auto host_visible_line_index_buffer_memory_details = Details <DeviceMemory> {
+			.physical_device = physical_device,
+			.device = device,
+			.size = host_visible_line_index_buffer.get_memory_requirements ().size,
+			.flags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
+		};
+
+		auto host_visible_line_index_buffer_memory = host_visible_line_index_buffer_memory_details ();
+
 		host_visible_line_index_buffer_memory.bind (host_visible_line_index_buffer);
-	};
+
+		auto const dublicate_line_index_buffers = [&] {
+			device.wait_idle ();
+			host_visible_line_index_buffer.destroy ();
+			host_visible_line_index_buffer_memory.destroy ();
+			device_local_line_index_buffer.destroy ();
+			device_local_line_index_buffer_memory.destroy ();
+
+			device_local_line_index_buffer_details.size *= 2;
+			device_local_line_index_buffer = device_local_line_index_buffer_details ();
+
+			device_local_line_index_buffer_memory_details.size *= 2;
+			device_local_line_index_buffer_memory = device_local_line_index_buffer_memory_details ();
+			device_local_line_index_buffer_memory.bind (device_local_line_index_buffer);
+
+			host_visible_line_index_buffer_details.size *= 2;
+			host_visible_line_index_buffer = host_visible_line_index_buffer_details ();
+
+			host_visible_line_index_buffer_memory_details.size *= 2;
+			host_visible_line_index_buffer_memory = host_visible_line_index_buffer_memory_details ();
+			host_visible_line_index_buffer_memory.bind (host_visible_line_index_buffer);
+		};
 
 
 
 
 
-		// host_visible_vertex_buffer_memory.bind (host_visible_vertex_buffer).paste (text_vertices.data(), host_visible_vertex_buffer.get_memory_requirements ().size);
-		// device_local_vertex_buffer.copy_from (host_visible_vertex_buffer);
+			// host_visible_vertex_buffer_memory.bind (host_visible_vertex_buffer).paste (text_vertices.data(), host_visible_vertex_buffer.get_memory_requirements ().size);
+			// device_local_vertex_buffer.copy_from (host_visible_vertex_buffer);
 
-		// host_visible_vertex_buffer.destroy ();
-		// host_visible_vertex_buffer_memory.destroy ();
-		
-	// std::cout << "start" << std::endl;
+			// host_visible_vertex_buffer.destroy ();
+			// host_visible_vertex_buffer_memory.destroy ();
+			
+		// std::cout << "start" << std::endl;
 
-	// device_local_vertex_buffer_memory.bind (device_local_vertex_buffer);
-	// std::cout << "start" << std::endl;
-	// auto texture_image = Details_image2//Details <Image>
-	//  {
-	// 	.physical_device = physical_device,
-	// 	.device = device,
-	// 	.format = VK_FORMAT_R8G8B8A8_SRGB,
-	// 	.path = "Graphics.Triangle.Texture.Lion.jpeg"
-	// 	// .path = "/Users/philipwenkel/Github/Delta/Graphics.Triangle.Texture.Lion.jpeg"
-	// } ();
+		// device_local_vertex_buffer_memory.bind (device_local_vertex_buffer);
+		// std::cout << "start" << std::endl;
+		// auto texture_image = Details_image2//Details <Image>
+		//  {
+		// 	.physical_device = physical_device,
+		// 	.device = device,
+		// 	.format = VK_FORMAT_R8G8B8A8_SRGB,
+		// 	.path = "Graphics.Triangle.Texture.Lion.jpeg"
+		// 	// .path = "/Users/philipwenkel/Github/Delta/Graphics.Triangle.Texture.Lion.jpeg"
+		// } ();
 
-	auto texture_image = Details_image2 {
-		.physical_device = physical_device,
-		.device = device,
-		.format = VK_FORMAT_R8G8B8A8_SRGB,
-		.tex_width = bitmap.image_width,
-		.tex_height = bitmap.image_height,
-		.pixels = bitmap.buffer
-	} ();
+		auto texture_image = Details_image2 {
+			.physical_device = physical_device,
+			.device = device,
+			.format = VK_FORMAT_R8G8B8A8_SRGB,
+			.tex_width = bitmap.image_width,
+			.tex_height = bitmap.image_height,
+			.pixels = bitmap.buffer
+		} ();
 
-	auto texture_sampler = Details <Sampler> {
-		.device = device
-	} ();
+		auto texture_sampler = Details <Sampler> {
+			.device = device
+		} ();
 
-	auto descriptor_pool = Details <DescriptorPool> {
-		.device = device,
-		.pool_sizes = {
-			{
-				.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-				.descriptorCount = (uint32_t) max_frames_in_flight
+		auto descriptor_pool = Details <DescriptorPool> {
+			.device = device,
+			.pool_sizes = {
+				{
+					.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+					.descriptorCount = (uint32_t) max_frames_in_flight
+				}
+			},
+			.max_sets = (uint32_t) max_frames_in_flight
+		} ();
+
+		auto descriptor_sets = descriptor_pool.allocate ({max_frames_in_flight, graphics_pipeline.descriptor_set_layout});
+		// auto descriptor_sets = descriptor_pool.allocate (graphics_pipeline.descriptor_set_layout);
+		{
+			auto const sampler_info = VkDescriptorImageInfo {
+				.sampler = texture_sampler.handle,
+				.imageView = texture_image.view,
+				.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+			};
+
+			auto const sampler_info2 = VkDescriptorImageInfo {
+				// .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+				// .imageView = texture_image.view,
+				.sampler = texture_sampler.handle
+			};
+
+			auto descriptor_writes = std::vector <VkWriteDescriptorSet> {
+				{
+					.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+					.dstBinding = 0,
+					.dstArrayElement = 0,
+					.descriptorCount = 1,
+					.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+					.pImageInfo = &sampler_info,
+				}
+				// {
+				// 	.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+				// 	.dstBinding = 1,
+				// 	.dstArrayElement = 0,
+				// 	.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER,
+				// 	.descriptorCount = TEXTURE_ARRAY_SIZE,
+				// 	.pImageInfo = &sampler_info,
+				// }
+			};
+
+			for (auto const & descriptor_set : descriptor_sets){
+				descriptor_writes[0].dstSet = descriptor_set;
+				vkUpdateDescriptorSets (device.handle, static_cast <uint32_t> (descriptor_writes.size()), descriptor_writes.data(), 0, nullptr);
 			}
-		},
-		.max_sets = (uint32_t) max_frames_in_flight
-	} ();
+		}
 
-	auto descriptor_sets = descriptor_pool.allocate ({max_frames_in_flight, graphics_pipeline.descriptor_set_layout});
-	// auto descriptor_sets = descriptor_pool.allocate (graphics_pipeline.descriptor_set_layout);
-	// {
-	// 	auto const sampler_info = VkDescriptorImageInfo {
-	// 		.sampler = texture_sampler.handle,
-	// 		.imageView = texture_image.view,
-	// 		.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-	// 	};
+		auto viewport = VkRect2D {.offset = {.x = 0, .y = 0}, .extent = {.width = swapchain.image_extent.width, .height = swapchain.image_extent.height}};
 
-	// 	auto const sampler_info2 = VkDescriptorImageInfo {
-	// 		// .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-	// 		// .imageView = texture_image.view,
-	// 		.sampler = texture_sampler.handle
-	// 	};
-
-	// 	auto descriptor_writes = std::vector <VkWriteDescriptorSet> {
-	// 		{
-	// 			.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-	// 			.dstBinding = 0,
-	// 			.dstArrayElement = 0,
-	// 			.descriptorCount = 1,
-	// 			.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-	// 			.pImageInfo = &sampler_info,
-	// 		}
-	// 		// {
-	// 		// 	.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-	// 		// 	.dstBinding = 1,
-	// 		// 	.dstArrayElement = 0,
-	// 		// 	.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER,
-	// 		// 	.descriptorCount = TEXTURE_ARRAY_SIZE,
-	// 		// 	.pImageInfo = &sampler_info,
-	// 		// }
-	// 	};
-
-	// 	for (auto const & descriptor_set : descriptor_sets){
-	// 		descriptor_writes[0].dstSet = descriptor_set;
-	// 		vkUpdateDescriptorSets (device.handle, static_cast <uint32_t> (descriptor_writes.size()), descriptor_writes.data(), 0, nullptr);
-	// 	}
-	// }
-
-	// auto viewport = VkRect2D {.offset = {.x = 0, .y = 0}, .extent = {.width = swapchain.image_extent.width, .height = swapchain.image_extent.height}};
-
-	
-	// auto texture_image = Details_image2 {
-	// 	.physical_device = physical_device,
-	// 	.device = device,
-	// 	.format = VK_FORMAT_R8G8B8A8_SRGB,
-	// 	.tex_width = bitmap.image_width,
-	// 	.tex_height = bitmap.image_height,
-	// 	.pixels = bitmap.buffer
-	// } ();
-
-	// auto texture_sampler = Details <Sampler> {
-	// 	.device = device
-	// } ();
-
-	// auto descriptor_pool = Details <DescriptorPool> {
-	// 	.device = device,
-	// 	.pool_sizes = {
-	// 		{
-	// 			.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-	// 			.descriptorCount = (uint32_t) max_frames_in_flight
-	// 		}
-	// 	},
-	// 	.max_sets = (uint32_t) max_frames_in_flight
-	// } ();
-
-
-	// constexpr auto TEXTURE_ARRAY_SIZE = uint32_t {2};
-
-	// auto descriptor_sets = descriptor_pool.allocate ({max_frames_in_flight, graphics_pipeline.descriptor_set_layout});
-	// {
-	// 	auto const sampler_info = VkDescriptorImageInfo {
-	// 		.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-	// 		.imageView = texture_image.view,
-	// 		.sampler = texture_sampler.handle
-	// 	};
-
-	// 	auto const sampler_info2 = VkDescriptorImageInfo {
-	// 		// .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-	// 		// .imageView = texture_image.view,
-	// 		.sampler = texture_sampler.handle
-	// 	};
-
-	// 	auto descriptor_writes = std::vector <VkWriteDescriptorSet> {
-	// 		{
-	// 			.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-	// 			.dstBinding = 0,
-	// 			.dstArrayElement = 0,
-	// 			.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-	// 			.descriptorCount = 1,
-	// 			.pImageInfo = &sampler_info,
-	// 		},
-	// 		// {
-	// 		// 	.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-	// 		// 	.dstBinding = 1,
-	// 		// 	.dstArrayElement = 0,
-	// 		// 	.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER,
-	// 		// 	.descriptorCount = TEXTURE_ARRAY_SIZE,
-	// 		// 	.pImageInfo = &sampler_info,
-	// 		// }
-	// 	};
-
-	// 	for (auto const & descriptor_set : descriptor_sets){
-	// 		descriptor_writes[0].dstSet = descriptor_set;
-	// 		vkUpdateDescriptorSets (device.handle, static_cast <uint32_t> (descriptor_writes.size()), descriptor_writes.data(), 0, nullptr);
-	// 	}
-	// }
-
-		// graphics_pipeline_line = graphics_pipeline_details_line ();
+		
 	}
 	window (window&& other) noexcept : window {} {
 		swap (*this, other);
