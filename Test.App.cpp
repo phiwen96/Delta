@@ -1,13 +1,13 @@
 #include <iostream>
-import App; 
+// import App; 
 
 auto main () -> int {
-	App auto my_app = app {"Test"};
+	// App auto my_app = app {""};
 	
-	if (not my_app.run ()) {
-		std::cout << "error >> failed to run app" << std::endl;
-		exit (-1);
-	}
+	// if (not my_app.run ()) {
+	// 	std::cout << "error >> failed to run app" << std::endl;
+	// 	exit (-1);
+	// }
 	
 	return 0;
 }

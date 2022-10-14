@@ -1,6 +1,7 @@
 export module Promise;
 
 export import :Type;
+export import :Concept;
 
 // import <coroutine>;
 

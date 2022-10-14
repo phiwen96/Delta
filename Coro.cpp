@@ -4,7 +4,15 @@ export module Coro;
 
 // export import <coroutine>;
 export import :Type;
+export import :Concept;
+export import Awaitable;
+export import Promise;
 
+static_assert (Awaitable <std::suspend_always>);
+static_assert (Awaitable <std::suspend_never>);
+
+static_assert (Coro <coro <std::suspend_never>>);
+static_assert (Promise <typename coro <std::suspend_never>::promise_type>);
 
 // import <iostream>;
 // export import <coroutine>;

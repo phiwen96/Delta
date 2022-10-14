@@ -345,11 +345,11 @@ auto main (int argc, char** argv) -> int {
 
 	// std::cout << make_names (get_instance_extension_properties ()) << std::endl;
 	// std::cout << make_names (get_instance_layer_properties ()) << std::endl << std::endl;;
-
-	auto const instance = Details <VkInstance> {
-		.layers = {"VK_LAYER_KHRONOS_validation"/*, "VK_LAYER_LUNARG_api_dump"*/},
-		.extensions = {"VK_KHR_portability_enumeration", "VK_KHR_surface", "VK_EXT_metal_surface", "VK_MVK_macos_surface", "VK_KHR_get_physical_device_properties2"}
-	} ();
+	
+	// auto const instance = Details <VkInstance> {
+	// 	.layers = {"VK_LAYER_KHRONOS_validation"/*, "VK_LAYER_LUNARG_api_dump"*/},
+	// 	.extensions = {"VK_KHR_portability_enumeration", "VK_KHR_surface", "VK_EXT_metal_surface", "VK_MVK_macos_surface", "VK_KHR_get_physical_device_properties2"}
+	// } ();
 
 	auto const surface = Details <VkSurfaceKHR> {
 		.instance = instance,
@@ -359,7 +359,7 @@ auto main (int argc, char** argv) -> int {
 	auto physical_device = Details <PhysicalDevice> {
 		.instance = instance,
 		.picker = [] (std::vector <VkPhysicalDevice> const & devices) -> VkPhysicalDevice {
-			return devices.front ();
+			return devices.back ();
 		}
 	} ();
 
@@ -1011,7 +1011,7 @@ auto main (int argc, char** argv) -> int {
 	auto viewport = VkRect2D {.offset = {.x = 0, .y = 0}, .extent = {.width = swapchain.image_extent.width, .height = swapchain.image_extent.height}};
 
 	auto const rendering_tape = [&] (uint32_t image_index) noexcept -> void {
-
+		
 		static auto startTime = std::chrono::high_resolution_clock::now();
 
 		auto currentTime = std::chrono::high_resolution_clock::now();
