@@ -346,10 +346,10 @@ auto main (int argc, char** argv) -> int {
 	// std::cout << make_names (get_instance_extension_properties ()) << std::endl;
 	// std::cout << make_names (get_instance_layer_properties ()) << std::endl << std::endl;;
 	
-	// auto const instance = Details <VkInstance> {
-	// 	.layers = {"VK_LAYER_KHRONOS_validation"/*, "VK_LAYER_LUNARG_api_dump"*/},
-	// 	.extensions = {"VK_KHR_portability_enumeration", "VK_KHR_surface", "VK_EXT_metal_surface", "VK_MVK_macos_surface", "VK_KHR_get_physical_device_properties2"}
-	// } ();
+	auto const instance = Details <VkInstance> {
+		.layers = {"VK_LAYER_KHRONOS_validation"/*, "VK_LAYER_LUNARG_api_dump"*/},
+		.extensions = {"VK_KHR_portability_enumeration", "VK_KHR_surface", "VK_EXT_metal_surface", "VK_MVK_macos_surface", "VK_KHR_get_physical_device_properties2"}
+	} ();
 
 	auto const surface = Details <VkSurfaceKHR> {
 		.instance = instance,

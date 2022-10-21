@@ -25,7 +25,7 @@ module;
 export module Graphics.Window;
 
 
-import Concepts.Bool;
+// import Concepts.Bool;
 // import Coro;
 
 export template <typename T>
@@ -1815,24 +1815,24 @@ export struct window {
 	auto open () const noexcept -> bool {
 		return is_open;
 	}
-	auto click () noexcept -> future_io {
-		printf("setting glfwSetWindowUserPointer\n");
-		co_yield handle;
-		printf("setting glfwSetWindowUserPointer\n");
-		co_await std::suspend_always {};
-		// printf("setting glfwSetWindowUserPointer\n");
-		co_return;
-		// auto h = co_await my_coro_handle {};
-		// void * h;
-		// co_yield h;
-		// printf("setting glfwSetWindowUserPointer\n");
-		// glfwSetWindowUserPointer (handle, h);
-		// co_await std::suspend_always {};
-		// printf("Release?\n");
-		// co_yield;
-		// printf ("registering a click\n");
-		// co_return nullptr;
-	}
+	// auto click () noexcept -> future_io {
+	// 	printf("setting glfwSetWindowUserPointer\n");
+	// 	co_yield handle;
+	// 	printf("setting glfwSetWindowUserPointer\n");
+	// 	co_await std::suspend_always {};
+	// 	// printf("setting glfwSetWindowUserPointer\n");
+	// 	co_return;
+	// 	// auto h = co_await my_coro_handle {};
+	// 	// void * h;
+	// 	// co_yield h;
+	// 	// printf("setting glfwSetWindowUserPointer\n");
+	// 	// glfwSetWindowUserPointer (handle, h);
+	// 	// co_await std::suspend_always {};
+	// 	// printf("Release?\n");
+	// 	// co_yield;
+	// 	// printf ("registering a click\n");
+	// 	// co_return nullptr;
+	// }
 	auto get_extent () const noexcept -> VkExtent2D {
 		int width, height;
 		glfwGetFramebufferSize(handle, &width, &height);

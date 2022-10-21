@@ -3,7 +3,8 @@
 
 # GCC=g++-12 -std=gnu++2a -fcoroutines -fmodules-ts -fconcepts-diagnostics-depth=1
 CXX = clang++
-CXX_FLAGS = -D DEBUG -std=c++2b -fmodules-ts -fconcepts-diagnostics-depth=2 
+# --verbose
+CXX_FLAGS = -D DEBUG -std=c++2b -fmodules-ts -fconcepts-diagnostics-depth=1
 CXX_MODULES = -fmodules-ts -fmodules -fbuiltin-module-map -fimplicit-modules -fimplicit-module-maps -fprebuilt-module-path=.
 
 CXX_APP_FLAGS = -lpthread 
@@ -12,7 +13,7 @@ ifeq ($(OS),Windows_NT)
     detected_OS := Windows
 else
     detected_OS := $(shell sh -c 'uname 2>/dev/null || echo Unknown')
-	CXX_INCLUDES = -I/usr/local/include -I/opt/homebrew/Cellar/glm/0.9.9.8/include -I/opt/homebrew/Cellar/freetype/2.12.1/include/freetype2 #-I/Users/philipwenkel/VulkanSDK/1.3.216.0/macOS/include
+	CXX_INCLUDES = -I/usr/local/include -I/opt/homebrew/Cellar/glm/0.9.9.8/include -I/opt/homebrew/Cellar/freetype/2.12.1/include/freetype2 -I/Users/philipwenkel/VulkanSDK/1.3.216.0/macOS/include
 endif
 ifeq ($(detected_OS),Windows)
 	GCC = g++
@@ -24,7 +25,7 @@ endif
 ifeq ($(detected_OS),Darwin)
 	GCC = /opt/homebrew/Cellar/gcc/12.2.0/bin/g++-12
 	CXX_FLAGS += -D MACOS -D FONTS_DIR=\"/System/Library/Fonts/Supplemental\"
-	CXX_LIBS = -L/opt/homebrew/Cellar/glfw/3.3.8/lib -lglfw -lvulkan.1.3.216 -L/Users/philipwenkel/VulkanSDK/1.3.216.0/macOS/lib -L/opt/homebrew/lib #-L/opt/homebrew/Cellar/freetype/2.12.1/lib -lfreetype
+	CXX_LIBS = -L/opt/homebrew/lib -L/opt/homebrew/Cellar/glfw/3.3.8/lib -lglfw -L/Users/philipwenkel/VulkanSDK/1.3.216.0/macOS/lib -lvulkan.1.3.216 -L/opt/homebrew/Cellar/freetype/2.12.1/lib -lfreetype
 	# CXX_INCLUDES += -I/opt/homebrew/include
 endif
 ifeq ($(detected_OS),Linux)
@@ -41,7 +42,8 @@ endif
 APP=main
 apps:= Express#Graphics.Test Oj #App.Server App.FileNotifier Graphics.Triangle App.Graphics.Info#App.Client
 tests:= Test.Coro # Test.Async Test.App
-all: $(tests) $(apps)
+# all: $(tests) $(apps)
+all: $(apps)
 
 std_headers:
 	$(GCC) -std=c++2b -fmodules-ts -x c++-system-header iostream
@@ -135,6 +137,7 @@ Bool.o: Bool.cpp
 
 Graphics.Window.o: Graphics.Window.cpp #Window.Interface.o Window.Implementation.o 
 	$(GCC) $(CXX_FLAGS) -c $< $(CXX_INCLUDES)
+	# $(CXX_INCLUDES)
 
 #Graphics.Window.o:= Window.o # Window.Interface.o Window.Implementation.o Window.o 
 
@@ -170,12 +173,20 @@ Vulkan.o: Vulkan.cpp Vulkan.Implementation.o Vulkan.Interface.o
 
 Vulkan := Vulkan.o Vulkan.Implementation.o Vulkan.Interface.o
 
-Delta := Bool.o $(Coro) Graphics.Window.o Graphics.o $(App) #$(Coro) $(Window) $(Async) $(Vulkan) $(App) 
+Delta := Bool.o Graphics.Window.o Graphics.o #$(Coro) $(Window) $(Async) $(Vulkan) $(App) 
 # libDelta.a: Bool.o # $(App) $(Vulkan) $(Window) $(Async) $(Coro) 
 # 	ar -cr libDelta.a $^
 
-Express: Express.cpp $(Delta) Graphics.Triangle.vert.spv Graphics.Triangle.frag.spv
-	$(GCC) $(CXX_FLAGS) -Werror=unused-result -o $@ $< $(Delta) $(CXX_LIBS) $(CXX_INCLUDES)
+Array.o: Array.cpp 
+	$(GCC) $(CXX_FLAGS) -c $<
+
+Vector.o: Vector.cpp 
+	$(GCC) $(CXX_FLAGS) -c $< $(CXX_INCLUDES)
+
+
+Express: Express.cpp Vector.o Array.o Graphics.Triangle.vert.spv Graphics.Triangle.frag.spv
+	$(GCC) $(CXX_FLAGS) -Werror=unused-result -o $@ $< Vector.o Array.o $(CXX_LIBS) $(CXX_INCLUDES)
+	# $(CXX_LIBS) $(CXX_INCLUDES)
 	# $(GCC) $(CXX_FLAGS) -Werror=unused-result -o $@ $< -L. -lDelta $(CXX_LIBS) $(CXX_INCLUDES)
 	# $(GCC) $(CXX_FLAGS) -Werror=unused-result -o $@ $^ $(CXX_LIBS) $(CXX_INCLUDES)
 	
