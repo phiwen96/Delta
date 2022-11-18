@@ -33,6 +33,7 @@
 
 import Vector;
 import Array;
+import App;
 
 // import Concepts.Bool;
 // import Window; 
@@ -181,7 +182,7 @@ struct /*[[nodiscard]]*/ future_io {
 	}
 	auto await_suspend (std::coroutine_handle <> c, char const* from = __builtin_FUNCTION(), int line = __builtin_LINE()) noexcept//std::coroutine_handle <promise_type> 
 	{
-		printf ("future_io::await_suspend called from %s  ");
+		// printf ("future_io::await_suspend called from %s"̉);
 		// std::cout << "future_io::await_suspend called from " << from << line << std::endl;
 		// std::cout << "await_suspend" << std::endl;
 		// printf ("await_suspend\n");
@@ -2855,14 +2856,17 @@ private:
 
 
 // auto exp
-constexpr auto font_size = 128;
-constexpr auto padding = 2;
+
 // auto bitmap = FontBitmap3 <(font_size+padding)*16, (font_size+padding)*8> {};
 
 
-
+constexpr auto font_size = 128;
+constexpr auto padding = 2;
+auto bitmap = FontBitmap3 <(font_size+padding)*16, (font_size+padding)*8> {};
 
 auto main () -> int {
+	std::cout << "hello world" << std::endl;
+
 	// auto v = vector {1, 3, 5};
 	// std::cout << v.size() << std::endl;
 	// v += 7;

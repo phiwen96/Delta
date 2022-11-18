@@ -1,17 +1,20 @@
-module;
-#include <stdio.h>
-#include <vulkan/vulkan_core.h>
-#include <GLFW/glfw3.h>
-#define GLM_FORCE_RADIANS
-#define GLM_FORCE_DEPTH_ZERO_TO_ONE
-#include <glm/vec2.hpp>
-#include <glm/vec3.hpp>
-#include <glm/gtc/matrix_transform.hpp>
+// module;
+// #include <stdio.h>
+// #include <vulkan/vulkan_core.h>
+// #include <GLFW/glfw3.h>
+// #define GLM_FORCE_RADIANS
+// #define GLM_FORCE_DEPTH_ZERO_TO_ONE
+// #include <glm/vec2.hpp>
+// #include <glm/vec3.hpp>
+// #include <glm/gtc/matrix_transform.hpp>
 // #include <ft2build.h>
 // #include FT_FREETYPE_H
-#include <thread>
-#include <vector>
+// #include <thread>
+// #include <vector>
 export module App;
+// import <vector>;
+// export import "vector";
+// import std;
 
 // export import :Concept;
 // import Graphics;

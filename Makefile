@@ -23,12 +23,14 @@ ifeq ($(detected_OS),Windows)
 	CXX_INCLUDES += -I$(VULKAN_DIR)\Include
 endif
 ifeq ($(detected_OS),Darwin)
+	GLSLC_COMPILER = /Users/philipwenkel/VulkanSDK/1.3.216.0/macOS/bin/glslc
 	GCC = /opt/homebrew/Cellar/gcc/12.2.0/bin/g++-12
 	CXX_FLAGS += -D MACOS -D FONTS_DIR=\"/System/Library/Fonts/Supplemental\"
 	CXX_LIBS = -L/opt/homebrew/lib -L/opt/homebrew/Cellar/glfw/3.3.8/lib -lglfw -L/Users/philipwenkel/VulkanSDK/1.3.216.0/macOS/lib -lvulkan.1.3.216 -L/opt/homebrew/Cellar/freetype/2.12.1/lib -lfreetype
 	# CXX_INCLUDES += -I/opt/homebrew/include
 endif
 ifeq ($(detected_OS),Linux)
+	GLSLC_COMPILER = /usr/bin/glslc
 	GCC = /usr/bin/g++-12
 	CXX_FLAGS += -D LINUX
 	# CXX_LIBS += -lglfw
@@ -40,14 +42,24 @@ endif
 
 
 APP=main
-apps:= Express#Graphics.Test Oj #App.Server App.FileNotifier Graphics.Triangle App.Graphics.Info#App.Client
+apps:= Express Nej#Graphics.Test Oj #App.Server App.FileNotifier Graphics.Triangle App.Graphics.Info#App.Client
 tests:= Test.Coro # Test.Async Test.App
 # all: $(tests) $(apps)
 all: $(apps)
 
 std_headers:
+	$(GCC) -std=c++2b -fmodules-ts -x c++-header /usr/include/GLFW/glfw3.h
+	$(GCC) -std=c++2b -fmodules-ts -x c++-header /usr/include/glm/glm.hpp
+	$(GCC) -std=c++2b -fmodules-ts -x c++-header /usr/include/vulkan/vulkan_core.h
+	$(GCC) -std=c++2b -fmodules-ts -x c++-system-header array
+	$(GCC) -std=c++2b -fmodules-ts -x c++-system-header vector
 	$(GCC) -std=c++2b -fmodules-ts -x c++-system-header iostream
+	$(GCC) -std=c++2b -fmodules-ts -x c++-system-header tuple
+	$(GCC) -std=c++2b -fmodules-ts -x c++-system-header utility
 	$(GCC) -std=c++2b -fmodules-ts -x c++-system-header coroutine
+	$(GCC) -std=c++2b -fmodules-ts -x c++-system-header type_traits
+	$(GCC) -std=c++2b -fmodules-ts -x c++-system-header string
+	$(GCC) -std=c++2b -fmodules-ts -x c++-system-header algorithm
 
 Awaitable.Type.Interface.o: Awaitable.Type.Interface.cpp
 	$(GCC) $(CXX_FLAGS) -c $<
@@ -156,7 +168,7 @@ Graphics.Window.o: Graphics.Window.cpp #Window.Interface.o Window.Implementation
 Graphics.o: Graphics.cpp Graphics.Window.o
 	$(GCC) $(CXX_FLAGS) -c $< $(CXX_INCLUDES)
 
-App.o: App.cpp Graphics.o #App.Type.Interface.o App.Type.Implementation.o App.Type.o
+App.o: App.cpp #App.Type.Interface.o App.Type.Implementation.o App.Type.o
 	$(GCC) $(CXX_FLAGS) -c $< $(CXX_INCLUDES)
 
 App := App.o#App.Type.Interface.o App.Type.Implementation.o App.Type.o App.o 
@@ -183,14 +195,20 @@ Array.o: Array.cpp
 Vector.o: Vector.cpp 
 	$(GCC) $(CXX_FLAGS) -c $< $(CXX_INCLUDES)
 
+Standard.o: Standard.cpp std_headers
+	$(GCC) $(CXX_FLAGS) -c $< $(CXX_INCLUDES)
 
-Express: Express.cpp Vector.o Array.o Graphics.Triangle.vert.spv Graphics.Triangle.frag.spv
-	$(GCC) $(CXX_FLAGS) -Werror=unused-result -o $@ $< Vector.o Array.o $(CXX_LIBS) $(CXX_INCLUDES)
+Ja.o: Ja.cpp Standard.o
+	$(GCC) $(CXX_FLAGS) -c $< $(CXX_INCLUDES)
+
+Nej: Nej.cpp Standard.o
+	$(GCC) $(CXX_FLAGS) -Werror=unused-result -o $@ $< Standard.o $(CXX_LIBS) $(CXX_INCLUDES)
+
+Express: Express.cpp App.o Vector.o Array.o Graphics.Triangle.vert.spv Graphics.Triangle.frag.spv
+	$(GCC) $(CXX_FLAGS) -Werror=unused-result -o $@ $< App.o Vector.o Array.o $(CXX_LIBS) $(CXX_INCLUDES)
 	# $(CXX_LIBS) $(CXX_INCLUDES)
 	# $(GCC) $(CXX_FLAGS) -Werror=unused-result -o $@ $< -L. -lDelta $(CXX_LIBS) $(CXX_INCLUDES)
 	# $(GCC) $(CXX_FLAGS) -Werror=unused-result -o $@ $^ $(CXX_LIBS) $(CXX_INCLUDES)
-	
-
 
 # Express: Express.cpp Delta
 # 	$(GCC) $(CXX_FLAGS) -Werror=unused-result -o $@ $< -L. -lDelta $(CXX_LIBS) $(CXX_INCLUDES)
@@ -210,7 +228,7 @@ Test.Coro: Test.Coro.cpp $(Delta)
 
 
 # GLSLC_COMPILER = /Users/philipwenkel/VulkanSDK/1.2.182.0/macOS/bin/glslc
-GLSLC_COMPILER = /Users/philipwenkel/VulkanSDK/1.3.216.0/macOS/bin/glslc
+
 
 %.vert.spv: %.vert 
 	$(GLSLC_COMPILER) $< -o $@
