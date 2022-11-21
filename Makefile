@@ -61,6 +61,9 @@ std_headers:
 	$(GCC) -std=c++2b -fmodules-ts -x c++-system-header string
 	$(GCC) -std=c++2b -fmodules-ts -x c++-system-header algorithm
 
+Standard.o: Standard.cpp std_headers
+	$(GCC) $(CXX_FLAGS) -c $< $(CXX_INCLUDES)
+
 Awaitable.Type.Interface.o: Awaitable.Type.Interface.cpp
 	$(GCC) $(CXX_FLAGS) -c $<
 
@@ -180,8 +183,17 @@ Vulkan.Interface.o: Vulkan.Interface.cpp Window.o
 Vulkan.Implementation.o: Vulkan.Implementation.cpp Vulkan.Interface.o
 	$(GCC) $(CXX_FLAGS) -c $< $(CXX_INCLUDES)
 
-Vulkan.o: Vulkan.cpp Vulkan.Implementation.o Vulkan.Interface.o
-	$(GCC) $(CXX_FLAGS) -c $<
+Vulkan.Instance.o: Vulkan.Instance.cpp
+	$(GCC) $(CXX_FLAGS) -c $< $(CXX_INCLUDES)
+
+Vulkan.PhysicalDevice.o: Vulkan.PhysicalDevice.cpp Vulkan.Instance.o
+	$(GCC) $(CXX_FLAGS) -c $< $(CXX_INCLUDES)
+
+Vulkan.Instance.Impl.o: Vulkan.Instance.Impl.cpp Vulkan.Instance.o
+	$(GCC) $(CXX_FLAGS) -c $< $(CXX_INCLUDES)
+
+Vulkan.o: Vulkan.cpp Vulkan.PhysicalDevice.o Vulkan.Instance.o
+	$(GCC) $(CXX_FLAGS) -c $< $(CXX_INCLUDES)
 
 Vulkan := Vulkan.o Vulkan.Implementation.o Vulkan.Interface.o
 
@@ -195,14 +207,13 @@ Array.o: Array.cpp
 Vector.o: Vector.cpp 
 	$(GCC) $(CXX_FLAGS) -c $< $(CXX_INCLUDES)
 
-Standard.o: Standard.cpp std_headers
+
+
+Ja.o: Ja.cpp #Standard.o
 	$(GCC) $(CXX_FLAGS) -c $< $(CXX_INCLUDES)
 
-Ja.o: Ja.cpp Standard.o
-	$(GCC) $(CXX_FLAGS) -c $< $(CXX_INCLUDES)
-
-Nej: Nej.cpp Standard.o
-	$(GCC) $(CXX_FLAGS) -Werror=unused-result -o $@ $< Standard.o $(CXX_LIBS) $(CXX_INCLUDES)
+Nej: Nej.cpp Vulkan.o Vulkan.PhysicalDevice.o Vulkan.Instance.o #Standard.o
+	$(GCC) $(CXX_FLAGS) -Werror=unused-result -fcompare-debug-second -o $@ $< Vulkan.o Vulkan.PhysicalDevice.o Vulkan.Instance.o $(CXX_LIBS) $(CXX_INCLUDES)
 
 Express: Express.cpp App.o Vector.o Array.o Graphics.Triangle.vert.spv Graphics.Triangle.frag.spv
 	$(GCC) $(CXX_FLAGS) -Werror=unused-result -o $@ $< App.o Vector.o Array.o $(CXX_LIBS) $(CXX_INCLUDES)

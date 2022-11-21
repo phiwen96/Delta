@@ -1,4 +1,7 @@
 export module Vulkan;
 
-export import :Interface;
-import :Implementation;
+export import Vulkan.Instance;
+export import Vulkan.PhysicalDevice;
+
+// export import Vulkan.Instance;
+// import Vulkan.Instance.Impl;
