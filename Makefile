@@ -4,7 +4,7 @@
 # GCC=g++-12 -std=gnu++2a -fcoroutines -fmodules-ts -fconcepts-diagnostics-depth=1
 CXX = clang++
 # --verbose
-CXX_FLAGS = -D DEBUG -std=c++2b -fmodules-ts -fconcepts-diagnostics-depth=1
+CXX_FLAGS = -D DEBUG -std=c++2b -fmodules-ts -fconcepts-diagnostics-depth=1 -fcompare-debug-second
 CXX_MODULES = -fmodules-ts -fmodules -fbuiltin-module-map -fimplicit-modules -fimplicit-module-maps -fprebuilt-module-path=.
 
 CXX_APP_FLAGS = -lpthread 
@@ -186,13 +186,31 @@ Vulkan.Implementation.o: Vulkan.Implementation.cpp Vulkan.Interface.o
 Vulkan.Instance.o: Vulkan.Instance.cpp
 	$(GCC) $(CXX_FLAGS) -c $< $(CXX_INCLUDES)
 
+Vulkan.CommandPool.o: Vulkan.CommandPool.cpp
+	$(GCC) $(CXX_FLAGS) -c $< $(CXX_INCLUDES)
+
+Vulkan.Queue.o: Vulkan.Queue.cpp
+	$(GCC) $(CXX_FLAGS) -c $< $(CXX_INCLUDES)
+
+Vulkan.QueueFamily.o: Vulkan.QueueFamily.cpp Vulkan.Queue.o Vulkan.CommandPool.o
+	$(GCC) $(CXX_FLAGS) -c $< $(CXX_INCLUDES)
+
 Vulkan.PhysicalDevice.o: Vulkan.PhysicalDevice.cpp Vulkan.Instance.o
+	$(GCC) $(CXX_FLAGS) -c $< $(CXX_INCLUDES)
+
+Vulkan.LogicalDevice.o: Vulkan.LogicalDevice.cpp Vulkan.PhysicalDevice.o Vulkan.QueueFamily.o Vulkan.Queue.o
 	$(GCC) $(CXX_FLAGS) -c $< $(CXX_INCLUDES)
 
 Vulkan.Instance.Impl.o: Vulkan.Instance.Impl.cpp Vulkan.Instance.o
 	$(GCC) $(CXX_FLAGS) -c $< $(CXX_INCLUDES)
 
-Vulkan.o: Vulkan.cpp Vulkan.PhysicalDevice.o Vulkan.Instance.o
+Vulkan.Window.Coroutine.o: Vulkan.Window.Coroutine.cpp Vulkan.LogicalDevice.o Vulkan.QueueFamily.o Vulkan.Queue.o Vulkan.CommandPool.o Vulkan.PhysicalDevice.o Vulkan.Instance.o
+	$(GCC) $(CXX_FLAGS) -c $< $(CXX_INCLUDES)
+
+Vulkan.Window.o: Vulkan.Window.cpp Vulkan.Window.Coroutine.o
+	$(GCC) $(CXX_FLAGS) -c $< $(CXX_INCLUDES)
+
+Vulkan.o: Vulkan.cpp Vulkan.Window.o Vulkan.LogicalDevice.o Vulkan.QueueFamily.o Vulkan.Queue.o Vulkan.CommandPool.o Vulkan.PhysicalDevice.o Vulkan.Instance.o
 	$(GCC) $(CXX_FLAGS) -c $< $(CXX_INCLUDES)
 
 Vulkan := Vulkan.o Vulkan.Implementation.o Vulkan.Interface.o
@@ -212,8 +230,8 @@ Vector.o: Vector.cpp
 Ja.o: Ja.cpp #Standard.o
 	$(GCC) $(CXX_FLAGS) -c $< $(CXX_INCLUDES)
 
-Nej: Nej.cpp Vulkan.o Vulkan.PhysicalDevice.o Vulkan.Instance.o #Standard.o
-	$(GCC) $(CXX_FLAGS) -Werror=unused-result -fcompare-debug-second -o $@ $< Vulkan.o Vulkan.PhysicalDevice.o Vulkan.Instance.o $(CXX_LIBS) $(CXX_INCLUDES)
+Nej: Nej.cpp Vulkan.o Vulkan.Window.o Vulkan.Window.Coroutine.o Vulkan.LogicalDevice.o Vulkan.QueueFamily.o Vulkan.Queue.o Vulkan.CommandPool.o Vulkan.PhysicalDevice.o Vulkan.Instance.o #Standard.o
+	$(GCC) $(CXX_FLAGS) -Werror=unused-result -o $@ $< Vulkan.o Vulkan.Window.o Vulkan.Window.Coroutine.o Vulkan.LogicalDevice.o Vulkan.QueueFamily.o Vulkan.Queue.o Vulkan.CommandPool.o Vulkan.PhysicalDevice.o Vulkan.Instance.o $(CXX_LIBS) $(CXX_INCLUDES)
 
 Express: Express.cpp App.o Vector.o Array.o Graphics.Triangle.vert.spv Graphics.Triangle.frag.spv
 	$(GCC) $(CXX_FLAGS) -Werror=unused-result -o $@ $< App.o Vector.o Array.o $(CXX_LIBS) $(CXX_INCLUDES)
