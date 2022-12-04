@@ -3,6 +3,7 @@ module;
 #include <vector>
 #include <vulkan/vulkan_core.h>
 #include <GLFW/glfw3.h>
+#include <utility>
 export module Vulkan.Instance;
 
 export struct vInstance {
@@ -27,13 +28,23 @@ export struct vInstance {
 			.enabledExtensionCount = static_cast <uint32_t> (extensions.size()),
 			.ppEnabledExtensionNames = extensions.data()
 		};
-
+		
 
 		if (vkCreateInstance (/*VkInstanceCreateInfo const * pCreateInfo */&createInfo, /*VkAllocationCallbacks const * pAllocator */nullptr, /*VkInstance* pInstance*/&handle) != VK_SUCCESS) {
 			std::cout << "error >> failed to create instance" << std::endl;
 			exit (-1);
 		}
 	}
+	~vInstance () {
+		std::cout << "~vInstance ()" << std::endl;
+ 		if (handle) {
+			vkDestroyInstance (handle, nullptr); 
+		}
+	}
+	vInstance (vInstance&& o) noexcept : handle {VK_NULL_HANDLE} {
+		std::swap (handle, o.handle);
+	}
+	vInstance (vInstance const&) noexcept = delete;
 
 	auto devices () const -> std::vector <VkPhysicalDevice> {
 		auto count = uint32_t {0};

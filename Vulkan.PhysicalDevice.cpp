@@ -8,8 +8,8 @@ export module Vulkan.PhysicalDevice;
 import Vulkan.Instance;
 
 export struct vPhysicalDevice {
-	vPhysicalDevice (vInstance& h) : handle {h.devices().back()} {}
-	vPhysicalDevice (VkPhysicalDevice&& h) : handle {(VkPhysicalDevice&&) h} {}
+	// vPhysicalDevice (vInstance& h) : handle {h.devices().back()} {}
+	vPhysicalDevice (VkPhysicalDevice const& h) : handle {h} {}
 	auto properties () const -> VkPhysicalDeviceProperties {
 		auto res = VkPhysicalDeviceProperties {};
 		vkGetPhysicalDeviceProperties (handle, &res);

@@ -210,7 +210,10 @@ Vulkan.Window.Coroutine.o: Vulkan.Window.Coroutine.cpp Vulkan.LogicalDevice.o Vu
 Vulkan.Window.o: Vulkan.Window.cpp Vulkan.Window.Coroutine.o
 	$(GCC) $(CXX_FLAGS) -c $< $(CXX_INCLUDES)
 
-Vulkan.o: Vulkan.cpp Vulkan.Window.o Vulkan.LogicalDevice.o Vulkan.QueueFamily.o Vulkan.Queue.o Vulkan.CommandPool.o Vulkan.PhysicalDevice.o Vulkan.Instance.o
+Vulkan.App.o: Vulkan.App.cpp Vulkan.Window.o
+	$(GCC) $(CXX_FLAGS) -c $< $(CXX_INCLUDES)
+
+Vulkan.o: Vulkan.cpp Vulkan.App.o Vulkan.Window.o Vulkan.LogicalDevice.o Vulkan.QueueFamily.o Vulkan.Queue.o Vulkan.CommandPool.o Vulkan.PhysicalDevice.o Vulkan.Instance.o
 	$(GCC) $(CXX_FLAGS) -c $< $(CXX_INCLUDES)
 
 Vulkan := Vulkan.o Vulkan.Implementation.o Vulkan.Interface.o
@@ -230,8 +233,8 @@ Vector.o: Vector.cpp
 Ja.o: Ja.cpp #Standard.o
 	$(GCC) $(CXX_FLAGS) -c $< $(CXX_INCLUDES)
 
-Nej: Nej.cpp Vulkan.o Vulkan.Window.o Vulkan.Window.Coroutine.o Vulkan.LogicalDevice.o Vulkan.QueueFamily.o Vulkan.Queue.o Vulkan.CommandPool.o Vulkan.PhysicalDevice.o Vulkan.Instance.o #Standard.o
-	$(GCC) $(CXX_FLAGS) -Werror=unused-result -o $@ $< Vulkan.o Vulkan.Window.o Vulkan.Window.Coroutine.o Vulkan.LogicalDevice.o Vulkan.QueueFamily.o Vulkan.Queue.o Vulkan.CommandPool.o Vulkan.PhysicalDevice.o Vulkan.Instance.o $(CXX_LIBS) $(CXX_INCLUDES)
+Nej: Nej.cpp Vulkan.o Vulkan.App.o Vulkan.Window.o Vulkan.Window.Coroutine.o Vulkan.LogicalDevice.o Vulkan.QueueFamily.o Vulkan.Queue.o Vulkan.CommandPool.o Vulkan.PhysicalDevice.o Vulkan.Instance.o #Standard.o
+	$(GCC) $(CXX_FLAGS) -Werror=unused-result -o $@ $< Vulkan.o Vulkan.App.o Vulkan.Window.o Vulkan.Window.Coroutine.o Vulkan.LogicalDevice.o Vulkan.QueueFamily.o Vulkan.Queue.o Vulkan.CommandPool.o Vulkan.PhysicalDevice.o Vulkan.Instance.o $(CXX_LIBS) $(CXX_INCLUDES)
 
 Express: Express.cpp App.o Vector.o Array.o Graphics.Triangle.vert.spv Graphics.Triangle.frag.spv
 	$(GCC) $(CXX_FLAGS) -Werror=unused-result -o $@ $< App.o Vector.o Array.o $(CXX_LIBS) $(CXX_INCLUDES)
