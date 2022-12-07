@@ -11,7 +11,7 @@
 #include <assert.h>
 #include <array>
 #include <tuple>
-import Vulkan;
+import Delta;
 // import Standard;
 
 struct vRectangle {
@@ -148,11 +148,27 @@ auto make_window (VkInstance& instance, int width, int height, char const* title
 	return {window, surface};
 }
 
-auto make_instance () noexcept -> VkInstance {
+template <typename T>
+auto make () noexcept -> T;
+
+template <>
+auto make <std::vector<VkExtensionProperties>> () noexcept -> std::vector<VkExtensionProperties> {
+	uint32_t extensionCount = 0;
+	vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount,
+nullptr);
+std::vector<VkExtensionProperties> extensions {};
+extensions.resize (extensionCount);
+vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount,
+extensions.data());
+return extensions;
+}
+
+template <>
+auto make <VkInstance> () noexcept -> VkInstance {
 	auto layers = std::vector <char const*> {"VK_LAYER_KHRONOS_validation"};
 	auto glfwExtensionCount = uint32_t {0};
 	char const** glfwExtensions = glfwGetRequiredInstanceExtensions (&glfwExtensionCount);
-
+	// std::cout << glfwExtensionCount << std::endl;
 	auto create_info = VkInstanceCreateInfo {
 		.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
 		.enabledLayerCount = static_cast <uint32_t> (layers.size()),
@@ -168,12 +184,111 @@ auto make_instance () noexcept -> VkInstance {
 	return instance;
 }
 
+template <typename T>
+struct iInstance {
+	iInstance (vector <char const*> && layers, vector <char const*> && extensions) noexcept {
+		VkApplicationInfo app_info {
+			.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
+			.pNext = nullptr,
+			.pApplicationName = "",
+			.applicationVersion = VK_MAKE_API_VERSION (1, 0, 0, 0),
+			.pEngineName = "",
+			.engineVersion = VK_MAKE_API_VERSION (1, 0, 0, 0),
+			.apiVersion = VK_MAKE_API_VERSION (1, 3, 0, 0)
+		};
+
+		auto const createInfo = VkInstanceCreateInfo {
+			.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
+			.pNext = nullptr,
+			.flags = 0,//VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR,
+			.pApplicationInfo = &app_info,
+			.enabledLayerCount = static_cast <uint32_t> (layers.size()),
+			.ppEnabledLayerNames = layers.data(),
+			.enabledExtensionCount = static_cast <uint32_t> (extensions.size()),
+			.ppEnabledExtensionNames = extensions.data()
+		};
+		
+
+		if (auto res = vkCreateInstance (/*VkInstanceCreateInfo const * pCreateInfo */&createInfo, /*VkAllocationCallbacks const * pAllocator */nullptr, /*VkInstance* pInstance*/&handle); res != VK_SUCCESS) {
+			switch (res)
+			{
+			case VK_ERROR_INCOMPATIBLE_DRIVER:
+				std::cout << "VK_ERROR_INCOMPATIBLE_DRIVER" << std::endl;
+				break;
+			
+			default:
+				break;
+			}
+			std::cout << "error >> failed to create instance" << std::endl;
+			exit (-1);
+		}
+
+		static_cast <T*> (this) -> instance_finished ();
+	}
+	~iInstance () {
+		std::cout << "~iInstance ()" << std::endl;
+ 		if (handle) {
+			vkDestroyInstance (handle, nullptr); 
+		}
+	}
+	iInstance (iInstance&& o) noexcept : handle {VK_NULL_HANDLE} {
+		std::swap (handle, o.handle);
+	}
+	iInstance (iInstance const&) noexcept = delete;
+
+	auto devices () const -> std::vector <VkPhysicalDevice> {
+		auto count = uint32_t {0};
+		vkEnumeratePhysicalDevices (handle, &count, nullptr);
+		if (count > 0) {
+			auto devices = std::vector <VkPhysicalDevice> {count};
+			vkEnumeratePhysicalDevices (handle, &count, devices.data());
+			return devices;
+		} else {
+			std::cout << "error >> failed to find any physical devices" << std::endl;
+			exit (-1);
+			// return std::vector <VkPhysicalDevice> {0};
+		}
+	}
+	static auto extension_properties () noexcept -> vector <VkExtensionProperties> {
+		uint32_t extensionCount = 0;
+		vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
+		auto extensions = vector <VkExtensionProperties> {extensionCount};
+		vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensions.data());
+		return extensions;
+	}
+
+protected:
+	// friend struct T;
+	VkInstance handle;
+};
+
+struct iPhysicalDevice : iInstance <iPhysicalDevice> {
+	using iInstance::iInstance;
+	
+private:
+	template <typename T>
+	friend struct iInstance;
+	auto instance_finished () noexcept -> void {
+		handle = iInstance::devices ().back ();
+	}
+	// iInstance <iPhysicalDevice> instance;
+	VkPhysicalDevice handle;
+};
+
 
 auto run () -> vApp {
 	std::cout << "run ..." << std::endl;
-	
-	// auto instance = make_instance ();
-	auto window = co_await make_window (640, 480);
+	auto extensions = iInstance<iPhysicalDevice>::extension_properties ();
+	std::cout << extensions << std::endl;
+	auto ii = iPhysicalDevice {{"VK_LAYER_KHRONOS_validation"}, {"VK_KHR_portability_enumeration"}};
+
+	// std::cout << extensions << std::endl;
+
+
+	// auto instanceExtensions = make <std::vector<VkExtensionProperties>> ();
+	// for (auto const& i : instanceExtensions) std::cout << i.extensionName << std::endl;
+	// auto instance = make <VkInstance> ();
+	// auto window = co_await make_window (640, 480);
 	
 
 	// auto surface = co_await make_surface (window, instance);

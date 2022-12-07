@@ -23,10 +23,10 @@ ifeq ($(detected_OS),Windows)
 	CXX_INCLUDES += -I$(VULKAN_DIR)\Include
 endif
 ifeq ($(detected_OS),Darwin)
-	GLSLC_COMPILER = /Users/philipwenkel/VulkanSDK/1.3.216.0/macOS/bin/glslc
+	GLSLC_COMPILER = /Users/philipwenkel/VulkanSDK/1.3.231.1/macOS/bin/glslc
 	GCC = /opt/homebrew/Cellar/gcc/12.2.0/bin/g++-12
 	CXX_FLAGS += -D MACOS -D FONTS_DIR=\"/System/Library/Fonts/Supplemental\"
-	CXX_LIBS = -L/opt/homebrew/lib -L/opt/homebrew/Cellar/glfw/3.3.8/lib -lglfw -L/Users/philipwenkel/VulkanSDK/1.3.216.0/macOS/lib -lvulkan.1.3.216 -L/opt/homebrew/Cellar/freetype/2.12.1/lib -lfreetype
+	CXX_LIBS = -L/opt/homebrew/lib -L/opt/homebrew/Cellar/glfw/3.3.8/lib -lglfw -L/Users/philipwenkel/VulkanSDK/1.3.231.1/macOS/lib -lvulkan.1.3.231 -L/opt/homebrew/Cellar/freetype/2.12.1/lib -lfreetype
 	# CXX_INCLUDES += -I/opt/homebrew/include
 endif
 ifeq ($(detected_OS),Linux)
@@ -42,7 +42,7 @@ endif
 
 
 APP=main
-apps:= Express Nej#Graphics.Test Oj #App.Server App.FileNotifier Graphics.Triangle App.Graphics.Info#App.Client
+apps:= Nej#Graphics.Test Oj #App.Server App.FileNotifier Graphics.Triangle App.Graphics.Info#App.Client
 tests:= Test.Coro # Test.Async Test.App
 # all: $(tests) $(apps)
 all: $(apps)
@@ -210,10 +210,16 @@ Vulkan.Window.Coroutine.o: Vulkan.Window.Coroutine.cpp Vulkan.LogicalDevice.o Vu
 Vulkan.Window.o: Vulkan.Window.cpp Vulkan.Window.Coroutine.o
 	$(GCC) $(CXX_FLAGS) -c $< $(CXX_INCLUDES)
 
-Vulkan.App.o: Vulkan.App.cpp Vulkan.Window.o
+Vulkan.App.o: Vulkan.App.cpp
 	$(GCC) $(CXX_FLAGS) -c $< $(CXX_INCLUDES)
 
-Vulkan.o: Vulkan.cpp Vulkan.App.o Vulkan.Window.o Vulkan.LogicalDevice.o Vulkan.QueueFamily.o Vulkan.Queue.o Vulkan.CommandPool.o Vulkan.PhysicalDevice.o Vulkan.Instance.o
+Vulkan.o: Vulkan.cpp Vulkan.App.o #Vulkan.LogicalDevice.o Vulkan.QueueFamily.o Vulkan.Queue.o Vulkan.CommandPool.o Vulkan.PhysicalDevice.o Vulkan.Instance.o
+	$(GCC) $(CXX_FLAGS) -c $< $(CXX_INCLUDES)
+
+Vector.o: Vector.cpp 
+	$(GCC) $(CXX_FLAGS) -c $< $(CXX_INCLUDES)
+
+Delta.o: Delta.cpp Vector.o Vulkan.o
 	$(GCC) $(CXX_FLAGS) -c $< $(CXX_INCLUDES)
 
 Vulkan := Vulkan.o Vulkan.Implementation.o Vulkan.Interface.o
@@ -225,16 +231,14 @@ Delta := Bool.o Graphics.Window.o Graphics.o #$(Coro) $(Window) $(Async) $(Vulka
 Array.o: Array.cpp 
 	$(GCC) $(CXX_FLAGS) -c $<
 
-Vector.o: Vector.cpp 
-	$(GCC) $(CXX_FLAGS) -c $< $(CXX_INCLUDES)
 
 
 
 Ja.o: Ja.cpp #Standard.o
 	$(GCC) $(CXX_FLAGS) -c $< $(CXX_INCLUDES)
 
-Nej: Nej.cpp Vulkan.o Vulkan.App.o Vulkan.Window.o Vulkan.Window.Coroutine.o Vulkan.LogicalDevice.o Vulkan.QueueFamily.o Vulkan.Queue.o Vulkan.CommandPool.o Vulkan.PhysicalDevice.o Vulkan.Instance.o #Standard.o
-	$(GCC) $(CXX_FLAGS) -Werror=unused-result -o $@ $< Vulkan.o Vulkan.App.o Vulkan.Window.o Vulkan.Window.Coroutine.o Vulkan.LogicalDevice.o Vulkan.QueueFamily.o Vulkan.Queue.o Vulkan.CommandPool.o Vulkan.PhysicalDevice.o Vulkan.Instance.o $(CXX_LIBS) $(CXX_INCLUDES)
+Nej: Nej.cpp Delta.o Vector.o Vulkan.o Vulkan.App.o  #Standard.o
+	$(GCC) $(CXX_FLAGS) -Werror=unused-result -o $@ $< Delta.o Vector.o Vulkan.o Vulkan.App.o $(CXX_LIBS) $(CXX_INCLUDES)
 
 Express: Express.cpp App.o Vector.o Array.o Graphics.Triangle.vert.spv Graphics.Triangle.frag.spv
 	$(GCC) $(CXX_FLAGS) -Werror=unused-result -o $@ $< App.o Vector.o Array.o $(CXX_LIBS) $(CXX_INCLUDES)

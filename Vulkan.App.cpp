@@ -9,7 +9,7 @@ module;
 #include <bit>
 #include <algorithm>
 export module Vulkan.App;
-import Vulkan.Window;
+// import Vulkan.Window;
 
 export struct is_clicked {
 	GLFWwindow* handle;

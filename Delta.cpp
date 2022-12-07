@@ -1,5 +1,8 @@
 export module Delta;
 
+export import Vector;
+export import Vulkan;
+
 // export import Delta.String;
 // export import Delta.Coro;
 // export import Delta.Range;
@@ -7,51 +10,51 @@ export module Delta;
 // export import Async;
 
 // export import std;
-#ifdef MACOS
-export import Darwin;
-#endif
+// #ifdef MACOS
+// export import Darwin;
+// #endif
 
-export auto absolute (auto v) noexcept -> auto {
-	if (v < 0) return -v;
-	else return v;
-}
+// export auto absolute (auto v) noexcept -> auto {
+// 	if (v < 0) return -v;
+// 	else return v;
+// }
 
-export template <typename T>
-auto operator << (std::ostream& os, std::vector <T> const& v) noexcept -> std::ostream& requires requires (T const & t) {
-	std::cout << t;
-} {
-	for (auto const& i : v)
-		std::cout << i << std::endl;
-	return os;
-}
+// export template <typename T>
+// auto operator << (std::ostream& os, std::vector <T> const& v) noexcept -> std::ostream& requires requires (T const & t) {
+// 	std::cout << t;
+// } {
+// 	for (auto const& i : v)
+// 		std::cout << i << std::endl;
+// 	return os;
+// }
 
-constexpr auto same (char const* lhs, char const* rhs) noexcept -> bool {
-	auto * l = lhs;
-	auto * r = rhs;
-	while (*l != '\0' or *r != '\0') {
-		if (*l != *r) {
-			return false;
-		}
-		++l;
-		++r;
-	}
-	return *l == '\0' and *r == '\0';
-}
+// constexpr auto same (char const* lhs, char const* rhs) noexcept -> bool {
+// 	auto * l = lhs;
+// 	auto * r = rhs;
+// 	while (*l != '\0' or *r != '\0') {
+// 		if (*l != *r) {
+// 			return false;
+// 		}
+// 		++l;
+// 		++r;
+// 	}
+// 	return *l == '\0' and *r == '\0';
+// }
 
-export template <typename... T>
-struct const_map {
-	std::tuple <std::tuple <T, char const*>...> tups;
-	constexpr const_map (auto... v) : tups {{{}, v}...} {
+// export template <typename... T>
+// struct const_map {
+// 	std::tuple <std::tuple <T, char const*>...> tups;
+// 	constexpr const_map (auto... v) : tups {{{}, v}...} {
 
-	}
+// 	}
 
-	// constexpr auto operator [] (char const* a) noexcept {
-	// 	return [] <std::size_t... II> (auto& t, auto v, std::index_sequence <II...>) {
-	// 		auto & [value, key] = std::get <II>
-	// 		if (same ())
-	// 	} (tups, a, std::make_index_sequence <sizeof... (T)> {});
-	// }
-};
+// 	// constexpr auto operator [] (char const* a) noexcept {
+// 	// 	return [] <std::size_t... II> (auto& t, auto v, std::index_sequence <II...>) {
+// 	// 		auto & [value, key] = std::get <II>
+// 	// 		if (same ())
+// 	// 	} (tups, a, std::make_index_sequence <sizeof... (T)> {});
+// 	// }
+// };
 
 // static_assert (Array <char[10]>);
 // static_assert (Range <char[10]>);

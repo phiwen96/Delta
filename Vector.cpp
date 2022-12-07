@@ -7,6 +7,15 @@ export module Vector;
 
 export template <typename T>
 struct vector {	
+	friend auto swap (vector& lhs, vector& rhs) noexcept -> void {
+		using std::swap;
+		std::swap (lhs.buffer, rhs.buffer);
+		std::swap (lhs.next, rhs.next);
+		std::swap (lhs.max, rhs.max);
+	}
+	vector (unsigned int s) noexcept : buffer {(T*) std::malloc (s * sizeof (T))}, next {s}, max {s} {
+		
+	}
 	vector (auto&&... t) noexcept : buffer {(T*) std::malloc (sizeof (T) * sizeof... (t))}, next {sizeof... (t)}, max {next} {
 		auto i = 0;
 		((construct_element (i, std::forward <decltype (t)> (t))), ...);
@@ -18,6 +27,10 @@ struct vector {
 	vector () noexcept : buffer {(T*) std::malloc (sizeof (T))}, next {0}, max {1} {
 		
 	}
+	vector (vector && o) noexcept : buffer {nullptr}, next {0}, max {0} {
+		swap (*this, o);
+	}
+	
 	~vector () {
 		std::free (buffer);
 	}
@@ -46,15 +59,27 @@ struct vector {
 	constexpr auto end () noexcept -> T * {
 		return buffer + next;
 	}
+	constexpr auto begin () const noexcept -> T * const {
+		return buffer;
+	}
+	constexpr auto end () const noexcept -> T * const {
+		return buffer + next;
+	}
+	friend auto operator << (std::ostream & os, vector const& v) noexcept -> std::ostream& {
+		for (auto* i = v.begin(); i < v.end(); ++i) {
+			os << *i << " ";
+		}
+		return os;
+	}
 
 private:
 	auto construct_element (int& i, auto&& v) noexcept -> void {
-		::new (buffer + i) T (std::forward <decltype (v)> (v));
+		::new (buffer + i) T {std::forward <decltype (v)> (v)};
 		++i;
 	}
 	T* buffer;
-	int next;
-	int max;
+	unsigned int next;
+	unsigned int max;
 };
 
 export template <typename T>
