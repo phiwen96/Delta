@@ -3,6 +3,7 @@ module;
 // #include <cstdio>
 #include <type_traits>
 #include <iostream>
+#include <span>
 export module Vector;
 
 export template <typename T>
@@ -34,6 +35,11 @@ struct vector {
 	~vector () {
 		std::free (buffer);
 	}
+	auto resize (int s) noexcept -> void {
+		buffer = (T*) std::realloc (buffer, sizeof (T) * s);
+		next = s - 1;
+		max = s;
+	}
 	auto operator += (auto&& v) noexcept -> vector & {
 		if (next == max) {
 			max *= 2;
@@ -50,8 +56,11 @@ struct vector {
 	constexpr auto data () noexcept -> T* {
 		return buffer;
 	}
-	constexpr auto size () noexcept {
+	constexpr auto size () const noexcept {
 		return next;
+	}
+	constexpr auto back () noexcept -> T & {
+		return buffer [next - 1];
 	}
 	constexpr auto begin () noexcept -> T * {
 		return buffer;
@@ -70,6 +79,13 @@ struct vector {
 			os << *i << " ";
 		}
 		return os;
+	}
+	// constexpr auto operator += (std::span s) noexcept -> vector & {
+	// 	if (s.size ())
+	// }
+
+	constexpr auto space () const noexcept -> unsigned int {
+		return max - next;
 	}
 
 private:

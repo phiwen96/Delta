@@ -2,7 +2,7 @@
 // #include <vulkan/vulkan_core.h>
 // import Vulkan;
 #include <iostream>
-#include <vector>
+// #include <vector>
 #include <coroutine>
 #include <utility>
 #include <vulkan/vulkan_core.h>
@@ -11,6 +11,8 @@
 #include <assert.h>
 #include <array>
 #include <tuple>
+#include <span>
+#include <concepts>
 import Delta;
 // import Standard;
 
@@ -152,12 +154,12 @@ template <typename T>
 auto make () noexcept -> T;
 
 template <>
-auto make <std::vector<VkExtensionProperties>> () noexcept -> std::vector<VkExtensionProperties> {
+auto make <vector<VkExtensionProperties>> () noexcept -> vector<VkExtensionProperties> {
 	uint32_t extensionCount = 0;
 	vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount,
 nullptr);
-std::vector<VkExtensionProperties> extensions {};
-extensions.resize (extensionCount);
+vector<VkExtensionProperties> extensions {extensionCount};
+// extensions.resize (extensionCount);
 vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount,
 extensions.data());
 return extensions;
@@ -165,7 +167,7 @@ return extensions;
 
 template <>
 auto make <VkInstance> () noexcept -> VkInstance {
-	auto layers = std::vector <char const*> {"VK_LAYER_KHRONOS_validation"};
+	auto layers = vector <char const*> {"VK_LAYER_KHRONOS_validation"};
 	auto glfwExtensionCount = uint32_t {0};
 	char const** glfwExtensions = glfwGetRequiredInstanceExtensions (&glfwExtensionCount);
 	// std::cout << glfwExtensionCount << std::endl;
@@ -186,6 +188,9 @@ auto make <VkInstance> () noexcept -> VkInstance {
 
 template <typename T>
 struct iInstance {
+	iInstance () noexcept : iInstance {{"VK_LAYER_KHRONOS_validation"}, necessary_instance_extensions ()} {
+
+	}
 	iInstance (vector <char const*> && layers, vector <char const*> && extensions) noexcept {
 		VkApplicationInfo app_info {
 			.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
@@ -200,7 +205,7 @@ struct iInstance {
 		auto const createInfo = VkInstanceCreateInfo {
 			.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
 			.pNext = nullptr,
-			.flags = 0,//VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR,
+			.flags = MACOS ? VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR : 0,
 			.pApplicationInfo = &app_info,
 			.enabledLayerCount = static_cast <uint32_t> (layers.size()),
 			.ppEnabledLayerNames = layers.data(),
@@ -217,13 +222,16 @@ struct iInstance {
 				break;
 			
 			default:
+				std::cout << "Unknown error" << std::endl;
 				break;
 			}
 			std::cout << "error >> failed to create instance" << std::endl;
 			exit (-1);
 		}
 
-		static_cast <T*> (this) -> instance_finished ();
+		if constexpr (requires {static_cast <T*> (this) -> on_instance_finished (handle);}) {
+			static_cast <T*> (this) -> on_instance_finished (handle);
+		}
 	}
 	~iInstance () {
 		std::cout << "~iInstance ()" << std::endl;
@@ -236,56 +244,121 @@ struct iInstance {
 	}
 	iInstance (iInstance const&) noexcept = delete;
 
-	auto devices () const -> std::vector <VkPhysicalDevice> {
+	auto devices () const -> vector <VkPhysicalDevice> {
 		auto count = uint32_t {0};
 		vkEnumeratePhysicalDevices (handle, &count, nullptr);
 		if (count > 0) {
-			auto devices = std::vector <VkPhysicalDevice> {count};
+			auto devices = vector <VkPhysicalDevice> {count};
 			vkEnumeratePhysicalDevices (handle, &count, devices.data());
 			return devices;
 		} else {
 			std::cout << "error >> failed to find any physical devices" << std::endl;
 			exit (-1);
-			// return std::vector <VkPhysicalDevice> {0};
+			// return vector <VkPhysicalDevice> {0};
 		}
 	}
-	static auto extension_properties () noexcept -> vector <VkExtensionProperties> {
+	static auto available_extension_properties () noexcept -> vector <VkExtensionProperties> {
 		uint32_t extensionCount = 0;
 		vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
 		auto extensions = vector <VkExtensionProperties> {extensionCount};
 		vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensions.data());
 		return extensions;
 	}
+	static auto necessary_instance_extensions () noexcept -> vector <char const*> {
+		auto glfwExtensionCount = uint32_t {0};
+		char const** glfwExtensions = glfwGetRequiredInstanceExtensions (&glfwExtensionCount);
+		#ifdef MACOS
+		auto res = vector <char const*> {glfwExtensionCount + 1};
+		res [glfwExtensionCount] = "VK_KHR_portability_enumeration";
+		#else 
+		auto res = vector <char const*> {glfwExtensionCount};
+		#endif
+		for (auto i = 0; i < glfwExtensionCount; ++i) {
+			res [i] = glfwExtensions [i];
+		}
+		return res;
+	}
 
 protected:
+	auto instance () const noexcept -> VkInstance const& {
+		return handle;
+	}
+
+private:
 	// friend struct T;
 	VkInstance handle;
 };
 
-struct iPhysicalDevice : iInstance <iPhysicalDevice> {
-	using iInstance::iInstance;
-	
-private:
-	template <typename T>
-	friend struct iInstance;
-	auto instance_finished () noexcept -> void {
-		handle = iInstance::devices ().back ();
+template <typename T>
+struct iPhysicalDevice : iInstance <iPhysicalDevice <T>> {
+	// using iInstance::iInstance;
+	~iPhysicalDevice () noexcept {
+		// std::cout << "~iPhysicalDevice ()" << std::endl;
 	}
+protected:
+	auto physical_device () const noexcept -> VkPhysicalDevice const& {
+		return handle;
+	}
+private:
+	template <typename U>
+	friend struct iInstance;
+	auto on_instance_finished (VkInstance const& i) noexcept -> void {
+		// std::cout<<"mfd"<<std::endl;
+		handle = iInstance <iPhysicalDevice <T>>::devices ().back ();
+		// if constexpr (requires {static_cast <T*> (this) -> on_instance_finished (i);}) {
+		// 	static_cast <T*> (this) -> on_instance_finished (i);
+		// }
+		if constexpr (requires {static_cast <T*> (this) -> on_physical_device_finished (handle);}) {
+			static_cast <T*> (this) -> on_physical_device_finished (handle);
+		}
+	}
+	
 	// iInstance <iPhysicalDevice> instance;
 	VkPhysicalDevice handle;
+};
+
+struct iDevice : iPhysicalDevice <iDevice> {
+	~iDevice () noexcept {
+		// std::cout << "~iDevice ()" << std::endl;
+	}
+protected:
+	auto device () const noexcept -> VkDevice const& {
+		return handle;
+	}
+private:
+	template <typename U>
+	friend struct iPhysicalDevice;
+	auto on_physical_device_finished (VkPhysicalDevice const& p) noexcept -> void {
+
+		// if constexpr (requires {static_cast <T*> (this) -> on_device_finished (handle);}) {
+		// 	static_cast <T*> (this) -> on_device_finished (handle);
+		// }
+	}
+	VkDevice handle;
 };
 
 
 auto run () -> vApp {
 	std::cout << "run ..." << std::endl;
-	auto extensions = iInstance<iPhysicalDevice>::extension_properties ();
-	std::cout << extensions << std::endl;
-	auto ii = iPhysicalDevice {{"VK_LAYER_KHRONOS_validation"}, {"VK_KHR_portability_enumeration"}};
-
+	// auto extensions = iInstance<iPhysicalDevice>::extension_properties ();
 	// std::cout << extensions << std::endl;
 
+	// auto glfwExtensionCount = uint32_t {0};
+	// char const** glfwExtensions = glfwGetRequiredInstanceExtensions (&glfwExtensionCount);
+	// for (auto i = 0; i < glfwExtensionCount; ++i) {
+	// 	std::cout << glfwExtensions [i] << std::endl;
+	// }
+	// std::cout << glfwExtensionCount << std::endl;
+	// #if defined (MACOS)
+	auto ii = iDevice {};
+	// #else 
+	// auto ii = iPhysicalDevice {{"VK_LAYER_KHRONOS_validation"}, {"VK_KHR_portability_enumeration"}};
+	// #en
 
-	// auto instanceExtensions = make <std::vector<VkExtensionProperties>> ();
+	// std::cout << extensions << std::endl;
+	// co_await 
+
+	// auto instanceExtensions = make <vector<VkExtensionProperties>> ();
 	// for (auto const& i : instanceExtensions) std::cout << i.extensionName << std::endl;
 	// auto instance = make <VkInstance> ();
 	// auto window = co_await make_window (640, 480);
@@ -336,9 +409,9 @@ auto run_app () -> int {
 }
 
 auto main (int argc, char** argv) -> int {
-	std::cout << "main ..." << std::endl;
+	// std::cout << "main ..." << std::endl;
 	auto res = run_app ();
-	std::cout << "... main" << std::endl;
+	// std::cout << "... main" << std::endl;
 	return res;
 	// auto instance = vInstance {{"VK_LAYER_KHRONOS_validation"}, {"VK_KHR_surface"}};
 	// auto physicalDevice = vPhysicalDevice {instance};
@@ -363,7 +436,7 @@ auto main (int argc, char** argv) -> int {
 	// 	physicalDevice};
 	// auto instance = vInstance {{"VK_LAYER_KHRONOS_validation"}, {"VK_KHR_surface"}};
 	
-	// std::vector <int> baj;
+	// vector <int> baj;
 	// VkInstance inst;
 	// std::cout << "... main" << std::endl;
 	// return 0;
