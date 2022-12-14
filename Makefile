@@ -13,7 +13,7 @@ ifeq ($(OS),Windows_NT)
     detected_OS := Windows
 else
     detected_OS := $(shell sh -c 'uname 2>/dev/null || echo Unknown')
-	CXX_INCLUDES = -I/usr/local/include -I/opt/homebrew/Cellar/glm/0.9.9.8/include -I/opt/homebrew/Cellar/freetype/2.12.1/include/freetype2 -I/Users/philipwenkel/VulkanSDK/1.3.216.0/macOS/include
+	CXX_INCLUDES = -I/usr/local/include -I/opt/homebrew/Cellar/glm/0.9.9.8/include -I/opt/homebrew/Cellar/freetype/2.12.1/include/freetype2 #-I/Users/philipwenkel/VulkanSDK/1.3.216.0/macOS/include
 endif
 ifeq ($(detected_OS),Windows)
 	GCC = g++
@@ -45,7 +45,7 @@ APP=main
 apps:= Nej#Graphics.Test Oj #App.Server App.FileNotifier Graphics.Triangle App.Graphics.Info#App.Client
 tests:= Test.Coro # Test.Async Test.App
 # all: $(tests) $(apps)
-all: $(apps)
+all: $(apps) Test.Compute Test.Graphics
 
 std_headers:
 	$(GCC) -std=c++2b -fmodules-ts -x c++-header /usr/include/GLFW/glfw3.h
@@ -213,13 +213,14 @@ Vulkan.Window.o: Vulkan.Window.cpp Vulkan.Window.Coroutine.o
 Vulkan.App.o: Vulkan.App.cpp
 	$(GCC) $(CXX_FLAGS) -c $< $(CXX_INCLUDES)
 
-Vulkan.o: Vulkan.cpp Vulkan.App.o #Vulkan.LogicalDevice.o Vulkan.QueueFamily.o Vulkan.Queue.o Vulkan.CommandPool.o Vulkan.PhysicalDevice.o Vulkan.Instance.o
+Mector.o: Mector.cpp 
 	$(GCC) $(CXX_FLAGS) -c $< $(CXX_INCLUDES)
 
-Vector.o: Vector.cpp 
+Vulkan.o: Vulkan.cpp Mector.o #Vulkan.LogicalDevice.o Vulkan.QueueFamily.o Vulkan.Queue.o Vulkan.CommandPool.o Vulkan.PhysicalDevice.o Vulkan.Instance.o
 	$(GCC) $(CXX_FLAGS) -c $< $(CXX_INCLUDES)
 
-Delta.o: Delta.cpp Vector.o Vulkan.o
+
+Delta.o: Delta.cpp Vulkan.o
 	$(GCC) $(CXX_FLAGS) -c $< $(CXX_INCLUDES)
 
 Vulkan := Vulkan.o Vulkan.Implementation.o Vulkan.Interface.o
@@ -237,14 +238,20 @@ Array.o: Array.cpp
 Ja.o: Ja.cpp #Standard.o
 	$(GCC) $(CXX_FLAGS) -c $< $(CXX_INCLUDES)
 
-Nej: Nej.cpp Delta.o Vector.o Vulkan.o Vulkan.App.o  #Standard.o
-	$(GCC) $(CXX_FLAGS) -Werror=unused-result -o $@ $< Delta.o Vector.o Vulkan.o Vulkan.App.o $(CXX_LIBS) $(CXX_INCLUDES)
+Nej: Nej.cpp Delta.o #Standard.o
+	$(GCC) $(CXX_FLAGS) -Werror=unused-result -o $@ $< Delta.o Vulkan.o Mector.o $(CXX_LIBS) $(CXX_INCLUDES)
 
-Express: Express.cpp App.o Vector.o Array.o Graphics.Triangle.vert.spv Graphics.Triangle.frag.spv
-	$(GCC) $(CXX_FLAGS) -Werror=unused-result -o $@ $< App.o Vector.o Array.o $(CXX_LIBS) $(CXX_INCLUDES)
-	# $(CXX_LIBS) $(CXX_INCLUDES)
-	# $(GCC) $(CXX_FLAGS) -Werror=unused-result -o $@ $< -L. -lDelta $(CXX_LIBS) $(CXX_INCLUDES)
-	# $(GCC) $(CXX_FLAGS) -Werror=unused-result -o $@ $^ $(CXX_LIBS) $(CXX_INCLUDES)
+Test.Compute: Test.Compute.cpp Delta.o #Standard.o
+	$(GCC) $(CXX_FLAGS) -Werror=unused-result -o $@ $< Delta.o Vulkan.o Mector.o $(CXX_LIBS) $(CXX_INCLUDES)
+
+Test.Graphics: Test.Graphics.cpp Delta.o #Standard.o
+	$(GCC) $(CXX_FLAGS) -Werror=unused-result -o $@ $< Delta.o Vulkan.o Mector.o $(CXX_LIBS) $(CXX_INCLUDES)
+
+# Express: Express.cpp App.o Vector.o Array.o Graphics.Triangle.vert.spv Graphics.Triangle.frag.spv
+# 	$(GCC) $(CXX_FLAGS) -Werror=unused-result -o $@ $< App.o Vector.o Array.o $(CXX_LIBS) $(CXX_INCLUDES)
+# 	# $(CXX_LIBS) $(CXX_INCLUDES)
+# 	# $(GCC) $(CXX_FLAGS) -Werror=unused-result -o $@ $< -L. -lDelta $(CXX_LIBS) $(CXX_INCLUDES)
+# 	# $(GCC) $(CXX_FLAGS) -Werror=unused-result -o $@ $^ $(CXX_LIBS) $(CXX_INCLUDES)
 
 # Express: Express.cpp Delta
 # 	$(GCC) $(CXX_FLAGS) -Werror=unused-result -o $@ $< -L. -lDelta $(CXX_LIBS) $(CXX_INCLUDES)

@@ -1,6 +1,6 @@
 export module Delta;
 
-export import Vector;
+export import Mector;
 export import Vulkan;
 
 // export import Delta.String;
