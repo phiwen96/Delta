@@ -42,10 +42,10 @@ endif
 
 
 APP=main
-apps:= Nej#Graphics.Test Oj #App.Server App.FileNotifier Graphics.Triangle App.Graphics.Info#App.Client
+apps:= Nej Test.Compute Test.Graphics#Graphics.Test Oj #App.Server App.FileNotifier Graphics.Triangle App.Graphics.Info#App.Client
 tests:= Test.Coro # Test.Async Test.App
 # all: $(tests) $(apps)
-all: $(apps) Test.Compute Test.Graphics
+all: $(apps)
 
 std_headers:
 	$(GCC) -std=c++2b -fmodules-ts -x c++-header /usr/include/GLFW/glfw3.h

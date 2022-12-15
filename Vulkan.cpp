@@ -349,8 +349,6 @@ export struct iComputePipeline : iResources {
 			.pBindings = descriptor_set_layout_bindings
 		};
 
-		auto descriptor_set_layout = VkDescriptorSetLayout {};
-
 		if (vkCreateDescriptorSetLayout (device (), &descriptor_set_layout_create_info, 0, &descriptor_set_layout) != VK_SUCCESS) {
 			std::cout << "error << failed to create descriptor set layout" << std::endl;
 			exit (-1);
@@ -366,8 +364,6 @@ export struct iComputePipeline : iResources {
 			.pPushConstantRanges = nullptr
 		};
 
-		auto layout = VkPipelineLayout {};
-
 		if (vkCreatePipelineLayout (device (), &layout_create_info, 0, &layout)) {
 			std::cout << "error >> failed to create pipeline layout" << std::endl;
 			exit (-1);
@@ -381,15 +377,15 @@ export struct iComputePipeline : iResources {
 			.flags = 0,
 			// .stage = shader_stage_create_info,
 			.stage = VkPipelineShaderStageCreateInfo {
-			VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
-			nullptr,
-			0,
-			VK_SHADER_STAGE_COMPUTE_BIT,
-			// make_shader_module (read_byte_file (shader_path))
-			compute_shader_module,
-			"main",
-			0
-		},
+				VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+				nullptr,
+				0,
+				VK_SHADER_STAGE_COMPUTE_BIT,
+				// make_shader_module (read_byte_file (shader_path))
+				compute_shader_module,
+				"main",
+				0
+			},
 			.layout = layout,
 			.basePipelineHandle = 0,
 			.basePipelineIndex = 0
@@ -401,6 +397,11 @@ export struct iComputePipeline : iResources {
 		}
 
 		vkDestroyShaderModule (device (), compute_shader_module, nullptr);
+	}
+	~iComputePipeline () noexcept {
+		vkDestroyDescriptorSetLayout (device (), descriptor_set_layout, nullptr);
+		vkDestroyPipelineLayout (device (), layout, nullptr);
+		vkDestroyPipeline (device (), handle, nullptr);
 	}
 private:
 	static std::vector<char> readFile(const std::string& filename) {
@@ -430,54 +431,9 @@ private:
 		}
 		return shaderModule;
 	}
-	// auto make_shader_module (std::vector <char> && code) const noexcept -> VkShaderModule {
-	// 	auto const create_info = VkShaderModuleCreateInfo {
-	// 		.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
-	// 		.pNext = nullptr, 
-	// 		.flags = 0,
-	// 		.codeSize = code.size (),
-	// 		.pCode = reinterpret_cast <uint32_t const *> (code.data ())
-	// 	};
 
-	// 	auto shader_module = VkShaderModule {};	
-
-	// 	if (vkCreateShaderModule (device (), &create_info, nullptr, &shader_module) != VK_SUCCESS) {
-	// 		std::cout << "error >> failed to create shader module" << std::endl;
-	// 		exit (-1);
-	// 	}
-
-	// 	return shader_module;
-	// }
-	// auto read_byte_file (char const * path) noexcept -> std::vector <char> {
-	// 	// auto file = std::ifstream {path, std::ios::ate | std::ios::binary};
-
-	// 	// if (!file.is_open ()) {
-	// 	// 	std::cout << "error >> failed to open file" << std::endl;
-	// 	// 	exit (-1);
-	// 	// }
-
-	// 	// auto file_size = file.tellg ();
-	// 	// auto buffer = std::vector <char> {};
-	// 	// buffer.resize (file_size);
-	// 	// file.seekg (0);
-	// 	// file.read (buffer.data (), file_size);
-	// 	// file.close ();
-		
-	// 	auto * fileptr = fopen(path, "rb");
-	// 	if (not fileptr) {
-	// 		printf ("error >> failed to read file\nfile >> %s\n", path);
-	// 		exit (-1);
-	// 	}
-	// 	fseek(fileptr, 0, SEEK_END);  
-		
-	// 	auto filelen = ftell(fileptr);
-	// 	rewind(fileptr);     
-	// 	auto buffer = std::vector <char> {}; 
-	// 	buffer.resize (filelen);
-	// 	fread(buffer.data(), filelen, 1, fileptr);
-	// 	fclose(fileptr);
-	// 	return buffer;
-	// }
+	VkDescriptorSetLayout descriptor_set_layout;
+	VkPipelineLayout layout;
 	VkPipeline handle;
 };
 
