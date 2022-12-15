@@ -1,0 +1,18 @@
+#version 450 core
+
+// layout (local_size_x = 1, local_size_y = 1) in;
+
+// layout (binding = 0) buffer lay0 {
+// 	int inbuf [];
+// };
+
+// layout (binding = 1) buffer lay1 {
+// 	int outbuf [];
+// };
+layout (local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+
+void main() {
+	// float id = gl_LocalInvocationID.x;
+	int i = 0;
+	// outbuf [id] = 0;//inbuf [id] * inbuf [id];
+}

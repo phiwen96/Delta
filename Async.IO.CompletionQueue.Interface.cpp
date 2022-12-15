@@ -1,1 +1,0 @@
-export module Async.IO:CompletionQueue.Interface;

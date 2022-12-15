@@ -3,9 +3,12 @@ module;
 #include <vulkan/vulkan_core.h>
 #include <GLFW/glfw3.h>
 #include <array>
+#include <vector>
+#include <fstream>
+#include <string>
 export module Vulkan;
 
-import Mector;
+// import std::vector;
 
 // export import Vulkan.Instance;
 // export import Vulkan.PhysicalDevice;
@@ -30,7 +33,7 @@ struct iInstance {
 	iInstance () noexcept : iInstance {{"VK_LAYER_KHRONOS_validation"}, necessary_instance_extensions ()} {
 		// std::cout << "iInstance ()" << std::endl;
 	}
-	iInstance (mector <char const*> && layers, mector <char const*> && extensions) noexcept {
+	iInstance (std::vector <char const*> && layers, std::vector <char const*> && extensions) noexcept {
 		VkApplicationInfo app_info {
 			.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
 			.pNext = nullptr,
@@ -83,34 +86,34 @@ struct iInstance {
 	}
 	iInstance (iInstance const&) noexcept = delete;
 
-	auto devices () const -> mector <VkPhysicalDevice> {
+	auto devices () const -> std::vector <VkPhysicalDevice> {
 		auto count = uint32_t {0};
 		vkEnumeratePhysicalDevices (handle, &count, nullptr);
 		if (count > 0) {
-			auto devices = mector <VkPhysicalDevice> {count};
+			auto devices = std::vector <VkPhysicalDevice> {count};
 			vkEnumeratePhysicalDevices (handle, &count, devices.data());
 			return devices;
 		} else {
 			std::cout << "error >> failed to find any physical devices" << std::endl;
 			exit (-1);
-			// return mector <VkPhysicalDevice> {0};
+			// return std::vector <VkPhysicalDevice> {0};
 		}
 	}
-	static auto available_extension_properties () noexcept -> mector <VkExtensionProperties> {
+	static auto available_extension_properties () noexcept -> std::vector <VkExtensionProperties> {
 		uint32_t extensionCount = 0;
 		vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
-		auto extensions = mector <VkExtensionProperties> {extensionCount};
+		auto extensions = std::vector <VkExtensionProperties> {extensionCount};
 		vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensions.data());
 		return extensions;
 	}
-	static auto necessary_instance_extensions () noexcept -> mector <char const*> {
+	static auto necessary_instance_extensions () noexcept -> std::vector <char const*> {
 		auto glfwExtensionCount = uint32_t {0};
 		char const** glfwExtensions = glfwGetRequiredInstanceExtensions (&glfwExtensionCount);
 		#ifdef MACOS
-		auto res = mector <char const*> {glfwExtensionCount + 1};
+		auto res = std::vector <char const*> {glfwExtensionCount + 1};
 		res [glfwExtensionCount] = "VK_KHR_portability_enumeration";
 		#else 
-		auto res = mector <char const*> {glfwExtensionCount};
+		auto res = std::vector <char const*> {glfwExtensionCount};
 		#endif
 		for (auto i = 0; i < glfwExtensionCount; ++i) {
 			res [i] = glfwExtensions [i];
@@ -194,11 +197,11 @@ export struct iDevice : iPhysicalDevice <iDevice> {
 		auto const& p = iPhysicalDevice <iDevice>::physical_device ();
 		auto count = uint32_t {0};
 		vkGetPhysicalDeviceQueueFamilyProperties (p, &count, nullptr);
-		auto queue_family_properties = mector <VkQueueFamilyProperties> {count};
+		auto queue_family_properties = std::vector <VkQueueFamilyProperties> {count};
 		vkGetPhysicalDeviceQueueFamilyProperties (p, &count, queue_family_properties.data());
 
-		auto queue_create_infos = mector <VkDeviceQueueCreateInfo> {queue_family_properties.size()};
-		auto indices = mector <uint32_t> {};
+		auto queue_create_infos = std::vector <VkDeviceQueueCreateInfo> {queue_family_properties.size()};
+		auto indices = std::vector <uint32_t> {};
 		queueFamilies.resize (queue_family_properties.size());
 
 		auto const priority = float {1.0};
@@ -280,7 +283,7 @@ protected:
 	}
 private:
 	using parent = iPhysicalDevice <iDevice>;
-	mector <iQueueFamily> queueFamilies;
+	std::vector <iQueueFamily> queueFamilies;
 	template <typename U>
 	friend struct iPhysicalDevice;
 	auto on_physical_device_finished (VkPhysicalDevice const& p) noexcept -> void {
@@ -311,13 +314,15 @@ export struct iGraphicsPipeline : iRenderPass {
 */
 export struct iComputePipeline : iResources {
 	iComputePipeline (char const* shader_path) noexcept {
-		auto const shader_stage_create_info = VkPipelineShaderStageCreateInfo {
-			VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
-			nullptr,
-			0,
-			VK_SHADER_STAGE_COMPUTE_BIT,
-			make_shader_module (read_byte_file (shader_path))
-		};
+		// auto const shader_stage_create_info = VkPipelineShaderStageCreateInfo {
+		// 	VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+		// 	nullptr,
+		// 	0,
+		// 	VK_SHADER_STAGE_COMPUTE_BIT,
+		// 	// make_shader_module (read_byte_file (shader_path))
+		// 	createShaderModule (readFile (shader_path)),
+		// 	"main"
+		// };
 
 		VkDescriptorSetLayoutBinding descriptor_set_layout_bindings [2] = {
 			{
@@ -368,11 +373,23 @@ export struct iComputePipeline : iResources {
 			exit (-1);
 		}
 
+		VkShaderModule compute_shader_module = createShaderModule (readFile (shader_path));
+
 		auto const create_info = VkComputePipelineCreateInfo {
 			.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
 			.pNext = nullptr,
 			.flags = 0,
-			.stage = shader_stage_create_info,
+			// .stage = shader_stage_create_info,
+			.stage = VkPipelineShaderStageCreateInfo {
+			VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+			nullptr,
+			0,
+			VK_SHADER_STAGE_COMPUTE_BIT,
+			// make_shader_module (read_byte_file (shader_path))
+			compute_shader_module,
+			"main",
+			0
+		},
 			.layout = layout,
 			.basePipelineHandle = 0,
 			.basePipelineIndex = 0
@@ -382,54 +399,85 @@ export struct iComputePipeline : iResources {
 			std::cout << "error >> failed to create compute pipeline" << std::endl;
 			exit (-1);
 		}
+
+		vkDestroyShaderModule (device (), compute_shader_module, nullptr);
 	}
 private:
-	auto make_shader_module (mector <char> && code) const noexcept -> VkShaderModule {
-		auto create_info = VkShaderModuleCreateInfo {
-			.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
-			.codeSize = code.size (),
-			.pCode = reinterpret_cast <uint32_t const *> (code.data ())
-		};
-
-		auto shader_module = VkShaderModule {};	
-
-		if (vkCreateShaderModule (device (), &create_info, nullptr, &shader_module) != VK_SUCCESS) {
-			std::cout << "error >> failed to create shader module" << std::endl;
-			exit (-1);
+	static std::vector<char> readFile(const std::string& filename) {
+		std::ifstream file(filename, std::ios::ate | std::ios::binary);
+		if (!file.is_open()) {
+			throw std::runtime_error("failed to open file!");
 		}
-
-		return shader_module;
-	}
-	auto read_byte_file (char const * path) noexcept -> mector <char> {
-		// auto file = std::ifstream {path, std::ios::ate | std::ios::binary};
-
-		// if (!file.is_open ()) {
-		// 	std::cout << "error >> failed to open file" << std::endl;
-		// 	exit (-1);
-		// }
-
-		// auto file_size = file.tellg ();
-		// auto buffer = std::vector <char> {};
-		// buffer.resize (file_size);
-		// file.seekg (0);
-		// file.read (buffer.data (), file_size);
-		// file.close ();
-		
-		auto * fileptr = fopen(path, "rb");
-		if (not fileptr) {
-			printf ("error >> failed to read file\nfile >> %s\n", path);
-			exit (-1);
-		}
-		fseek(fileptr, 0, SEEK_END);  
-		
-		auto filelen = ftell(fileptr);
-		rewind(fileptr);     
-		auto buffer = mector <char> {}; 
-		buffer.resize (filelen);
-		fread(buffer.data(), filelen, 1, fileptr);
-		fclose(fileptr);
+		size_t fileSize = (size_t) file.tellg();
+		std::vector<char> buffer(fileSize);
+		file.seekg(0);
+		file.read(buffer.data(), fileSize);
+		file.close();
 		return buffer;
 	}
+	VkShaderModule createShaderModule (const std::vector<char>& code) {
+		VkShaderModuleCreateInfo createInfo {
+			.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
+			.codeSize = code.size(),
+			.pCode = reinterpret_cast<const uint32_t*>(code.data())
+		};
+
+		VkShaderModule shaderModule;
+
+		if (vkCreateShaderModule(device (), &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
+			std::cout << "failed to create shader module!" << std::endl;
+			exit (-1);
+		}
+		return shaderModule;
+	}
+	// auto make_shader_module (std::vector <char> && code) const noexcept -> VkShaderModule {
+	// 	auto const create_info = VkShaderModuleCreateInfo {
+	// 		.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
+	// 		.pNext = nullptr, 
+	// 		.flags = 0,
+	// 		.codeSize = code.size (),
+	// 		.pCode = reinterpret_cast <uint32_t const *> (code.data ())
+	// 	};
+
+	// 	auto shader_module = VkShaderModule {};	
+
+	// 	if (vkCreateShaderModule (device (), &create_info, nullptr, &shader_module) != VK_SUCCESS) {
+	// 		std::cout << "error >> failed to create shader module" << std::endl;
+	// 		exit (-1);
+	// 	}
+
+	// 	return shader_module;
+	// }
+	// auto read_byte_file (char const * path) noexcept -> std::vector <char> {
+	// 	// auto file = std::ifstream {path, std::ios::ate | std::ios::binary};
+
+	// 	// if (!file.is_open ()) {
+	// 	// 	std::cout << "error >> failed to open file" << std::endl;
+	// 	// 	exit (-1);
+	// 	// }
+
+	// 	// auto file_size = file.tellg ();
+	// 	// auto buffer = std::vector <char> {};
+	// 	// buffer.resize (file_size);
+	// 	// file.seekg (0);
+	// 	// file.read (buffer.data (), file_size);
+	// 	// file.close ();
+		
+	// 	auto * fileptr = fopen(path, "rb");
+	// 	if (not fileptr) {
+	// 		printf ("error >> failed to read file\nfile >> %s\n", path);
+	// 		exit (-1);
+	// 	}
+	// 	fseek(fileptr, 0, SEEK_END);  
+		
+	// 	auto filelen = ftell(fileptr);
+	// 	rewind(fileptr);     
+	// 	auto buffer = std::vector <char> {}; 
+	// 	buffer.resize (filelen);
+	// 	fread(buffer.data(), filelen, 1, fileptr);
+	// 	fclose(fileptr);
+	// 	return buffer;
+	// }
 	VkPipeline handle;
 };
 
