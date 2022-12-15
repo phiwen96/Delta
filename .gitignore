@@ -5,6 +5,7 @@ main
 .DS_Store
 *.sh
 *.pcm
+*.Cache
 
 # Prerequisites
 *.d

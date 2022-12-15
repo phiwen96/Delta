@@ -399,15 +399,33 @@ export struct iComputePipeline : iResources {
 		vkDestroyShaderModule (device (), compute_shader_module, nullptr);
 	}
 	~iComputePipeline () noexcept {
+		auto const cache_create_info = VkPipelineCacheCreateInfo {
+			.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO,
+			.pNext = nullptr,
+			.flags = 0,
+			.initialDataSize = 0,
+			.pInitialData = nullptr
+		};
+
+		if (vkCreatePipelineCache (device (), &cache_create_info, nullptr, &cache) != VK_SUCCESS) {
+			std::cout << "error >> failed to create pipeline cache" << std::endl;
+			exit (-1);
+		}
+
+		saveCacheToFile ("Vulkan.Pipeline.Cache", cache);
+		vkDestroyPipelineCache (device (), cache, nullptr);
+
+
 		vkDestroyDescriptorSetLayout (device (), descriptor_set_layout, nullptr);
 		vkDestroyPipelineLayout (device (), layout, nullptr);
 		vkDestroyPipeline (device (), handle, nullptr);
 	}
 private:
-	static std::vector<char> readFile(const std::string& filename) {
+	static std::vector<char> readFile(const std::string& filename) noexcept {
 		std::ifstream file(filename, std::ios::ate | std::ios::binary);
 		if (!file.is_open()) {
-			throw std::runtime_error("failed to open file!");
+			std::cout << "error >> failed to open file" << std::endl;
+			exit (-1);
 		}
 		size_t fileSize = (size_t) file.tellg();
 		std::vector<char> buffer(fileSize);
@@ -416,7 +434,7 @@ private:
 		file.close();
 		return buffer;
 	}
-	VkShaderModule createShaderModule (const std::vector<char>& code) {
+	VkShaderModule createShaderModule (const std::vector<char>& code) noexcept {
 		VkShaderModuleCreateInfo createInfo {
 			.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
 			.codeSize = code.size(),
@@ -432,9 +450,37 @@ private:
 		return shaderModule;
 	}
 
+	void saveCacheToFile (char const* filename, VkPipelineCache cache) noexcept {
+		auto cacheDataSize = size_t {};
+		// Determine the size of the cache data.
+		auto result = vkGetPipelineCacheData (device (), cache, &cacheDataSize, nullptr);
+
+		if (result == VK_SUCCESS && cacheDataSize != 0) {
+			FILE* pOutputFile;
+			void* pData;
+			// Allocate a temporary store for the cache data.
+			result = VK_ERROR_OUT_OF_HOST_MEMORY;
+			pData = malloc (cacheDataSize);
+			if (pData != nullptr){
+				// Retrieve the actual data from the cache.
+				result = vkGetPipelineCacheData (device (),cache,&cacheDataSize,pData);
+				if (result == VK_SUCCESS) {
+					// Open the file and write the data to it.
+					pOutputFile = fopen (filename, "wb");
+					if (pOutputFile != nullptr) {
+						fwrite (pData, 1, cacheDataSize, pOutputFile);
+						fclose (pOutputFile);
+					}
+					free (pData);
+				}
+			}
+		}
+	}
+
 	VkDescriptorSetLayout descriptor_set_layout;
 	VkPipelineLayout layout;
 	VkPipeline handle;
+	VkPipelineCache cache;
 };
 
 // export import Vulkan.Instance;
