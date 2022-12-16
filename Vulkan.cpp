@@ -391,14 +391,72 @@ export struct iComputePipeline : iResources {
 			.basePipelineIndex = 0
 		};
 
-		if (vkCreateComputePipelines (device (), 0, 1, &create_info, 0, &handle) != VK_SUCCESS) {
+		auto cache_size = size_t {0};
+		void* cache_data;
+
+		FILE *pReadFile = fopen ("Vulkan.Pipeline.Cache", "rb");
+		
+		if (pReadFile) {
+			// Determine cache size
+			fseek(pReadFile, 0, SEEK_END);
+			cache_size = ftell(pReadFile);
+			rewind(pReadFile);
+
+			// Allocate memory to hold the initial cache data
+			cache_data = (char *)malloc(sizeof(char) * cache_size);
+			if (cache_data == nullptr) {
+				fputs("Memory error", stderr);
+				exit(EXIT_FAILURE);
+			}
+
+			// Read the data into our buffer
+			size_t result = fread(cache_data, 1, cache_size, pReadFile);
+			if (result != cache_size) {
+				fputs("Reading error", stderr);
+				free(cache_data);
+				exit(EXIT_FAILURE);
+			}
+
+			// Clean up and print results
+			fclose(pReadFile);
+			// printf("  Pipeline cache HIT!\n");
+			// printf("  cacheData loaded from %s\n", "Vulkan.Pipeline.Cache");
+
+		} else {
+			// No cache found on disk
+			// printf("  Pipeline cache miss!\n");
+			cache_data = nullptr;
+		}
+
+		auto const cache_create_info = VkPipelineCacheCreateInfo {
+			.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO,
+			.pNext = nullptr,
+			.flags = 0,
+			.initialDataSize = cache_size,
+			.pInitialData = cache_data
+		};
+
+		if (vkCreatePipelineCache (device (), &cache_create_info, nullptr, &cache) != VK_SUCCESS) {
+			std::cout << "error >> failed to create pipeline cache" << std::endl;
+			exit (-1);
+		}
+		if (cache_data) {
+			// std::cout << "yay" << std::endl;
+			free (cache_data);
+		}
+		// std::cout << "yay" << std::endl;
+
+		if (vkCreateComputePipelines (device (), cache, 1, &create_info, 0, &handle) != VK_SUCCESS) {
 			std::cout << "error >> failed to create compute pipeline" << std::endl;
 			exit (-1);
 		}
 
+		vkDestroyPipelineCache (device (), cache, nullptr);
+
 		vkDestroyShaderModule (device (), compute_shader_module, nullptr);
 	}
 	~iComputePipeline () noexcept {
+		// std::cout << "~iComputePipeline()" << std::endl;
 		auto const cache_create_info = VkPipelineCacheCreateInfo {
 			.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO,
 			.pNext = nullptr,
@@ -415,7 +473,7 @@ export struct iComputePipeline : iResources {
 		saveCacheToFile ("Vulkan.Pipeline.Cache", cache);
 		vkDestroyPipelineCache (device (), cache, nullptr);
 
-
+		
 		vkDestroyDescriptorSetLayout (device (), descriptor_set_layout, nullptr);
 		vkDestroyPipelineLayout (device (), layout, nullptr);
 		vkDestroyPipeline (device (), handle, nullptr);
@@ -476,11 +534,11 @@ private:
 			}
 		}
 	}
-
 	VkDescriptorSetLayout descriptor_set_layout;
 	VkPipelineLayout layout;
 	VkPipeline handle;
 	VkPipelineCache cache;
+	// std::vector <unsigned char> chache_data;
 };
 
 // export import Vulkan.Instance;

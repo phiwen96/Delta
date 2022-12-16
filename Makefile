@@ -104,6 +104,7 @@ Test.Graphics: Test.Graphics.cpp Delta.o
 	$(GLSLC_COMPILER) $< -o $@
 
 clean:
+	@rm -f Vulkan.Pipeline.Cache
 	@rm -f libDelta.a
 	@rm -rf gcm.cache
 	@rm -f *.o
