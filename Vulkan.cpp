@@ -6,6 +6,7 @@ module;
 #include <vector>
 #include <fstream>
 #include <string>
+#include <tuple>
 export module Vulkan;
 
 // import std::vector;
@@ -28,8 +29,7 @@ export auto operator << (std::ostream& os, VkExtensionProperties const& p) noexc
 */
 
 
-export template <typename T>
-struct iInstance {
+export struct iInstance {
 	iInstance () noexcept : iInstance {{"VK_LAYER_KHRONOS_validation"}, necessary_instance_extensions ()} {
 		// std::cout << "iInstance ()" << std::endl;
 	}
@@ -75,11 +75,11 @@ struct iInstance {
 		// 	static_cast <T*> (this) -> on_instance_finished (handle);
 		// }
 	}
-	~iInstance () {
-		// std::cout << "~iInstance ()" << std::endl;
+	~iInstance () noexcept {
  		if (handle) {
 			vkDestroyInstance (handle, nullptr); 
 		}
+		// std::cout << "~iInstance ()" << std::endl;
 	}
 	iInstance (iInstance&& o) noexcept : handle {VK_NULL_HANDLE} {
 		std::swap (handle, o.handle);
@@ -131,15 +131,15 @@ private:
 	VkInstance handle;
 };
 
-
-export template <typename T>
-struct iPhysicalDevice : iInstance <iPhysicalDevice <T>> {
+export struct iPhysicalDevice : iInstance {
 	// using iInstance::iInstance;
 	iPhysicalDevice () noexcept {
-		handle = iInstance <iPhysicalDevice <T>>::devices ().back ();
+		handle = iInstance::devices ().back ();
 	}
 	~iPhysicalDevice () noexcept {
 		// std::cout << "~iPhysicalDevice ()" << std::endl;
+		// std::cout << "yay" << std::endl;
+		// iInstance::~iInstance ();
 	}
 protected:
 	auto physical_device () const noexcept -> VkPhysicalDevice const& {
@@ -147,8 +147,8 @@ protected:
 	}
 	
 private:
-	template <typename U>
-	friend struct iInstance;
+	// template <typename U>
+	// friend struct iInstance;
 	// auto on_instance_finished (VkInstance const& i) noexcept -> void {
 	// 	// std::cout<<"mfd"<<std::endl;
 	// 	handle = iInstance <iPhysicalDevice <T>>::devices ().back ();
@@ -187,14 +187,55 @@ export struct iCommandPool : iQueueFamily {
 	iCommandPool () noexcept {
 		
 	}
+	~iCommandPool () noexcept {
+		// iQueueFamily::~iQueueFamily ();
+	}
 private:
 	VkCommandPool handle;
 };
 
+
+// export template <typename T>
+export struct iCommandPool2 {
+	iCommandPool2 (iCommandPool2 const& o) noexcept : dev {o.dev}, queues {o.queues}, handle {o.handle}, index {o.index}, capabilities {o.capabilities}, present_support {o.present_support} {
+
+	}
+
+	iCommandPool2 (iCommandPool2&& o) noexcept : handle {VK_NULL_HANDLE} {
+		std::swap (dev, o.dev);
+		std::swap (queues, o.queues);
+		std::swap (handle, o.handle);
+		std::swap (index, o.index);
+		std::swap (capabilities, o.capabilities);
+		std::swap (present_support, o.present_support);
+	}
+	iCommandPool2 (VkDevice d, std::vector <VkQueue> && q, VkCommandPool h, uint32_t i, VkQueueFlags c) noexcept : dev {d}, queues {std::move (q)}, handle {h}, index {i}, capabilities {c} {
+
+	}
+	~iCommandPool2 () noexcept {
+		if (handle) vkDestroyCommandPool (dev, handle, nullptr);
+	}
+
+	auto allocate_command_buffer () noexcept {
+		
+	}
+private:
+	// template <typename U>
+	// friend struct 
+	VkDevice dev;
+	std::vector <VkQueue> queues;
+	VkCommandPool handle;
+	uint32_t index;
+	VkQueueFlags capabilities;
+	VkBool32 present_support;
+};
+
 // template <typename T>
-export struct iDevice : iPhysicalDevice <iDevice> {
+export struct iDevice : iPhysicalDevice {
+	iDevice (iDevice const&) = delete;
+	iDevice (iDevice&&) = delete;
 	iDevice () noexcept {
-		auto const& p = iPhysicalDevice <iDevice>::physical_device ();
+		auto const& p = iPhysicalDevice::physical_device ();
 		auto count = uint32_t {0};
 		vkGetPhysicalDeviceQueueFamilyProperties (p, &count, nullptr);
 		auto queue_family_properties = std::vector <VkQueueFamilyProperties> {count};
@@ -202,9 +243,12 @@ export struct iDevice : iPhysicalDevice <iDevice> {
 
 		auto queue_create_infos = std::vector <VkDeviceQueueCreateInfo> {queue_family_properties.size()};
 		auto indices = std::vector <uint32_t> {};
-		queueFamilies.resize (queue_family_properties.size());
+		// queueFamilies.resize (queue_family_properties.size());
+		commandPools.reserve (queue_family_properties.size());
 
 		auto const priority = float {1.0};
+
+		auto families = std::vector <std::tuple <std::vector <VkQueue>, uint32_t, VkQueueFlags>> {queue_family_properties.size ()};
 
 		for (auto i = 0; i < queue_family_properties.size (); ++i) {
 
@@ -212,11 +256,21 @@ export struct iDevice : iPhysicalDevice <iDevice> {
 			auto const family_index = static_cast <uint32_t> (i);
 			auto const capabilities = queue_family_properties [i].queueFlags;
 
-			queueFamilies[i].handles = (iQueue*) std::malloc (count * sizeof (iQueue));
-			queueFamilies[i].count = count;
+			// queueFamilies[i].handles = (iQueue*) std::malloc (count * sizeof (iQueue));
+			// queueFamilies[i].count = count;
 			// queueFamilies [i].handles.resize (count);
-			queueFamilies [i].index = family_index;
-			queueFamilies [i].capabilities = capabilities;
+			// queueFamilies [i].index = family_index;
+			// queueFamilies [i].capabilities = capabilities;
+
+			auto & [qs, ind, cap] = families [i];
+
+			qs.resize (count);
+			ind = family_index;
+			cap = capabilities;
+
+			// families [i].resize (count);
+
+			// commandPools.push_back (iCommandPool2 {std::vector <VkQueue> {count}, family_index, capabilities});
 
 			queue_create_infos [i] = {
 				.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
@@ -233,7 +287,10 @@ export struct iDevice : iPhysicalDevice <iDevice> {
 			.dynamicRendering = VK_TRUE
 		};
 
+		auto layers = std::array <char const*, 1> {"VK_LAYER_KHRONOS_validation"};
 		auto extensions = std::array <char const*, 1> {"VK_KHR_portability_subset"};
+
+		VkPhysicalDeviceFeatures features {};
 
 		auto const createInfo = VkDeviceCreateInfo {
 			.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
@@ -241,11 +298,11 @@ export struct iDevice : iPhysicalDevice <iDevice> {
 			.flags = 0,
 			.queueCreateInfoCount = static_cast <uint32_t> (queue_create_infos.size()),
 			.pQueueCreateInfos = queue_create_infos.data(),
-			.enabledLayerCount = 0,//static_cast <uint32_t> (layers.size()),
-			.ppEnabledLayerNames = nullptr,//layers.data(),
+			.enabledLayerCount = static_cast <uint32_t> (layers.size()),
+			.ppEnabledLayerNames = layers.data(),
 			.enabledExtensionCount = static_cast <uint32_t> (extensions.size()),
 			.ppEnabledExtensionNames = extensions.data(),
-			// .pEnabledFeatures = &features
+			.pEnabledFeatures = &features
 		};
 
 		// auto device = VkDevice {};
@@ -255,37 +312,65 @@ export struct iDevice : iPhysicalDevice <iDevice> {
 			exit (-1);
 		}
 
-		for (auto i = 0; i < queueFamilies.size(); ++i) {
-			for (auto j = 0; j < queueFamilies[i].count; ++j) {
-				vkGetDeviceQueue (handle, queueFamilies[i].index, static_cast <uint32_t> (j), &queueFamilies[i].handles [j].handle);
+		for (auto i = 0; i < families.size(); ++i) {
+
+			auto & [qs, ind, cap] = families [i];
+
+			for (auto j = 0; j < qs.size (); ++j) {
+				vkGetDeviceQueue (handle, ind, static_cast <uint32_t> (j), &qs [j]);
 				// queueFamilies[i].present_support = physical_device.get_surface_support (queueFamilies[i].index, surface);
 
 				auto const command_pool_create_info = VkCommandPoolCreateInfo {
 					.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
 					.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
-					.queueFamilyIndex = queueFamilies[i].index
+					.queueFamilyIndex = ind
 				};
 
-				// if (vkCreateCommandPool(device, &command_pool_create_info, nullptr, &queue_family.command_pool.handle) != VK_SUCCESS) {
-				// 	std::cout << "error >> failed to create command pool" << std::endl;
-				// 	exit (-1);
-				// }
+				auto h = VkCommandPool {};
+
+				if (vkCreateCommandPool(device (), &command_pool_create_info, nullptr, &h) != VK_SUCCESS) {
+					std::cout << "error >> failed to create command pool" << std::endl;
+					exit (-1);
+				}
+
+				commandPools.push_back (iCommandPool2 {device (), std::move (qs), h, ind, cap});
 			}
 		}
+
+		// for (auto i = 0; i < queueFamilies.size(); ++i) {
+		// 	for (auto j = 0; j < queueFamilies[i].count; ++j) {
+		// 		vkGetDeviceQueue (handle, queueFamilies[i].index, static_cast <uint32_t> (j), &queueFamilies[i].handles [j].handle);
+		// 		// queueFamilies[i].present_support = physical_device.get_surface_support (queueFamilies[i].index, surface);
+
+		// 		auto const command_pool_create_info = VkCommandPoolCreateInfo {
+		// 			.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
+		// 			.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
+		// 			.queueFamilyIndex = queueFamilies[i].index
+		// 		};
+
+		// 		// if (vkCreateCommandPool(device, &command_pool_create_info, nullptr, &queue_family.command_pool.handle) != VK_SUCCESS) {
+		// 		// 	std::cout << "error >> failed to create command pool" << std::endl;
+		// 		// 	exit (-1);
+		// 		// }
+		// 	}
+		// }
 	}
 	~iDevice () noexcept {
+		commandPools.clear ();
 		vkDestroyDevice (handle, nullptr); 
+		// iPhysicalDevice::~iPhysicalDevice ();
 		// std::cout << "~iDevice ()" << std::endl;
 	}
-protected:
+public:
 	auto device () const noexcept -> VkDevice const& {
 		return handle;
 	}
 private:
-	using parent = iPhysicalDevice <iDevice>;
-	std::vector <iQueueFamily> queueFamilies;
-	template <typename U>
-	friend struct iPhysicalDevice;
+	using parent = iPhysicalDevice;
+	// std::vector <iQueueFamily> queueFamilies;
+	std::vector <iCommandPool2> commandPools;
+	// template <typename U>
+	// friend struct iPhysicalDevice;
 	auto on_physical_device_finished (VkPhysicalDevice const& p) noexcept -> void {
 
 		// if constexpr (requires {static_cast <T*> (this) -> on_device_finished (handle);}) {
@@ -295,25 +380,26 @@ private:
 	VkDevice handle;
 };
 
-export struct iResources : iDevice {
+// export struct iResources : iDevice {
 	
-};
+// };
 
-export struct iRenderPass : iDevice {
+// export struct iRenderPass : iDevice {
 
-};
+// };
 
-export struct iGraphicsPipeline : iRenderPass {
+// export struct iGraphicsPipeline : iRenderPass {
 
-};
+// };
 
 /*
 	The compute pipeline descibes its buffer usage needs 
 	in the compute shader as a pipeline layout, which 
 	contains multiple description set layouts.
 */
-export struct iComputePipeline : iResources {
+export struct iComputePipeline : iDevice {
 	iComputePipeline (char const* shader_path) noexcept {
+		
 		// auto const shader_stage_create_info = VkPipelineShaderStageCreateInfo {
 		// 	VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
 		// 	nullptr,
@@ -444,7 +530,6 @@ export struct iComputePipeline : iResources {
 			// std::cout << "yay" << std::endl;
 			free (cache_data);
 		}
-		// std::cout << "yay" << std::endl;
 
 		if (vkCreateComputePipelines (device (), cache, 1, &create_info, 0, &handle) != VK_SUCCESS) {
 			std::cout << "error >> failed to create compute pipeline" << std::endl;
@@ -456,7 +541,7 @@ export struct iComputePipeline : iResources {
 		vkDestroyShaderModule (device (), compute_shader_module, nullptr);
 	}
 	~iComputePipeline () noexcept {
-		// std::cout << "~iComputePipeline()" << std::endl;
+		
 		auto const cache_create_info = VkPipelineCacheCreateInfo {
 			.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO,
 			.pNext = nullptr,
@@ -477,6 +562,8 @@ export struct iComputePipeline : iResources {
 		vkDestroyDescriptorSetLayout (device (), descriptor_set_layout, nullptr);
 		vkDestroyPipelineLayout (device (), layout, nullptr);
 		vkDestroyPipeline (device (), handle, nullptr);
+		// std::cout << "~iComputePipeline()" << std::endl;
+		// iDevice::~iDevice ();
 	}
 private:
 	static std::vector<char> readFile(const std::string& filename) noexcept {

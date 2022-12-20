@@ -1,3 +1,4 @@
+#include <iostream>
 import Delta;
 
 
@@ -11,7 +12,11 @@ import Delta;
 	}
 */
 auto main (int argc, char** argv) -> int {
-	auto compute = iComputePipeline {"Test.Compute.Shader.spv"};
+	{
+		auto compute = iComputePipeline {"Test.Compute.Shader.spv"};
+	}
+	std::cout << "... main" << std::endl;
+	
 	return 0;
 }
 
